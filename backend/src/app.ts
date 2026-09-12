@@ -4,6 +4,7 @@ import authRouter from './routes/auth.routes.js'
 import { loggerMiddleware } from './middlewares/logger.middleware.js'
 import cookieParser from 'cookie-parser'
 import chatRouter from './routes/chat.routes.js'
+import messageRouter from './routes/message.routes.js'
 
 const app = express()
 
@@ -20,5 +21,6 @@ app.get('/', (_req, res) => {
 app.use('/api', healthRouter)
 app.use('/api/auth', authRouter)
 app.use('/api/chats', chatRouter)
+app.use('/api/chats', messageRouter)
 
 export default app
