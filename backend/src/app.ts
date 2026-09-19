@@ -1,13 +1,22 @@
 import express from 'express'
+import cookieParser from 'cookie-parser'
+import cors from 'cors'
+
 import healthRouter from './routes/health.routes.js'
 import authRouter from './routes/auth.routes.js'
-import { loggerMiddleware } from './middlewares/logger.middleware.js'
-import cookieParser from 'cookie-parser'
 import chatRouter from './routes/chat.routes.js'
 import messageRouter from './routes/message.routes.js'
+import { loggerMiddleware } from './middlewares/logger.middleware.js'
 import uploadRouter from './routes/upload.routes.js'
 
 const app = express()
+
+app.use(
+  cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+  })
+)
 
 app.use(express.json())
 app.use(cookieParser())
