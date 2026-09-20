@@ -1,5 +1,6 @@
 export interface AIProvider {
   generateResponse(
-    prompt: string
+    prompt: string,
+    model: string
   ): Promise<string>
 }

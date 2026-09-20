@@ -14,7 +14,9 @@ export const createMessageController = async (
   try {
     const userId = req.userId
     const chatId = req.params.id as string
-    const { content } = req.body
+    const { content, modelId } = req.body
+    console.log('Request body:', req.body)
+    console.log('Selected modelId:', modelId)
 
     if (!userId) {
       return res.status(401).json({
@@ -43,7 +45,8 @@ export const createMessageController = async (
     const aiResponse = await generateChatResponse(
       chatId,
       userId,
-      content
+      content,
+      modelId
     )
 
     if (aiResponse === null) {

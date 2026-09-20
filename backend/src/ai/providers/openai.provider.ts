@@ -11,10 +11,11 @@ export class OpenAIProvider implements AIProvider {
   }
 
   async generateResponse(
-    prompt: string
+    prompt: string,
+    model: string
   ): Promise<string> {
     const response = await this.client.responses.create({
-      model: 'gpt-5-mini',
+      model,
       input: prompt
     })
 

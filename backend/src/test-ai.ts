@@ -37,7 +37,11 @@ const main = async () => {
     console.log('\nPrompt:')
     console.log(prompt)
 
-    const response = await generateAIResponse(prompt)
+    const response = await generateAIResponse(
+      prompt,
+      'qwen3:1.7b',
+      'ollama'
+    )
 
     console.log('\nAI response:')
     console.log(response)

@@ -9,7 +9,8 @@ const main = async () => {
     const response = await generateChatResponse(
       chatId,
       userId,
-      'Hãy giải thích ngắn gọn GROUP BY trong SQL.'
+      'Hãy giải thích ngắn gọn GROUP BY trong SQL.',
+      'ollama-qwen3-1.7b'
     )
 
     console.log('\nAI response:')

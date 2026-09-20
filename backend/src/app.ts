@@ -8,6 +8,7 @@ import chatRouter from './routes/chat.routes.js'
 import messageRouter from './routes/message.routes.js'
 import { loggerMiddleware } from './middlewares/logger.middleware.js'
 import uploadRouter from './routes/upload.routes.js'
+import aiRouter from './routes/ai.routes.js'
 
 const app = express()
 
@@ -33,5 +34,6 @@ app.use('/api/auth', authRouter)
 app.use('/api/chats', chatRouter)
 app.use('/api/chats', messageRouter)
 app.use('/api/uploads', uploadRouter)
+app.use('/api/ai', aiRouter)
 
 export default app

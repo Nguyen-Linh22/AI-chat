@@ -2,10 +2,15 @@ import { useState } from 'react'
 import { sendMessage } from '../services/messageService'
 import { useChatStore } from '../stores/chatStore'
 import { useMessageStore } from '../stores/messageStore'
+import { useAIStore } from '../stores/aiStore'
 
 function ChatInput() {
   const currentChatId = useChatStore(
     (state) => state.currentChatId
+  )
+
+  const selectedModelId = useAIStore(
+    (state) => state.selectedModelId
   )
 
   const addMessage = useMessageStore(
@@ -28,6 +33,10 @@ function ChatInput() {
       return
     }
 
+    if (!selectedModelId) {
+      return
+    }
+
     if (isSending || isCooldown) {
       return
     }
@@ -38,7 +47,8 @@ function ChatInput() {
 
       const result = await sendMessage(
         currentChatId,
-        trimmedContent
+        trimmedContent,
+        selectedModelId
       )
 
       addMessage(result.userMessage)
@@ -66,7 +76,9 @@ function ChatInput() {
   }
 
   const isDisabled =
-    isSending || isCooldown
+    isSending ||
+    isCooldown ||
+    !selectedModelId
 
   return (
     <div className="shrink-0 border-t border-gray-700 bg-gray-900 p-4">

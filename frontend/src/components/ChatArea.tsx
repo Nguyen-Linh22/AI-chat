@@ -4,6 +4,7 @@ import { useChatStore } from '../stores/chatStore'
 import { useMessageStore } from '../stores/messageStore'
 import MessageBubble from './MessageBubble'
 import ChatInput from './ChatInput'
+import ModelSelector from './ModelSelector'
 
 function ChatArea() {
   const currentChatId = useChatStore(
@@ -79,17 +80,20 @@ const setMessageError = useMessageStore(
   return (
     <main className="flex min-w-0 flex-1 flex-col bg-gray-900">
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-700 px-6">
-        <div>
-          <h1 className="text-sm font-semibold">
-            AI Chat Clone
-          </h1>
+      <div>
+        <h1 className="text-sm font-semibold">
+          AI Chat Clone
+        </h1>
 
-          <p className="text-xs text-gray-500">
-            {currentChatId
-              ? `Chat ID: ${currentChatId}`
-              : 'Chưa chọn chat'}
-          </p>
-        </div>
+        <p className="text-xs text-gray-500">
+          {currentChatId
+            ? `Chat ID: ${currentChatId}`
+            : 'Chưa chọn chat'}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <ModelSelector />
 
         <button
           type="button"
@@ -98,7 +102,8 @@ const setMessageError = useMessageStore(
         >
           ⋮
         </button>
-      </header>
+      </div>
+    </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
         <div className="mx-auto flex max-w-3xl flex-col gap-5">

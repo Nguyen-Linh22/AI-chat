@@ -1,20 +1,53 @@
 import { useEffect } from 'react'
 import { getCurrentUser } from '../services/authService'
 import { getChats } from '../services/chatService'
+import { getAIModels } from '../services/aiService'
 import { useAuthStore } from '../stores/authStore'
 import { useChatStore } from '../stores/chatStore'
+import { useAIStore } from '../stores/aiStore'
 
 function AuthInitializer() {
-  const setUser = useAuthStore((state) => state.setUser)
-  const clearUser = useAuthStore((state) => state.clearUser)
+  const setUser = useAuthStore(
+    (state) => state.setUser
+  )
 
-  const setChats = useChatStore((state) => state.setChats)
+  const clearUser = useAuthStore(
+    (state) => state.clearUser
+  )
+
+  const setChats = useChatStore(
+    (state) => state.setChats
+  )
+
   const setCurrentChatId = useChatStore(
     (state) => state.setCurrentChatId
   )
 
+  const setModels = useAIStore(
+    (state) => state.setModels
+  )
+
+  const setSelectedModelId = useAIStore(
+    (state) => state.setSelectedModelId
+  )
+
   useEffect(() => {
     const initializeAuth = async () => {
+      try {
+        const models = await getAIModels()
+
+        setModels(models)
+
+        if (models.length > 0) {
+          setSelectedModelId(models[0].id)
+        }
+      } catch (error) {
+        console.error(
+          'Không thể lấy danh sách AI model:',
+          error
+        )
+      }
+
       try {
         const user = await getCurrentUser()
 
@@ -37,7 +70,10 @@ function AuthInitializer() {
           setCurrentChatId(null)
         }
       } catch (error) {
-        console.error('Không thể khởi tạo ứng dụng:', error)
+        console.error(
+          'Không thể khởi tạo ứng dụng:',
+          error
+        )
 
         clearUser()
         setChats([])
@@ -50,7 +86,9 @@ function AuthInitializer() {
     setUser,
     clearUser,
     setChats,
-    setCurrentChatId
+    setCurrentChatId,
+    setModels,
+    setSelectedModelId
   ])
 
   return null

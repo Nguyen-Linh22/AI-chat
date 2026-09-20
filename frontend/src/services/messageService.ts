@@ -31,12 +31,14 @@ export interface SendMessageResponse {
 
 export const sendMessage = async (
   chatId: string,
-  content: string
+  content: string,
+  modelId: string
 ): Promise<SendMessageResponse> => {
   const response = await apiClient.post(
     `/api/chats/${chatId}/messages`,
     {
-      content
+      content,
+      modelId
     }
   )
 
