@@ -1,9 +1,11 @@
 import { Request, Response } from 'express'
 import {
   createMessage,
+  createAssistantMessage,
   getMessages,
   deleteMessage
 } from '../services/message.service.js'
+import { generateChatResponse } from '../ai/chat.service.js'
 
 export const createMessageController = async (
   req: Request,
@@ -26,24 +28,48 @@ export const createMessageController = async (
       })
     }
 
-    const message = await createMessage(
+    const userMessage = await createMessage(
       chatId,
       userId,
       content
     )
 
-    if (!message) {
+    if (!userMessage) {
       return res.status(404).json({
         message: 'Không tìm thấy cuộc trò chuyện'
       })
     }
 
+    const aiResponse = await generateChatResponse(
+      chatId,
+      userId,
+      content
+    )
+
+    if (aiResponse === null) {
+      return res.status(404).json({
+        message: 'Không tìm thấy cuộc trò chuyện'
+      })
+    }
+
+    const assistantMessage =
+      await createAssistantMessage(
+        chatId,
+        aiResponse
+      )
+
     return res.status(201).json({
       message: 'Gửi tin nhắn thành công',
-      data: message
+      data: {
+        userMessage,
+        assistantMessage
+      }
     })
   } catch (error) {
-    console.error('Create message error:', error)
+    console.error(
+      'Create message error:',
+      error
+    )
 
     return res.status(500).json({
       message: 'Đã xảy ra lỗi khi gửi tin nhắn'

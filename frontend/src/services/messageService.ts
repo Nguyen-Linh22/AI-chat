@@ -24,10 +24,15 @@ export const getMessages = async (
   return data.messages
 }
 
+export interface SendMessageResponse {
+  userMessage: Message
+  assistantMessage: Message
+}
+
 export const sendMessage = async (
   chatId: string,
   content: string
-): Promise<Message> => {
+): Promise<SendMessageResponse> => {
   const response = await apiClient.post(
     `/api/chats/${chatId}/messages`,
     {

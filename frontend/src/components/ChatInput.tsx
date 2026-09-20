@@ -36,12 +36,13 @@ function ChatInput() {
       setIsSending(true)
       setSendError(null)
 
-      const message = await sendMessage(
+      const result = await sendMessage(
         currentChatId,
         trimmedContent
       )
 
-      addMessage(message)
+      addMessage(result.userMessage)
+      addMessage(result.assistantMessage)
 
       setContent('')
 

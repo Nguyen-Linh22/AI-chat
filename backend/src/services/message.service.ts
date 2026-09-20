@@ -112,3 +112,18 @@ export const deleteMessage = async (
 
   return message
 }
+
+export const createAssistantMessage = async (
+  chatId: string,
+  content: string
+) => {
+  const message = await prisma.message.create({
+    data: {
+      sessionId: chatId,
+      role: 'ai',
+      content
+    }
+  })
+
+  return message
+}
