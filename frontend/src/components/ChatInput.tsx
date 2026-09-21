@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { sendMessage } from '../services/messageService'
+import { useRef, useState } from 'react'
 import { useChatStore } from '../stores/chatStore'
-import { useMessageStore } from '../stores/messageStore'
 import { useAIStore } from '../stores/aiStore'
+import { streamMessage } from '../services/streamService'
+import { useMessageStore } from '../stores/messageStore'
 
 function ChatInput() {
   const currentChatId = useChatStore(
@@ -17,10 +17,25 @@ function ChatInput() {
     (state) => state.addMessage
   )
 
+  const updateMessage = useMessageStore(
+    (state) => state.updateMessage
+  )
+
+  const setStreamingMessageId = useMessageStore(
+    (state) => state.setStreamingMessageId
+  )
+
   const [content, setContent] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isCooldown, setIsCooldown] = useState(false)
-  const [sendError, setSendError] = useState<string | null>(null)
+  const [sendError, setSendError] =
+    useState<string | null>(null)
+  const abortControllerRef =
+    useRef<AbortController | null>(null)
+
+  const handleStop = () => {
+    abortControllerRef.current?.abort()
+  }
 
   const handleSendMessage = async () => {
     const trimmedContent = content.trim()
@@ -41,18 +56,52 @@ function ChatInput() {
       return
     }
 
+    const userMessageId = crypto.randomUUID()
+    const assistantMessageId = crypto.randomUUID()
+
     try {
       setIsSending(true)
       setSendError(null)
 
-      const result = await sendMessage(
+      const controller = new AbortController()
+      abortControllerRef.current = controller
+
+      // Thêm user message vào UI
+      addMessage({
+        id: userMessageId,
+        chatSessionId: currentChatId,
+        createdAt: new Date().toISOString(),
+        role: 'user',
+        content: trimmedContent
+      })
+
+      // Tạo assistant message rỗng
+      addMessage({
+        id: assistantMessageId,
+        chatSessionId: currentChatId,
+        createdAt: new Date().toISOString(),
+        role: 'assistant',
+        content: ''
+      })
+
+      setStreamingMessageId(assistantMessageId)
+
+      let assistantContent = ''
+
+      await streamMessage(
         currentChatId,
         trimmedContent,
-        selectedModelId
-      )
+        selectedModelId,
+        (chunk) => {
+          assistantContent += chunk
 
-      addMessage(result.userMessage)
-      addMessage(result.assistantMessage)
+          updateMessage(
+            assistantMessageId,
+            assistantContent
+          )
+        },
+        controller.signal
+      )
 
       setContent('')
 
@@ -62,8 +111,19 @@ function ChatInput() {
         setIsCooldown(false)
       }, 1500)
     } catch (error) {
+      if (
+        error instanceof DOMException &&
+        error.name === 'AbortError'
+      ) {
+        console.log(
+          'STREAM: người dùng đã dừng generation'
+        )
+
+        return
+      }
+
       console.error(
-        'Không thể gửi message:',
+        'Không thể streaming message:',
         error
       )
 
@@ -72,6 +132,8 @@ function ChatInput() {
       )
     } finally {
       setIsSending(false)
+      setStreamingMessageId(null)
+      abortControllerRef.current = null
     }
   }
 
@@ -117,14 +179,20 @@ function ChatInput() {
             className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-white outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
           />
 
-          {/* Send */}
+          {/* Send / Stop */}
           <button
             type="button"
-            onClick={handleSendMessage}
-            disabled={isDisabled}
+            onClick={
+              isSending
+                ? handleStop
+                : handleSendMessage
+            }
+            disabled={
+              !isSending && isDisabled
+            }
             className="flex h-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSending ? 'Đang gửi...' : 'Gửi'}
+            {isSending ? 'Dừng' : 'Gửi'}
           </button>
         </div>
 

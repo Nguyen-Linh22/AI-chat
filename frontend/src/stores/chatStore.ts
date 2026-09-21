@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type { ChatSession } from '../services/chatService'
 
 interface ChatState {
@@ -13,33 +14,47 @@ interface ChatState {
   removeChat: (chatId: string) => void
 }
 
-export const useChatStore = create<ChatState>((set) => ({
-  chats: [],
-  currentChatId: null,
+export const useChatStore = create<ChatState>()(
+  persist(
+    (set) => ({
+      chats: [],
+      currentChatId: null,
 
-  setChats: (chats) => set({ chats }),
+      setChats: (chats) =>
+        set({ chats }),
 
-  setCurrentChatId: (chatId) =>
-    set({ currentChatId: chatId }),
+      setCurrentChatId: (chatId) =>
+        set({
+          currentChatId: chatId
+        }),
 
-  addChat: (chat) =>
-    set((state) => ({
-      chats: [chat, ...state.chats]
-    })),
+      addChat: (chat) =>
+        set((state) => ({
+          chats: [chat, ...state.chats]
+        })),
 
-  updateChat: (chat) =>
-    set((state) => ({
-      chats: state.chats.map((item) =>
-        item.id === chat.id ? chat : item
-      )
-    })),
+      updateChat: (chat) =>
+        set((state) => ({
+          chats: state.chats.map((item) =>
+            item.id === chat.id
+              ? chat
+              : item
+          )
+        })),
 
-  removeChat: (chatId) =>
-    set((state) => ({
-      chats: state.chats.filter((chat) => chat.id !== chatId),
-      currentChatId:
-        state.currentChatId === chatId
-          ? null
-          : state.currentChatId
-    }))
-}))
+      removeChat: (chatId) =>
+        set((state) => ({
+          chats: state.chats.filter(
+            (chat) => chat.id !== chatId
+          ),
+          currentChatId:
+            state.currentChatId === chatId
+              ? null
+              : state.currentChatId
+        }))
+    }),
+    {
+      name: 'chat-store'
+    }
+  )
+)

@@ -21,4 +21,24 @@ export class OpenAIProvider implements AIProvider {
 
     return response.output_text
   }
+
+  async *generateResponseStream(
+    prompt: string,
+    model: string
+  ): AsyncGenerator<string> {
+    const stream = await this.client.responses.create({
+      model,
+      input: prompt,
+      stream: true
+    })
+
+    for await (const event of stream) {
+      if (
+        event.type ===
+        'response.output_text.delta'
+      ) {
+        yield event.delta
+      }
+    }
+  }
 }

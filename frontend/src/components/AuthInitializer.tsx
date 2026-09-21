@@ -23,6 +23,10 @@ function AuthInitializer() {
     (state) => state.setCurrentChatId
   )
 
+  const currentChatId = useChatStore(
+    (state) => state.currentChatId
+  )
+
   const setModels = useAIStore(
     (state) => state.setModels
   )
@@ -64,10 +68,16 @@ function AuthInitializer() {
 
         setChats(chats)
 
-        if (chats.length > 0) {
-          setCurrentChatId(chats[0].id)
-        } else {
-          setCurrentChatId(null)
+        const currentChatExists = chats.some(
+          (chat) => chat.id === currentChatId
+        )
+
+        if (!currentChatExists) {
+          if (chats.length > 0) {
+            setCurrentChatId(chats[0].id)
+          } else {
+            setCurrentChatId(null)
+          }
         }
       } catch (error) {
         console.error(
@@ -87,6 +97,7 @@ function AuthInitializer() {
     clearUser,
     setChats,
     setCurrentChatId,
+    currentChatId,
     setModels,
     setSelectedModelId
   ])

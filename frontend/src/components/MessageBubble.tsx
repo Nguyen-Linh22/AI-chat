@@ -1,9 +1,14 @@
 interface MessageBubbleProps {
   role: 'user' | 'ai'
   content: string
+  isStreaming?: boolean
 }
 
-function MessageBubble({ role, content }: MessageBubbleProps) {
+function MessageBubble({
+  role,
+  content,
+  isStreaming = false
+}: MessageBubbleProps) {
   const isUser = role === 'user'
 
   return (
@@ -25,6 +30,12 @@ function MessageBubble({ role, content }: MessageBubbleProps) {
 
         <p className="whitespace-pre-wrap text-sm leading-6">
           {content}
+
+          {isStreaming && (
+            <span className="ml-1 inline-block animate-pulse">
+              ▌
+            </span>
+          )}
         </p>
       </div>
     </div>
