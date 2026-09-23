@@ -1,37 +1,24 @@
 import { useRef, useState } from 'react'
 import { useChatStore } from '../stores/chatStore'
 import { useAIStore } from '../stores/aiStore'
-import { streamMessage } from '../services/streamService'
 import { useMessageStore } from '../stores/messageStore'
+import { streamMessage } from '../services/streamService'
 
 function ChatInput() {
-  const currentChatId = useChatStore(
-    (state) => state.currentChatId
-  )
+  const currentChatId = useChatStore((state) => state.currentChatId)
+  const selectedModelId = useAIStore((state) => state.selectedModelId)
 
-  const selectedModelId = useAIStore(
-    (state) => state.selectedModelId
-  )
-
-  const addMessage = useMessageStore(
-    (state) => state.addMessage
-  )
-
-  const updateMessage = useMessageStore(
-    (state) => state.updateMessage
-  )
-
-  const setStreamingMessageId = useMessageStore(
-    (state) => state.setStreamingMessageId
-  )
+  const addMessage = useMessageStore((state) => state.addMessage)
+  const updateMessage = useMessageStore((state) => state.updateMessage)
+  const setStreamingMessageId = useMessageStore((state) => state.setStreamingMessageId)
+  const replaceMessageId = useMessageStore((state) => state.replaceMessageId)
 
   const [content, setContent] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isCooldown, setIsCooldown] = useState(false)
-  const [sendError, setSendError] =
-    useState<string | null>(null)
-  const abortControllerRef =
-    useRef<AbortController | null>(null)
+  const [sendError, setSendError] = useState<string | null>(null)
+
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const handleStop = () => {
     abortControllerRef.current?.abort()
@@ -40,19 +27,7 @@ function ChatInput() {
   const handleSendMessage = async () => {
     const trimmedContent = content.trim()
 
-    if (!trimmedContent) {
-      return
-    }
-
-    if (!currentChatId) {
-      return
-    }
-
-    if (!selectedModelId) {
-      return
-    }
-
-    if (isSending || isCooldown) {
+    if (!trimmedContent || !currentChatId || !selectedModelId || isSending || isCooldown) {
       return
     }
 
@@ -72,7 +47,7 @@ function ChatInput() {
         chatSessionId: currentChatId,
         createdAt: new Date().toISOString(),
         role: 'user',
-        content: trimmedContent
+        content: trimmedContent,
       })
 
       // Tạo assistant message rỗng
@@ -81,55 +56,41 @@ function ChatInput() {
         chatSessionId: currentChatId,
         createdAt: new Date().toISOString(),
         role: 'assistant',
-        content: ''
+        content: '',
       })
 
       setStreamingMessageId(assistantMessageId)
 
       let assistantContent = ''
 
-      await streamMessage(
+      const assistantMessage = await streamMessage(
         currentChatId,
         trimmedContent,
         selectedModelId,
         (chunk) => {
           assistantContent += chunk
-
-          updateMessage(
-            assistantMessageId,
-            assistantContent
-          )
+          updateMessage(assistantMessageId, assistantContent)
         },
         controller.signal
       )
 
-      setContent('')
+      updateMessage(assistantMessageId, assistantMessage.content)
+      replaceMessageId(assistantMessageId, assistantMessage.id)
 
+      setContent('')
       setIsCooldown(true)
 
       setTimeout(() => {
         setIsCooldown(false)
       }, 1500)
     } catch (error) {
-      if (
-        error instanceof DOMException &&
-        error.name === 'AbortError'
-      ) {
-        console.log(
-          'STREAM: người dùng đã dừng generation'
-        )
-
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        console.log('STREAM: người dùng đã dừng generation')
         return
       }
 
-      console.error(
-        'Không thể streaming message:',
-        error
-      )
-
-      setSendError(
-        'Không thể gửi tin nhắn. Vui lòng thử lại.'
-      )
+      console.error('Không thể streaming message:', error)
+      setSendError('Không thể gửi tin nhắn. Vui lòng thử lại.')
     } finally {
       setIsSending(false)
       setStreamingMessageId(null)
@@ -137,18 +98,15 @@ function ChatInput() {
     }
   }
 
-  const isDisabled =
-    isSending ||
-    isCooldown ||
-    !selectedModelId
+  const isDisabled = isSending || isCooldown || !selectedModelId
 
   return (
     <div className="shrink-0 border-t border-gray-700 bg-gray-900 p-4">
       <div className="mx-auto max-w-3xl">
         {sendError && (
-          <div className="mb-2 text-center text-sm text-red-400">
+          <p className="mb-2 text-sm text-red-400">
             {sendError}
-          </div>
+          </p>
         )}
 
         <div className="flex items-center gap-2 rounded-2xl border border-gray-600 bg-gray-800 p-2">
@@ -182,14 +140,8 @@ function ChatInput() {
           {/* Send / Stop */}
           <button
             type="button"
-            onClick={
-              isSending
-                ? handleStop
-                : handleSendMessage
-            }
-            disabled={
-              !isSending && isDisabled
-            }
+            onClick={isSending ? handleStop : handleSendMessage}
+            disabled={!isSending && isDisabled}
             className="flex h-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSending ? 'Dừng' : 'Gửi'}

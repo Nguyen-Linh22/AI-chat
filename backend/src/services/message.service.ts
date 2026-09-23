@@ -127,3 +127,33 @@ export const createAssistantMessage = async (
 
   return message
 }
+
+export const updateAssistantMessage = async (
+  chatId: string,
+  messageId: string,
+  content: string
+) => {
+  const message = await prisma.message.findFirst({
+    where: {
+      id: messageId,
+      sessionId: chatId,
+      role: 'ai'
+    }
+  })
+
+  if (!message) {
+    return null
+  }
+
+  const updatedMessage =
+    await prisma.message.update({
+      where: {
+        id: messageId
+      },
+      data: {
+        content
+      }
+    })
+
+  return updatedMessage
+}

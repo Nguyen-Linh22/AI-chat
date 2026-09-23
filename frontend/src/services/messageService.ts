@@ -12,7 +12,7 @@ export const getMessages = async (
   chatId: string
 ): Promise<Message[]> => {
   const response = await apiClient.get(
-    `/api/chats/${chatId}/messages`
+    `/api/chats/${chatId}/messages?limit=100`
   )
 
   if (!response.ok) {
@@ -49,4 +49,92 @@ export const sendMessage = async (
   const data = await response.json()
 
   return data.data
+}
+
+export const regenerateMessage = async (
+  chatId: string,
+  messageId: string,
+  modelId: string,
+  onChunk: (chunk: string) => void,
+  signal?: AbortSignal
+): Promise<void> => {
+  const response = await fetch(
+    `http://localhost:3000/api/chats/${chatId}/messages/${messageId}/regenerate`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        modelId
+      }),
+      signal
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      'Không thể regenerate message'
+    )
+  }
+
+  if (!response.body) {
+    throw new Error(
+      'Server không trả về stream'
+    )
+  }
+
+  const reader =
+    response.body.getReader()
+
+  const decoder =
+    new TextDecoder()
+
+  let buffer = ''
+
+  while (true) {
+    const { value, done } =
+      await reader.read()
+
+    if (done) {
+      break
+    }
+
+    buffer += decoder.decode(
+      value,
+      { stream: true }
+    )
+
+    const events =
+      buffer.split('\n\n')
+
+    buffer =
+      events.pop() ?? ''
+
+    for (const event of events) {
+      if (!event.startsWith('data: ')) {
+        continue
+      }
+
+      const data = JSON.parse(
+        event.slice(6)
+      )
+
+      if (data.type === 'chunk') {
+        onChunk(data.content)
+      }
+
+      if (data.type === 'error') {
+        throw new Error(
+          data.message ||
+            'Regenerate thất bại'
+        )
+      }
+
+      if (data.type === 'done') {
+        return
+      }
+    }
+  }
 }

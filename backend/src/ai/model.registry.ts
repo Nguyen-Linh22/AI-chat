@@ -15,16 +15,22 @@ export const AI_MODELS: AIModel[] = [
     model: 'qwen3:1.7b'
   },
   {
-    id: 'ollama-qwen3-8b',
-    name: 'Qwen 3 8B',
-    provider: 'ollama',
-    model: 'qwen3:8b'
-  },
-  {
     id: 'openai-gpt-5-mini',
     name: 'GPT-5 Mini',
     provider: 'openai',
     model: 'gpt-5-mini'
+  },
+    {
+    id: 'gemini-3.6-flash',
+    name: 'Gemini 3.6 Flash',
+    provider: 'gemini',
+    model: 'gemini-3.6-flash'
+  },
+    {
+    id: 'groq-gpt-oss-20b',
+    name: 'GPT OSS 20B (Groq)',
+    provider: 'groq',
+    model: 'openai/gpt-oss-20b'
   }
 ]
 

@@ -6,6 +6,10 @@ import {
   deleteMessageController
 } from '../controllers/message.controller.js'
 
+import {
+  regenerateMessage
+} from '../controllers/regenerate.controller.js'
+
 import { streamChatResponse } from '../controllers/stream.controller.js'
 
 import { authMiddleware } from '../middlewares/auth.middleware.js'
@@ -20,6 +24,12 @@ router.post(
   '/:id/messages/stream',
   authMiddleware,
   streamChatResponse
+)
+
+router.post(
+  '/:id/messages/:messageId/regenerate',
+  authMiddleware,
+  regenerateMessage
 )
 
 router.post(

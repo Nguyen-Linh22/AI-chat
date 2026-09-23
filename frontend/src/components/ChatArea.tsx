@@ -1,5 +1,9 @@
-import { useEffect } from 'react'
-import { getMessages } from '../services/messageService'
+import { useEffect, useRef } from 'react'
+import {
+  getMessages,
+  regenerateMessage
+} from '../services/messageService'
+import { useAIStore } from '../stores/aiStore'
 import { useChatStore } from '../stores/chatStore'
 import { useMessageStore } from '../stores/messageStore'
 import MessageBubble from './MessageBubble'
@@ -7,8 +11,14 @@ import ChatInput from './ChatInput'
 import ModelSelector from './ModelSelector'
 
 function ChatArea() {
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
   const currentChatId = useChatStore(
     (state) => state.currentChatId
+  )
+
+  const selectedModelId = useAIStore(
+    (state) => state.selectedModelId
   )
 
   const messages = useMessageStore(
@@ -17,6 +27,14 @@ function ChatArea() {
 
   const streamingMessageId = useMessageStore(
     (state) => state.streamingMessageId
+  )
+
+  const updateMessage = useMessageStore(
+    (state) => state.updateMessage
+  )
+
+  const setStreamingMessageId = useMessageStore(
+    (state) => state.setStreamingMessageId
   )
 
   const setMessages = useMessageStore(
@@ -42,6 +60,45 @@ function ChatArea() {
   const setMessageError = useMessageStore(
     (state) => state.setMessageError
   )
+
+  const handleRegenerate = async (
+    messageId: string
+  ) => {
+    if (!currentChatId) {
+      return
+    }
+
+    if (!selectedModelId) {
+      return
+    }
+
+    try {
+      setStreamingMessageId(messageId)
+
+      let assistantContent = ''
+
+      await regenerateMessage(
+        currentChatId,
+        messageId,
+        selectedModelId,
+        (chunk) => {
+          assistantContent += chunk
+
+          updateMessage(
+            messageId,
+            assistantContent
+          )
+        }
+      )
+    } catch (error) {
+      console.error(
+        'Không thể regenerate message:',
+        error
+      )
+    } finally {
+      setStreamingMessageId(null)
+    }
+  }
 
   useEffect(() => {
     const loadMessages = async () => {
@@ -81,12 +138,18 @@ function ChatArea() {
     setMessageError
   ])
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: 'smooth'
+    })
+  }, [messages])
+
   return (
     <main className="flex min-w-0 flex-1 flex-col bg-gray-900">
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-700 px-6">
         <div>
           <h1 className="text-sm font-semibold">
-            AI Chat Clone
+            AI Chat
           </h1>
 
           <p className="text-xs text-gray-500">
@@ -130,14 +193,22 @@ function ChatArea() {
               </p>
             </div>
           ) : (
-            messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                role={message.role === 'user' ? 'user' : 'ai'}
-                content={message.content}
-                isStreaming={message.id === streamingMessageId}
-              />
-            ))
+            <>
+              {messages.map((message) => (
+                <MessageBubble
+                  key={message.id}
+                  role={message.role === 'user' ? 'user' : 'ai'}
+                  content={message.content}
+                  isStreaming={message.id === streamingMessageId}
+                  onRegenerate={
+                    message.role === 'assistant'
+                      ? () => handleRegenerate(message.id)
+                      : undefined
+                  }
+                />
+              ))}
+              <div ref={messagesEndRef} />
+            </>
           )}
         </div>
       </div>

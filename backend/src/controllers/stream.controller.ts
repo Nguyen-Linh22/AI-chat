@@ -13,24 +13,20 @@ export const streamChatResponse = async (
   req: Request,
   res: Response
 ) => {
+  let fullResponse = ''
+  const chatId = req.params.id as string
+
   try {
-    console.log(
-      'STREAM: bắt đầu controller'
-    )
+    console.log('STREAM: bắt đầu controller')
 
     const userId = req.userId
-    const chatId = req.params.id as string
     const { content, modelId } = req.body
 
-    const abortController =
-      new AbortController()
+    const abortController = new AbortController()
 
     res.on('close', () => {
       if (!res.writableEnded) {
-        console.log(
-          'STREAM: client đã hủy request'
-        )
-
+        console.log('STREAM: client đã hủy request')
         abortController.abort()
       }
     })
@@ -49,8 +45,7 @@ export const streamChatResponse = async (
 
     if (!content || !content.trim()) {
       return res.status(400).json({
-        message:
-          'Nội dung tin nhắn không được để trống'
+        message: 'Nội dung tin nhắn không được để trống'
       })
     }
 
@@ -60,8 +55,7 @@ export const streamChatResponse = async (
       })
     }
 
-    const selectedModel =
-      getModelById(modelId)
+    const selectedModel = getModelById(modelId)
 
     if (!selectedModel) {
       return res.status(400).json({
@@ -69,96 +63,54 @@ export const streamChatResponse = async (
       })
     }
 
-    const userMessage =
-      await createMessage(
-        chatId,
-        userId,
-        content
-      )
-
-    console.log(
-      'STREAM: đã tạo user message'
+    const userMessage = await createMessage(
+      chatId,
+      userId,
+      content
     )
+
+    console.log('STREAM: đã tạo user message')
 
     if (!userMessage) {
       return res.status(404).json({
-        message:
-          'Không tìm thấy cuộc trò chuyện'
+        message: 'Không tìm thấy cuộc trò chuyện'
       })
     }
 
-    const history =
-      await getChatHistory(
-        chatId,
-        userId
-      )
-
-    console.log(
-      'STREAM: đã lấy chat history'
+    const history = await getChatHistory(
+      chatId,
+      userId
     )
+
+    console.log('STREAM: đã lấy chat history')
 
     if (!history) {
       return res.status(404).json({
-        message:
-          'Không tìm thấy cuộc trò chuyện'
+        message: 'Không tìm thấy cuộc trò chuyện'
       })
     }
 
-    const context =
-      buildChatContext(history)
+    const context = buildChatContext(history)
+    const prompt = buildChatPrompt(content, context)
+    const provider = createAIProvider(selectedModel.provider)
 
-    const prompt =
-      buildChatPrompt(
-        content,
-        context
-      )
+    console.log('STREAM: đã tạo AI provider')
 
-    const provider =
-      createAIProvider(
-        selectedModel.provider
-      )
-
-    console.log(
-      'STREAM: đã tạo AI provider'
-    )
-
-    res.setHeader(
-      'Content-Type',
-      'text/event-stream'
-    )
-
-    res.setHeader(
-      'Cache-Control',
-      'no-cache'
-    )
-
-    res.setHeader(
-      'Connection',
-      'keep-alive'
-    )
-
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
     res.flushHeaders()
 
-    let fullResponse = ''
-
-    const stream =
-      provider.generateResponseStream(
-        prompt,
-        selectedModel.model,
-        abortController.signal
-      )
-
-    console.log(
-      'STREAM: bắt đầu streaming'
+    const stream = provider.generateResponseStream(
+      prompt,
+      selectedModel.model,
+      abortController.signal
     )
 
-    for await (
-      const chunk of stream
-    ) {
-      console.log(
-        'STREAM CHUNK:',
-        chunk
-      )
+    console.log('STREAM: bắt đầu streaming')
+
+    for await (const chunk of stream) {
+      console.log('STREAM CHUNK:', chunk)
 
       fullResponse += chunk
 
@@ -170,15 +122,12 @@ export const streamChatResponse = async (
       )
     }
 
-    console.log(
-      'STREAM: Ollama đã hoàn tất'
-    )
+    console.log('STREAM: AI đã hoàn tất')
 
-    const assistantMessage =
-      await createAssistantMessage(
-        chatId,
-        fullResponse
-      )
+    const assistantMessage = await createAssistantMessage(
+      chatId,
+      fullResponse
+    )
 
     res.write(
       `data: ${JSON.stringify({
@@ -193,9 +142,23 @@ export const streamChatResponse = async (
       error instanceof Error &&
       error.name === 'AbortError'
     ) {
-      console.log(
-        'STREAM: generation đã bị hủy'
-      )
+      console.log('STREAM: generation đã bị hủy')
+
+      if (fullResponse.trim()) {
+        try {
+          await createAssistantMessage(
+            chatId,
+            fullResponse
+          )
+
+          console.log('STREAM: đã lưu partial AI message')
+        } catch (saveError) {
+          console.error(
+            'STREAM: không thể lưu partial AI message:',
+            saveError
+          )
+        }
+      }
 
       if (!res.writableEnded) {
         res.end()
@@ -204,15 +167,11 @@ export const streamChatResponse = async (
       return
     }
 
-    console.error(
-      'Stream chat error:',
-      error
-    )
+    console.error('Stream chat error:', error)
 
     if (!res.headersSent) {
       return res.status(500).json({
-        message:
-          'Đã xảy ra lỗi khi streaming'
+        message: 'Đã xảy ra lỗi khi streaming'
       })
     }
 
@@ -220,8 +179,7 @@ export const streamChatResponse = async (
       res.write(
         `data: ${JSON.stringify({
           type: 'error',
-          message:
-            'Đã xảy ra lỗi khi streaming'
+          message: 'Đã xảy ra lỗi khi streaming'
         })}\n\n`
       )
 

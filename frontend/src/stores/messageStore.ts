@@ -9,21 +9,34 @@ interface MessageState {
 
   setMessages: (messages: Message[]) => void
   addMessage: (message: Message) => void
+
   updateMessage: (
     messageId: string,
     content: string
   ) => void
+
+  replaceMessageId: (
+    oldMessageId: string,
+    newMessageId: string
+  ) => void
+
   setStreamingMessageId: (
     messageId: string | null
   ) => void
+
   clearMessages: () => void
 
-  setLoadingMessages: (loading: boolean) => void
-  setMessageError: (error: string | null) => void
+  setLoadingMessages: (
+    loading: boolean
+  ) => void
+
+  setMessageError: (
+    error: string | null
+  ) => void
 }
 
-export const useMessageStore = create<MessageState>(
-  (set) => ({
+export const useMessageStore =
+  create<MessageState>((set) => ({
     messages: [],
     loadingMessages: false,
     messageError: null,
@@ -36,22 +49,47 @@ export const useMessageStore = create<MessageState>(
 
     addMessage: (message) =>
       set((state) => ({
-        messages: [...state.messages, message]
+        messages: [
+          ...state.messages,
+          message
+        ]
       })),
 
-    updateMessage: (messageId, content) =>
+    updateMessage: (
+      messageId,
+      content
+    ) =>
       set((state) => ({
-        messages: state.messages.map((message) =>
-          message.id === messageId
-            ? {
-                ...message,
-                content
-              }
-            : message
+        messages: state.messages.map(
+          (message) =>
+            message.id === messageId
+              ? {
+                  ...message,
+                  content
+                }
+              : message
         )
       })),
 
-    setStreamingMessageId: (messageId) =>
+    replaceMessageId: (
+      oldMessageId,
+      newMessageId
+    ) =>
+      set((state) => ({
+        messages: state.messages.map(
+          (message) =>
+            message.id === oldMessageId
+              ? {
+                  ...message,
+                  id: newMessageId
+                }
+              : message
+        )
+      })),
+
+    setStreamingMessageId: (
+      messageId
+    ) =>
       set({
         streamingMessageId: messageId
       }),
@@ -62,14 +100,17 @@ export const useMessageStore = create<MessageState>(
         streamingMessageId: null
       }),
 
-    setLoadingMessages: (loading) =>
+    setLoadingMessages: (
+      loading
+    ) =>
       set({
         loadingMessages: loading
       }),
 
-    setMessageError: (error) =>
+    setMessageError: (
+      error
+    ) =>
       set({
         messageError: error
       })
-  })
-)
+  }))

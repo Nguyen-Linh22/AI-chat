@@ -2,7 +2,6 @@ export type AIProviderName =
   | 'ollama'
   | 'gemini'
   | 'groq'
-  | 'deepseek'
   | 'openai'
 
 export const AI_PROVIDER: AIProviderName =

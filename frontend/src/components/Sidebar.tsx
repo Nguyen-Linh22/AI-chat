@@ -1,5 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import { createChat, deleteChat } from '../services/chatService'
+import {
+  createChat,
+  deleteChat,
+  renameChat
+} from '../services/chatService'
 import { logout } from '../services/authService'
 import { useAuthStore } from '../stores/authStore'
 import { useChatStore } from '../stores/chatStore'
@@ -13,53 +17,87 @@ function Sidebar() {
   const chats = useChatStore((state) => state.chats)
   const addChat = useChatStore((state) => state.addChat)
   const removeChat = useChatStore((state) => state.removeChat)
+  const updateChat = useChatStore(
+    (state) => state.updateChat
+  )
   const setCurrentChatId = useChatStore(
     (state) => state.setCurrentChatId
-)
+  )
   const currentChatId = useChatStore(
-  (state) => state.currentChatId
-)
-
-  const handleCreateChat = async () => {
-  try {
-    const chat = await createChat()
-
-    addChat(chat)
-    setCurrentChatId(chat.id)
-  } catch (error) {
-    console.error('Không thể tạo chat mới:', error)
-  }
-}
-
-  const handleDeleteChat = async (chatId: string) => {
-  const confirmed = window.confirm(
-    'Bạn có chắc chắn muốn xóa đoạn chat này không?'
+    (state) => state.currentChatId
   )
 
-  if (!confirmed) {
-    return
+  const handleCreateChat = async () => {
+    try {
+      const chat = await createChat()
+
+      addChat(chat)
+      setCurrentChatId(chat.id)
+    } catch (error) {
+      console.error('Không thể tạo chat mới:', error)
+    }
   }
 
-  try {
-    await deleteChat(chatId)
-
-    const remainingChats = chats.filter(
-      (chat) => chat.id !== chatId
+  const handleRenameChat = async (
+    chatId: string,
+    currentTitle: string
+  ) => {
+    const newTitle = window.prompt(
+      'Nhập tên mới cho cuộc trò chuyện:',
+      currentTitle
     )
 
-    removeChat(chatId)
-
-    if (currentChatId === chatId) {
-      if (remainingChats.length > 0) {
-        setCurrentChatId(remainingChats[0].id)
-      } else {
-        setCurrentChatId(null)
-      }
+    if (newTitle === null) {
+      return
     }
-  } catch (error) {
-    console.error('Không thể xóa chat:', error)
+
+    const trimmedTitle = newTitle.trim()
+
+    if (!trimmedTitle) {
+      return
+    }
+
+    try {
+      const updatedChat = await renameChat(
+        chatId,
+        trimmedTitle
+      )
+
+      updateChat(updatedChat)
+    } catch (error) {
+      console.error('Không thể đổi tên chat:', error)
+    }
   }
-}
+
+  const handleDeleteChat = async (chatId: string) => {
+    const confirmed = window.confirm(
+      'Bạn có chắc chắn muốn xóa đoạn chat này không?'
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      await deleteChat(chatId)
+
+      const remainingChats = chats.filter(
+        (chat) => chat.id !== chatId
+      )
+
+      removeChat(chatId)
+
+      if (currentChatId === chatId) {
+        if (remainingChats.length > 0) {
+          setCurrentChatId(remainingChats[0].id)
+        } else {
+          setCurrentChatId(null)
+        }
+      }
+    } catch (error) {
+      console.error('Không thể xóa chat:', error)
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -73,7 +111,7 @@ function Sidebar() {
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-gray-700 bg-gray-800 p-4">
       <div className="mb-6 px-2">
-        <h1 className="text-xl font-bold">AI Chat Clone</h1>
+        <h1 className="text-xl font-bold">AI Chat</h1>
       </div>
 
       <button
@@ -92,32 +130,43 @@ function Sidebar() {
 
         <div className="space-y-1">
           {chats.map((chat) => (
-  <div
-    key={chat.id}
-    className="group flex items-center gap-1 rounded-lg hover:bg-gray-700"
-  >
-   <button
-  type="button"
-  onClick={() => setCurrentChatId(chat.id)}
-  className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-left text-sm ${
-    currentChatId === chat.id
-      ? 'bg-gray-700 text-white'
-      : 'text-gray-300'
-  }`}
->
-  {chat.title}
-</button>
+            <div
+              key={chat.id}
+              className="group flex items-center gap-1 rounded-lg hover:bg-gray-700"
+            >
+              <button
+                type="button"
+                onClick={() => setCurrentChatId(chat.id)}
+                className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-left text-sm ${
+                  currentChatId === chat.id
+                    ? 'bg-gray-700 text-white'
+                    : 'text-gray-300'
+                }`}
+              >
+                {chat.title}
+              </button>
 
-    <button
-      type="button"
-      onClick={() => handleDeleteChat(chat.id)}
-      className="mr-1 hidden rounded-md px-2 py-1 text-xs text-gray-400 hover:bg-gray-600 hover:text-red-400 group-hover:block"
-      title="Xóa chat"
-    >
-      ×
-    </button>
-  </div>
-))}
+              <button
+                type="button"
+                onClick={() =>
+                  handleRenameChat(chat.id, chat.title)
+                }
+                className="hidden rounded-md px-2 py-1 text-xs text-gray-400 hover:bg-gray-600 hover:text-white group-hover:block"
+                title="Đổi tên chat"
+              >
+                ✎
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDeleteChat(chat.id)}
+                className="mr-1 hidden rounded-md px-2 py-1 text-xs text-gray-400 hover:bg-gray-600 hover:text-red-400 group-hover:block"
+                title="Xóa chat"
+              >
+                ×
+              </button>
+            </div>
+          ))}
 
           {chats.length === 0 && (
             <p className="px-3 py-2 text-sm text-gray-500">

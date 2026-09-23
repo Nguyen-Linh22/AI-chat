@@ -39,3 +39,23 @@ export const deleteChat = async (chatId: string): Promise<void> => {
     throw new Error('Không thể xóa chat')
   }
 }
+
+export const renameChat = async (
+  chatId: string,
+  title: string
+): Promise<ChatSession> => {
+  const response = await apiClient.patch(
+    `/api/chats/${chatId}`,
+    {
+      title
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error('Không thể đổi tên chat')
+  }
+
+  const data = await response.json()
+
+  return data.chat
+}

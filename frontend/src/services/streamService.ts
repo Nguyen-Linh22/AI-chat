@@ -1,10 +1,12 @@
+import type { Message } from './messageService'
+
 export const streamMessage = async (
   chatId: string,
   content: string,
   modelId: string,
   onChunk: (chunk: string) => void,
   signal?: AbortSignal
-): Promise<void> => {
+): Promise<Message> => {
   const response = await fetch(
     `http://localhost:3000/api/chats/${chatId}/messages/stream`,
     {
@@ -33,17 +35,12 @@ export const streamMessage = async (
     )
   }
 
-  const reader =
-    response.body.getReader()
-
-  const decoder =
-    new TextDecoder()
-
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
   let buffer = ''
 
   while (true) {
-    const { value, done } =
-      await reader.read()
+    const { value, done } = await reader.read()
 
     if (done) {
       break
@@ -53,43 +50,36 @@ export const streamMessage = async (
       stream: true
     })
 
-    const events =
-      buffer.split('\n\n')
-
-    buffer =
-      events.pop() ?? ''
+    const events = buffer.split('\n\n')
+    buffer = events.pop() ?? ''
 
     for (const event of events) {
-      const line =
-        event
-          .split('\n')
-          .find((line) =>
-            line.startsWith('data:')
-          )
+      const line = event
+        .split('\n')
+        .find((line) => line.startsWith('data:'))
 
       if (!line) {
         continue
       }
 
-      const data = line
-        .replace(/^data:\s*/, '')
-
-      const parsed =
-        JSON.parse(data)
+      const data = line.replace(/^data:\s*/, '')
+      const parsed = JSON.parse(data)
 
       if (parsed.type === 'chunk') {
         onChunk(parsed.content)
       }
 
       if (parsed.type === 'error') {
-        throw new Error(
-          parsed.message
-        )
+        throw new Error(parsed.message)
       }
 
       if (parsed.type === 'done') {
-        return
+        return parsed.message
       }
     }
   }
+
+  throw new Error(
+    'Stream kết thúc mà không nhận được message hoàn tất'
+  )
 }
