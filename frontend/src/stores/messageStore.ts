@@ -20,6 +20,11 @@ interface MessageState {
     newMessageId: string
   ) => void
 
+  replaceMessage: (
+    oldMessageId: string,
+    newMessage: Message
+  ) => void
+
   setStreamingMessageId: (
     messageId: string | null
   ) => void
@@ -83,6 +88,19 @@ export const useMessageStore =
                   ...message,
                   id: newMessageId
                 }
+              : message
+        )
+      })),
+
+    replaceMessage: (
+      oldMessageId,
+      newMessage
+    ) =>
+      set((state) => ({
+        messages: state.messages.map(
+          (message) =>
+            message.id === oldMessageId
+              ? newMessage
               : message
         )
       })),

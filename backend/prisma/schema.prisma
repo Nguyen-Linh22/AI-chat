@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -11,54 +6,91 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
 model User {
   id           String        @id @default(uuid()) @db.Uuid
   email        String        @unique
   passwordHash String
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-
   chatSessions ChatSession[]
+  documents    Document[]
 }
-model ChatSession {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  title     String   @default("Đoạn chat mới")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages Message[]
+model ChatSession {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  title     String    @default("Đoạn chat mới")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
 
   @@index([userId])
 }
+
+model Message {
+  id          String       @id @default(uuid()) @db.Uuid
+  sessionId   String       @db.Uuid
+  role        SenderRole
+  content     String
+  createdAt   DateTime     @default(now())
+  attachments Attachment[]
+  session     ChatSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model Attachment {
+  id            String   @id @default(uuid()) @db.Uuid
+  messageId     String   @db.Uuid
+  fileName      String   @db.VarChar(255)
+  fileUrl       String   @db.VarChar(2048)
+  fileType      String   @db.VarChar(100)
+  sizeBytes     BigInt
+  extractedText String?  @db.Text
+  createdAt     DateTime @default(now())
+  message       Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model Document {
+  id         String          @id @default(uuid()) @db.Uuid
+  userId     String          @db.Uuid
+  name       String          @db.VarChar(255)
+  mimeType   String          @db.VarChar(100)
+  size       BigInt
+  storageUrl String          @db.VarChar(2048)
+  status     DocumentStatus  @default(PROCESSING)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunks     DocumentChunk[]
+
+  @@index([userId])
+}
+
+model DocumentChunk {
+  id         String                 @id @default(uuid()) @db.Uuid
+  documentId String                 @db.Uuid
+  content    String
+  chunkIndex Int
+  embedding  Unsupported("vector")?
+  createdAt  DateTime               @default(now())
+  document   Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+}
+
 enum SenderRole {
   user
   ai
   system
 }
-model Message {
-  id          String       @id @default(uuid()) @db.Uuid
-  sessionId   String       @db.Uuid
-  role        SenderRole
-  content     String       @db.Text
-  createdAt   DateTime     @default(now())
 
-  session     ChatSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  attachments Attachment[]
-
-  @@index([sessionId])
-}
-model Attachment {
-  id        String   @id @default(uuid()) @db.Uuid
-  messageId String   @db.Uuid
-  fileName  String   @db.VarChar(255)
-  fileUrl   String   @db.VarChar(2048)
-  fileType  String   @db.VarChar(100)
-  sizeBytes BigInt
-  createdAt DateTime @default(now())
-
-  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
-
-  @@index([messageId])
+enum DocumentStatus {
+  PROCESSING
+  READY
+  FAILED
 }

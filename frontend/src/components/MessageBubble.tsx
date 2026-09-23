@@ -2,17 +2,20 @@ import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import type { Attachment } from '../services/messageService'
 
 interface MessageBubbleProps {
   role: 'user' | 'ai'
   content: string
   isStreaming?: boolean
+  attachments?: Attachment[]
   onRegenerate?: () => void
 }
 
 function MessageBubble({
   role,
   content,
+  attachments = [],
   isStreaming = false,
   onRegenerate
 }: MessageBubbleProps) {
@@ -65,6 +68,26 @@ function MessageBubble({
         <p className="mb-1 text-xs font-semibold opacity-70">
           {isUser ? 'Bạn' : 'AI'}
         </p>
+
+        {attachments.length > 0 && (
+            <div className="mb-3 flex flex-col gap-2">
+              {attachments.map((attachment) => (
+                <a
+                  key={attachment.id}
+                  href={attachment.fileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 rounded-lg bg-black/20 px-3 py-2 text-sm hover:bg-black/30"
+                >
+                  <span>📎</span>
+
+                  <span className="min-w-0 truncate">
+                    {attachment.fileName}
+                  </span>
+                </a>
+              ))}
+            </div>
+          )}
 
         <div className="text-sm leading-6">
           {isStreaming && !content && (

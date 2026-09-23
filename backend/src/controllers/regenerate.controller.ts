@@ -127,7 +127,8 @@ export const regenerateMessage = async (
     const prompt =
       buildChatPrompt(
         previousUserMessage.content,
-        context
+        context,
+        ''
       )
 
     const provider =

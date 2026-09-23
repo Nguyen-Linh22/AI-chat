@@ -8,6 +8,11 @@ import { buildChatContext } from '../ai/context/chat.context.js'
 import { buildChatPrompt } from '../ai/prompts/chat.prompt.js'
 import { getModelById } from '../ai/model.registry.js'
 import { createAIProvider } from '../ai/ai.router.js'
+import { getAttachmentContext } from '../services/attachment-context.service.js'
+import { uploadFileToCloudinary } from '../services/cloudinary.service.js'
+import { extractFileText } from '../services/file-extraction.service.js'
+import fs from 'fs'
+import { prisma } from '../lib/prisma.js'
 
 export const streamChatResponse = async (
   req: Request,
@@ -21,6 +26,7 @@ export const streamChatResponse = async (
 
     const userId = req.userId
     const { content, modelId } = req.body
+    const file = req.file
 
     const abortController = new AbortController()
 
@@ -77,6 +83,57 @@ export const streamChatResponse = async (
       })
     }
 
+    let createdAttachment = null
+    if (file) {
+      try {
+        let extractedText: string | null = null
+
+        if (
+          file.mimetype === 'text/plain' ||
+          file.mimetype === 'application/pdf'
+        ) {
+          extractedText = await extractFileText(
+            file.path,
+            file.mimetype
+          )
+        }
+
+        const cloudinaryResult =
+          await uploadFileToCloudinary(
+            file.path,
+            file.originalname
+          )
+
+        createdAttachment = await prisma.attachment.create({
+          data: {
+            messageId: userMessage.id,
+            fileName: file.originalname,
+            fileUrl: cloudinaryResult.secure_url,
+            fileType: file.mimetype,
+            sizeBytes: BigInt(file.size),
+            extractedText
+          }
+        })
+
+        fs.unlinkSync(file.path)
+
+        console.log('STREAM: đã lưu attachment')
+      } catch (error) {
+        console.error(
+          'STREAM: không thể xử lý file:',
+          error
+        )
+
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path)
+        }
+
+        return res.status(500).json({
+          message: 'Không thể xử lý file đính kèm'
+        })
+      }
+    }
+
     const history = await getChatHistory(
       chatId,
       userId
@@ -91,7 +148,16 @@ export const streamChatResponse = async (
     }
 
     const context = buildChatContext(history)
-    const prompt = buildChatPrompt(content, context)
+
+    const attachmentContext =
+      await getAttachmentContext(userMessage.id)
+
+    const prompt = buildChatPrompt(
+      content,
+      context,
+      attachmentContext
+    )
+
     const provider = createAIProvider(selectedModel.provider)
 
     console.log('STREAM: đã tạo AI provider')
@@ -129,9 +195,24 @@ export const streamChatResponse = async (
       fullResponse
     )
 
+    const normalizedAttachment = createdAttachment
+      ? {
+          ...createdAttachment,
+          sizeBytes: createdAttachment.sizeBytes.toString()
+        }
+      : null
+
+    const normalizedUserMessage = {
+      ...userMessage,
+      attachments: normalizedAttachment
+        ? [normalizedAttachment]
+        : []
+    }
+
     res.write(
       `data: ${JSON.stringify({
         type: 'done',
+        userMessage: normalizedUserMessage,
         message: assistantMessage
       })}\n\n`
     )

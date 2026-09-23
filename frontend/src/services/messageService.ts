@@ -1,11 +1,21 @@
 import { apiClient } from './apiClient'
 
+export interface Attachment {
+  id: string
+  fileName: string
+  fileUrl: string
+  fileType: string
+  sizeBytes: string
+  createdAt: string
+}
+
 export interface Message {
   id: string
   chatSessionId: string
   role: 'user' | 'assistant'
   content: string
   createdAt: string
+  attachments: Attachment[]
 }
 
 export const getMessages = async (

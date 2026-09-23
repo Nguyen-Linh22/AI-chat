@@ -31,7 +31,8 @@ export const generateChatResponse = async (
 
   const prompt = buildChatPrompt(
     userMessage,
-    context
+    context,
+    ''
   )
 
   const response = await generateAIResponse(

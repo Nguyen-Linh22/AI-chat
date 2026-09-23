@@ -18,11 +18,14 @@ import { validate } from '../middlewares/validate.middleware.js'
 
 import { createMessageSchema } from '../validators/message.validator.js'
 
+import { uploadSingleFile } from '../middlewares/upload.middleware.js'
+
 const router = Router()
 
 router.post(
   '/:id/messages/stream',
   authMiddleware,
+  uploadSingleFile,
   streamChatResponse
 )
 

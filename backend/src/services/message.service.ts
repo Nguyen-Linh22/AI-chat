@@ -60,6 +60,9 @@ export const getMessages = async (
       where: {
         sessionId: chatId
       },
+      include: {
+        attachments: true
+      },
       orderBy: {
         createdAt: 'asc'
       },
@@ -74,8 +77,16 @@ export const getMessages = async (
     })
   ])
 
+  const normalizedMessages = messages.map((message) => ({
+    ...message,
+    attachments: message.attachments.map((attachment) => ({
+      ...attachment,
+      sizeBytes: attachment.sizeBytes.toString()
+    }))
+  }))
+
   return {
-    messages,
+    messages: normalizedMessages,
     pagination: {
       page,
       limit,

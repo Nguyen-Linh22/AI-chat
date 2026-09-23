@@ -11,14 +11,31 @@ function ChatInput() {
   const addMessage = useMessageStore((state) => state.addMessage)
   const updateMessage = useMessageStore((state) => state.updateMessage)
   const setStreamingMessageId = useMessageStore((state) => state.setStreamingMessageId)
-  const replaceMessageId = useMessageStore((state) => state.replaceMessageId)
+  const replaceMessage = useMessageStore((state) => state.replaceMessage)
 
   const [content, setContent] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isCooldown, setIsCooldown] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+
+  const handleSelectFile = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0]
+
+    if (!file) {
+      return
+    }
+
+    setSendError(null)
+    setSelectedFile(file)
+
+    event.target.value = ''
+  }
 
   const handleStop = () => {
     abortControllerRef.current?.abort()
@@ -48,6 +65,7 @@ function ChatInput() {
         createdAt: new Date().toISOString(),
         role: 'user',
         content: trimmedContent,
+        attachments: [],
       })
 
       // Tạo assistant message rỗng
@@ -57,13 +75,14 @@ function ChatInput() {
         createdAt: new Date().toISOString(),
         role: 'assistant',
         content: '',
+        attachments: [],
       })
 
       setStreamingMessageId(assistantMessageId)
 
       let assistantContent = ''
 
-      const assistantMessage = await streamMessage(
+      const result = await streamMessage(
         currentChatId,
         trimmedContent,
         selectedModelId,
@@ -71,12 +90,21 @@ function ChatInput() {
           assistantContent += chunk
           updateMessage(assistantMessageId, assistantContent)
         },
-        controller.signal
+        controller.signal,
+        selectedFile
       )
 
-      updateMessage(assistantMessageId, assistantMessage.content)
-      replaceMessageId(assistantMessageId, assistantMessage.id)
+      replaceMessage(
+        userMessageId,
+        result.userMessage
+      )
 
+      replaceMessage(
+        assistantMessageId,
+        result.assistantMessage
+      )
+
+      setSelectedFile(null)
       setContent('')
       setIsCooldown(true)
 
@@ -109,15 +137,42 @@ function ChatInput() {
           </p>
         )}
 
+        {selectedFile && (
+          <div className="mb-2 flex items-center justify-between rounded-xl bg-gray-800 px-3 py-2 text-sm text-gray-300">
+            <span className="min-w-0 truncate">
+              📎 {selectedFile.name}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setSelectedFile(null)}
+              className="ml-2 shrink-0 text-gray-400 hover:text-white"
+              title="Bỏ file"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 rounded-2xl border border-gray-600 bg-gray-800 p-2">
           {/* Attachment */}
           <button
             type="button"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl text-gray-400 transition hover:bg-gray-700 hover:text-white"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isSending}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl text-gray-400 transition hover:bg-gray-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             title="Đính kèm file"
           >
             +
           </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.txt,application/pdf,text/plain"
+            onChange={handleSelectFile}
+            className="hidden"
+          />
 
           {/* Input */}
           <input

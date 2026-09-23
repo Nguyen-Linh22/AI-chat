@@ -44,6 +44,9 @@ export class OllamaProvider implements AIProvider {
     model: string,
     signal?: AbortSignal
   ): AsyncGenerator<string> {
+    console.log('OLLAMA STREAM URL:', this.baseUrl)
+    console.log('OLLAMA STREAM MODEL:', model)
+
     const response = await fetch(
       `${this.baseUrl}/api/generate`,
       {

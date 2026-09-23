@@ -199,6 +199,7 @@ function ChatArea() {
                   key={message.id}
                   role={message.role === 'user' ? 'user' : 'ai'}
                   content={message.content}
+                  attachments={message.attachments}
                   isStreaming={message.id === streamingMessageId}
                   onRegenerate={
                     message.role === 'assistant'

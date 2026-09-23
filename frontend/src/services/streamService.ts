@@ -1,24 +1,33 @@
 import type { Message } from './messageService'
 
+interface StreamMessageResult {
+  userMessage: Message
+  assistantMessage: Message
+}
+
 export const streamMessage = async (
   chatId: string,
   content: string,
   modelId: string,
   onChunk: (chunk: string) => void,
-  signal?: AbortSignal
-): Promise<Message> => {
+  signal?: AbortSignal,
+  file?: File | null
+): Promise<StreamMessageResult> => {
+  const formData = new FormData()
+
+  formData.append('content', content)
+  formData.append('modelId', modelId)
+
+  if (file) {
+    formData.append('file', file)
+  }
+
   const response = await fetch(
     `http://localhost:3000/api/chats/${chatId}/messages/stream`,
     {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       credentials: 'include',
-      body: JSON.stringify({
-        content,
-        modelId
-      }),
+      body: formData,
       signal
     }
   )
@@ -74,7 +83,10 @@ export const streamMessage = async (
       }
 
       if (parsed.type === 'done') {
-        return parsed.message
+        return {
+          userMessage: parsed.userMessage,
+          assistantMessage: parsed.message
+        }
       }
     }
   }
