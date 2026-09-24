@@ -14,7 +14,6 @@ model User {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   chatSessions ChatSession[]
-  documents    Document[]
 }
 
 model ChatSession {
@@ -56,29 +55,27 @@ model Attachment {
 }
 
 model Document {
-  id         String          @id @default(uuid()) @db.Uuid
-  userId     String          @db.Uuid
-  name       String          @db.VarChar(255)
-  mimeType   String          @db.VarChar(100)
+  id         String         @id @default(uuid()) @db.Uuid
+  name       String         @db.VarChar(255)
+  mimeType   String         @db.VarChar(100)
   size       BigInt
-  storageUrl String          @db.VarChar(2048)
-  status     DocumentStatus  @default(PROCESSING)
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
-  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chunks     DocumentChunk[]
+  storageUrl String         @db.VarChar(2048)
+  status     DocumentStatus @default(PROCESSING)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 
-  @@index([userId])
+  chunks DocumentChunk[]
 }
 
 model DocumentChunk {
   id         String                 @id @default(uuid()) @db.Uuid
   documentId String                 @db.Uuid
-  content    String
+  content    String                 @db.Text
   chunkIndex Int
   embedding  Unsupported("vector")?
   createdAt  DateTime               @default(now())
-  document   Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@index([documentId])
 }
