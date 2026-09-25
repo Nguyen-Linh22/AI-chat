@@ -1,13 +1,4 @@
-import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from '../generated/prisma/client.js'
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!
-})
-
-const prisma = new PrismaClient({
-  adapter
-})
+import { prisma } from '../lib/prisma.js'
 
 export const createChat = async (userId: string) => {
   const chat = await prisma.chatSession.create({
@@ -19,7 +10,6 @@ export const createChat = async (userId: string) => {
   return chat
 }
 export const getChats = async (userId: string) => {
-     console.log('Get chats for userId:', userId)
   const chats = await prisma.chatSession.findMany({
     where: {
       userId: userId

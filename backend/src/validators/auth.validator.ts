@@ -8,7 +8,7 @@ export const registerSchema = z.object({
 
   password: z
     .string()
-    .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
+    .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
     .max(72, 'Mật khẩu không được vượt quá 72 ký tự'),
 })
 
@@ -20,5 +20,6 @@ export const loginSchema = z.object({
 
   password: z
     .string()
-    .min(1, 'Mật khẩu không được để trống'),
+    .min(1, 'Mật khẩu không được để trống')
+    .max(72, 'Mật khẩu không được vượt quá 72 ký tự'),
 })

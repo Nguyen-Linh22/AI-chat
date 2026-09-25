@@ -9,6 +9,7 @@ import {
 import { authMiddleware } from '../middlewares/auth.middleware.js'
 import { validate } from '../middlewares/validate.middleware.js'
 import { renameChatSchema } from '../validators/chat.validator.js'
+import { chatIdParamsSchema } from '../validators/params.validator.js'
 
 const router = Router()
 
@@ -27,12 +28,14 @@ router.get(
 router.get(
   '/:id',
   authMiddleware,
+  validate(chatIdParamsSchema, 'params'),
   getChatDetailController
 )
 
 router.patch(
   '/:id',
   authMiddleware,
+  validate(chatIdParamsSchema, 'params'),
   validate(renameChatSchema),
   renameChatController
 )
@@ -40,6 +43,7 @@ router.patch(
 router.delete(
   '/:id',
   authMiddleware,
+  validate(chatIdParamsSchema, 'params'),
   deleteChatController
 )
 

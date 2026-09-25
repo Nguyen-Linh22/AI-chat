@@ -4,7 +4,8 @@ import { createAIProvider } from './ai.router.js'
 export const generateAIResponse = async (
   prompt: string,
   model: string,
-  providerName: AIProviderName
+  providerName: AIProviderName,
+  signal?: AbortSignal
 ): Promise<string> => {
   const provider = createAIProvider(
     providerName
@@ -12,6 +13,7 @@ export const generateAIResponse = async (
 
   return provider.generateResponse(
     prompt,
-    model
+    model,
+    signal
   )
 }

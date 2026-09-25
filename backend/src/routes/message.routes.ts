@@ -16,28 +16,52 @@ import { authMiddleware } from '../middlewares/auth.middleware.js'
 
 import { validate } from '../middlewares/validate.middleware.js'
 
-import { createMessageSchema } from '../validators/message.validator.js'
+import {
+  createMessageSchema,
+  streamMessageSchema,
+  regenerateMessageSchema
+} from '../validators/message.validator.js'
+import {
+  chatIdParamsSchema,
+  chatMessageParamsSchema,
+  deleteMessageParamsSchema
+} from '../validators/params.validator.js'
+import { paginationQuerySchema } from '../validators/pagination.validator.js'
 
 import { uploadSingleFile } from '../middlewares/upload.middleware.js'
+import { validateUploadedFile } from '../validators/file.validator.js'
+import { aiRateLimiter, concurrentAiLimiter } from '../middlewares/rate-limit.middleware.js'
 
 const router = Router()
 
 router.post(
   '/:id/messages/stream',
   authMiddleware,
+  concurrentAiLimiter,
+  aiRateLimiter,
+  validate(chatIdParamsSchema, 'params'),
   uploadSingleFile,
+  validate(streamMessageSchema, 'body'),
+  validateUploadedFile,
   streamChatResponse
 )
 
 router.post(
   '/:id/messages/:messageId/regenerate',
   authMiddleware,
+  concurrentAiLimiter,
+  aiRateLimiter,
+  validate(chatMessageParamsSchema, 'params'),
+  validate(regenerateMessageSchema, 'body'),
   regenerateMessage
 )
 
 router.post(
   '/:id/messages',
   authMiddleware,
+  concurrentAiLimiter,
+  aiRateLimiter,
+  validate(chatIdParamsSchema, 'params'),
   validate(createMessageSchema),
   createMessageController
 )
@@ -45,12 +69,15 @@ router.post(
 router.get(
   '/:id/messages',
   authMiddleware,
+  validate(chatIdParamsSchema, 'params'),
+  validate(paginationQuerySchema, 'query'),
   getMessagesController
 )
 
 router.delete(
   '/:chatId/messages/:messageId',
   authMiddleware,
+  validate(deleteMessageParamsSchema, 'params'),
   deleteMessageController
 )
 

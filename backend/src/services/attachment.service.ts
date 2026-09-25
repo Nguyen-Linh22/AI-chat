@@ -1,107 +1,68 @@
 import fs from 'fs'
 
-import { PrismaPg } from '@prisma/adapter-pg'
-
-import { PrismaClient } from '../generated/prisma/client.js'
-
-import { uploadFileToCloudinary } from './cloudinary.service.js'
-
-import { extractFileText } from './file-extraction.service.js'
-
-const adapter = new PrismaPg({
-
-  connectionString: process.env.DATABASE_URL!
-
-})
-
-const prisma = new PrismaClient({
-
-  adapter
-
-})
+import { prisma } from '../lib/prisma.js'
+import { safeDeleteFile } from '../utils/file.util.js'
+import { uploadFileToCloudinary, deleteFileFromCloudinary } from './cloudinary.service.js'
+import { extractFileText, isExtractableMimeType } from './file-extraction.service.js'
 
 export const createAttachment = async (
-
   messageId: string,
-
   userId: string,
-
   file: Express.Multer.File
-
 ) => {
+  let uploadedPublicId: string | undefined
+  let uploadedResourceType: string = 'image'
+  let isSavedInDb = false
 
-  const message = await prisma.message.findFirst({
-
-    where: {
-
-      id: messageId,
-
-      session: {
-
-        userId
-
+  try {
+    const message = await prisma.message.findFirst({
+      where: {
+        id: messageId,
+        session: {
+          userId
+        }
       }
+    })
 
+    if (!message) {
+      return null
     }
 
-  })
+    let extractedText: string | null = null
 
-  if (!message) {
+    if (isExtractableMimeType(file.mimetype)) {
+      extractedText = await extractFileText(
+        file.path,
+        file.mimetype
+      )
+    }
 
-    return null
-
-  }
-
-  let extractedText: string | null = null
-
-  if (
-
-    file.mimetype === 'text/plain' ||
-
-    file.mimetype === 'application/pdf'
-
-  ) {
-
-    extractedText = await extractFileText(
-
+    const cloudinaryResult = await uploadFileToCloudinary(
       file.path,
-
-      file.mimetype
-
+      file.originalname
     )
+    uploadedPublicId = cloudinaryResult.public_id
+    uploadedResourceType = cloudinaryResult.resource_type || 'image'
 
-  }
+    const attachment = await prisma.attachment.create({
+      data: {
+        messageId,
+        fileName: file.originalname,
+        fileUrl: cloudinaryResult.secure_url,
+        fileType: file.mimetype,
+        sizeBytes: BigInt(file.size),
+        extractedText
+      }
+    })
 
-  const cloudinaryResult = await uploadFileToCloudinary(
-
-    file.path,
-
-    file.originalname
-
-  )
-
-  const attachment = await prisma.attachment.create({
-
-    data: {
-
-      messageId,
-
-      fileName: file.originalname,
-
-      fileUrl: cloudinaryResult.secure_url,
-
-      fileType: file.mimetype,
-
-      sizeBytes: BigInt(file.size),
-
-      extractedText
-
+    isSavedInDb = true
+    return attachment
+  } catch (error) {
+    if (uploadedPublicId && !isSavedInDb) {
+      await deleteFileFromCloudinary(uploadedPublicId, uploadedResourceType)
     }
-
-  })
-
-  fs.unlinkSync(file.path)
-
-  return attachment
-
+    throw error
+  } finally {
+    safeDeleteFile(file.path)
+  }
 }

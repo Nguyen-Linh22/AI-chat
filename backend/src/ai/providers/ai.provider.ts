@@ -1,7 +1,8 @@
 export interface AIProvider {
   generateResponse(
     prompt: string,
-    model: string
+    model: string,
+    signal?: AbortSignal
   ): Promise<string>
 
   generateResponseStream(

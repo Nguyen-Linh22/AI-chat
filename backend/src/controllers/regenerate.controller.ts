@@ -4,55 +4,53 @@ import {
 } from '../services/message.service.js'
 import { getChatHistory } from '../ai/context/chat-history.service.js'
 import { buildChatContext } from '../ai/context/chat.context.js'
-import { buildChatPrompt } from '../ai/prompts/chat.prompt.js'
+import { buildChatPrompt, MAX_AI_CONTEXT_CHARS } from '../ai/prompts/chat.prompt.js'
 import { getModelById } from '../ai/model.registry.js'
 import { createAIProvider } from '../ai/ai.router.js'
-import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from '../generated/prisma/client.js'
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!
-})
-
-const prisma = new PrismaClient({
-  adapter
-})
+import { prisma } from '../lib/prisma.js'
+import { AI_TIMEOUT_MS } from '../ai/ai.config.js'
+import {
+  logAiRequestStart,
+  logAiRequestCompleted,
+  logAiRequestTimeout,
+  logAiRequestFailed
+} from '../utils/ai-audit.util.js'
 
 export const regenerateMessage = async (
   req: Request,
   res: Response
 ) => {
+  const abortController = new AbortController()
+  let isTimedOut = false
+  const startTime = Date.now()
+
+  const timeoutId = setTimeout(() => {
+    isTimedOut = true
+    abortController.abort()
+  }, AI_TIMEOUT_MS)
+
+  res.on('close', () => {
+    if (!res.writableEnded) {
+      abortController.abort()
+    }
+  })
+
+  const userId = req.userId
+  const chatId = req.params.id as string
+  const messageId = req.params.messageId as string
+  const { modelId } = req.body
+  const selectedModel = getModelById(modelId)
+
   try {
-    const userId = req.userId
-    const chatId = req.params.id as string
-    const messageId =
-      req.params.messageId as string
-
-    const { modelId } = req.body
-
     if (!userId) {
+      clearTimeout(timeoutId)
       return res.status(401).json({
         message: 'Bạn chưa đăng nhập'
       })
     }
 
-    if (!chatId || !messageId) {
-      return res.status(400).json({
-        message:
-          'Chat ID hoặc Message ID không hợp lệ'
-      })
-    }
-
-    if (!modelId) {
-      return res.status(400).json({
-        message: 'Model ID không được để trống'
-      })
-    }
-
-    const selectedModel =
-      getModelById(modelId)
-
     if (!selectedModel) {
+      clearTimeout(timeoutId)
       return res.status(400).json({
         message:
           `AI model không được hỗ trợ: ${modelId}`
@@ -72,15 +70,7 @@ export const regenerateMessage = async (
       })
 
     if (!targetMessage) {
-      console.log(
-        'REGENERATE: không tìm thấy target message',
-        {
-          messageId,
-          chatId,
-          userId
-        }
-      )
-
+      clearTimeout(timeoutId)
       return res.status(404).json({
         message:
           'Không tìm thấy tin nhắn AI'
@@ -102,6 +92,7 @@ export const regenerateMessage = async (
       })
 
     if (!previousUserMessage) {
+      clearTimeout(timeoutId)
       return res.status(400).json({
         message:
           'Không tìm thấy tin nhắn người dùng tương ứng'
@@ -115,6 +106,7 @@ export const regenerateMessage = async (
       )
 
     if (!history) {
+      clearTimeout(timeoutId)
       return res.status(404).json({
         message:
           'Không tìm thấy cuộc trò chuyện'
@@ -131,23 +123,17 @@ export const regenerateMessage = async (
         ''
       )
 
+    if (prompt.length > MAX_AI_CONTEXT_CHARS) {
+      clearTimeout(timeoutId)
+      return res.status(413).json({
+        message: 'Nội dung cuộc trò chuyện quá lớn để xử lý.'
+      })
+    }
+
     const provider =
       createAIProvider(
         selectedModel.provider
       )
-
-    const abortController =
-      new AbortController()
-
-    res.on('close', () => {
-      if (!res.writableEnded) {
-        console.log(
-          'REGENERATE: client đã hủy request'
-        )
-
-        abortController.abort()
-      }
-    })
 
     res.setHeader(
       'Content-Type',
@@ -167,6 +153,13 @@ export const regenerateMessage = async (
     res.flushHeaders()
 
     let fullResponse = ''
+
+    logAiRequestStart({
+      userId,
+      chatId,
+      provider: selectedModel.provider,
+      model: selectedModel.model
+    })
 
     const stream =
       provider.generateResponseStream(
@@ -188,12 +181,23 @@ export const regenerateMessage = async (
       )
     }
 
+    logAiRequestCompleted({
+      userId,
+      chatId,
+      provider: selectedModel.provider,
+      model: selectedModel.model,
+      durationMs: Date.now() - startTime
+    })
+
     const updatedMessage =
       await updateAssistantMessage(
         chatId,
         messageId,
+        userId,
         fullResponse
       )
+
+    clearTimeout(timeoutId)
 
     if (!updatedMessage) {
       return res.end()
@@ -207,21 +211,54 @@ export const regenerateMessage = async (
     )
 
     res.end()
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      error.name === 'AbortError'
-    ) {
-      console.log(
-        'REGENERATE: generation đã bị hủy'
-      )
+  } catch (error: any) {
+    clearTimeout(timeoutId)
+    const durationMs = Date.now() - startTime
 
+    if (isTimedOut) {
+      logAiRequestTimeout({
+        provider: selectedModel?.provider || 'unknown',
+        model: selectedModel?.model || 'unknown',
+        durationMs
+      })
+
+      if (!res.headersSent) {
+        return res.status(504).json({
+          message: 'AI phản hồi quá lâu. Vui lòng thử lại.'
+        })
+      }
+
+      if (!res.writableEnded) {
+        res.write(
+          `data: ${JSON.stringify({
+            type: 'error',
+            message: 'AI phản hồi quá lâu. Vui lòng thử lại.'
+          })}\n\n`
+        )
+
+        res.end()
+      }
+
+      return
+    }
+
+    if (
+      (error instanceof Error && error.name === 'AbortError') ||
+      abortController.signal.aborted
+    ) {
       if (!res.writableEnded) {
         res.end()
       }
 
       return
     }
+
+    logAiRequestFailed({
+      provider: selectedModel?.provider || 'unknown',
+      model: selectedModel?.model || 'unknown',
+      errorName: error?.name || 'Error',
+      durationMs
+    })
 
     console.error(
       'Regenerate message error:',

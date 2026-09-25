@@ -1,6 +1,6 @@
 import { getChatHistory } from './context/chat-history.service.js'
 import { buildChatContext } from './context/chat.context.js'
-import { buildChatPrompt } from './prompts/chat.prompt.js'
+import { buildChatPrompt, MAX_AI_CONTEXT_CHARS } from './prompts/chat.prompt.js'
 import { generateAIResponse } from './ai.service.js'
 import { getModelById } from './model.registry.js'
 
@@ -8,7 +8,8 @@ export const generateChatResponse = async (
   chatId: string,
   userId: string,
   userMessage: string,
-  modelId: string
+  modelId: string,
+  signal?: AbortSignal
 ): Promise<string | null> => {
   const history = await getChatHistory(
     chatId,
@@ -35,10 +36,17 @@ export const generateChatResponse = async (
     ''
   )
 
+  if (prompt.length > MAX_AI_CONTEXT_CHARS) {
+    const error = new Error('Nội dung cuộc trò chuyện quá lớn để xử lý.')
+    ;(error as any).statusCode = 413
+    throw error
+  }
+
   const response = await generateAIResponse(
     prompt,
     selectedModel.model,
-    selectedModel.provider
+    selectedModel.provider,
+    signal
   )
 
   return response

@@ -6,25 +6,49 @@ import {
   deleteMessage
 } from '../services/message.service.js'
 import { generateChatResponse } from '../ai/chat.service.js'
+import { AI_TIMEOUT_MS } from '../ai/ai.config.js'
+import { getModelById } from '../ai/model.registry.js'
+import {
+  logAiRequestStart,
+  logAiRequestCompleted,
+  logAiRequestTimeout,
+  logAiRequestFailed
+} from '../utils/ai-audit.util.js'
 
 export const createMessageController = async (
   req: Request,
   res: Response
 ) => {
-  try {
-    const userId = req.userId
-    const chatId = req.params.id as string
-    const { content, modelId } = req.body
-    console.log('Request body:', req.body)
-    console.log('Selected modelId:', modelId)
+  const abortController = new AbortController()
+  let isTimedOut = false
+  const startTime = Date.now()
 
+  const timeoutId = setTimeout(() => {
+    isTimedOut = true
+    abortController.abort()
+  }, AI_TIMEOUT_MS)
+
+  res.on('close', () => {
+    if (!res.writableEnded) {
+      abortController.abort()
+    }
+  })
+
+  const userId = req.userId
+  const chatId = req.params.id as string
+  const { content, modelId } = req.body
+  const selectedModel = getModelById(modelId)
+
+  try {
     if (!userId) {
+      clearTimeout(timeoutId)
       return res.status(401).json({
         message: 'Bạn chưa đăng nhập'
       })
     }
 
     if (!chatId) {
+      clearTimeout(timeoutId)
       return res.status(400).json({
         message: 'Chat ID không hợp lệ'
       })
@@ -37,17 +61,28 @@ export const createMessageController = async (
     )
 
     if (!userMessage) {
+      clearTimeout(timeoutId)
       return res.status(404).json({
         message: 'Không tìm thấy cuộc trò chuyện'
       })
     }
 
+    logAiRequestStart({
+      userId,
+      chatId,
+      provider: selectedModel?.provider || 'unknown',
+      model: selectedModel?.model || modelId
+    })
+
     const aiResponse = await generateChatResponse(
       chatId,
       userId,
       content,
-      modelId
+      modelId,
+      abortController.signal
     )
+
+    clearTimeout(timeoutId)
 
     if (aiResponse === null) {
       return res.status(404).json({
@@ -58,8 +93,17 @@ export const createMessageController = async (
     const assistantMessage =
       await createAssistantMessage(
         chatId,
+        userId,
         aiResponse
       )
+
+    logAiRequestCompleted({
+      userId,
+      chatId,
+      provider: selectedModel?.provider || 'unknown',
+      model: selectedModel?.model || modelId,
+      durationMs: Date.now() - startTime
+    })
 
     return res.status(201).json({
       message: 'Gửi tin nhắn thành công',
@@ -68,11 +112,35 @@ export const createMessageController = async (
         assistantMessage
       }
     })
-  } catch (error) {
-    console.error(
-      'Create message error:',
-      error
-    )
+  } catch (error: any) {
+    clearTimeout(timeoutId)
+    const durationMs = Date.now() - startTime
+
+    if (isTimedOut) {
+      logAiRequestTimeout({
+        provider: selectedModel?.provider || 'unknown',
+        model: selectedModel?.model || modelId,
+        durationMs
+      })
+      return res.status(504).json({
+        message: 'AI phản hồi quá lâu. Vui lòng thử lại.'
+      })
+    }
+
+    if (error?.statusCode === 413 || error?.status === 413) {
+      return res.status(413).json({
+        message: 'Nội dung cuộc trò chuyện quá lớn để xử lý.'
+      })
+    }
+
+    logAiRequestFailed({
+      provider: selectedModel?.provider || 'unknown',
+      model: selectedModel?.model || modelId,
+      errorName: error?.name || 'Error',
+      durationMs
+    })
+
+    console.error('Create message error:', error)
 
     return res.status(500).json({
       message: 'Đã xảy ra lỗi khi gửi tin nhắn'
@@ -94,33 +162,8 @@ export const getMessagesController = async (
       })
     }
 
-    if (!chatId) {
-      return res.status(400).json({
-        message: 'Chat ID không hợp lệ'
-      })
-    }
-
-    const page = Number(req.query.page) || 1
-    const limit = Number(req.query.limit) || 20
-
-    if (
-      !Number.isInteger(page) ||
-      page < 1
-    ) {
-      return res.status(400).json({
-        message: 'Page phải là số nguyên lớn hơn hoặc bằng 1'
-      })
-    }
-
-    if (
-      !Number.isInteger(limit) ||
-      limit < 1 ||
-      limit > 100
-    ) {
-      return res.status(400).json({
-        message: 'Limit phải là số nguyên từ 1 đến 100'
-      })
-    }
+    const page = req.query.page as unknown as number
+    const limit = req.query.limit as unknown as number
 
     const result = await getMessages(
       chatId,

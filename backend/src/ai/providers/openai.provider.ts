@@ -12,27 +12,39 @@ export class OpenAIProvider implements AIProvider {
 
   async generateResponse(
     prompt: string,
-    model: string
+    model: string,
+    signal?: AbortSignal
   ): Promise<string> {
-    const response = await this.client.responses.create({
-      model,
-      input: prompt
-    })
+    const response = await this.client.responses.create(
+      {
+        model,
+        input: prompt
+      },
+      { signal }
+    )
 
     return response.output_text
   }
 
   async *generateResponseStream(
     prompt: string,
-    model: string
+    model: string,
+    signal?: AbortSignal
   ): AsyncGenerator<string> {
-    const stream = await this.client.responses.create({
-      model,
-      input: prompt,
-      stream: true
-    })
+    const stream = await this.client.responses.create(
+      {
+        model,
+        input: prompt,
+        stream: true
+      },
+      { signal }
+    )
 
     for await (const event of stream) {
+      if (signal?.aborted) {
+        throw new Error('This operation was aborted')
+      }
+
       if (
         event.type ===
         'response.output_text.delta'

@@ -12,18 +12,24 @@ export class GroqProvider implements AIProvider {
 
   async generateResponse(
     prompt: string,
-    model: string
+    model: string,
+    signal?: AbortSignal
   ): Promise<string> {
     const response =
-      await this.client.chat.completions.create({
-        model,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ]
-      })
+      await this.client.chat.completions.create(
+        {
+          model,
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ]
+        },
+        {
+          signal
+        }
+      )
 
     return (
       response.choices[0]?.message?.content ??
@@ -54,6 +60,10 @@ export class GroqProvider implements AIProvider {
     )
 
     for await (const chunk of stream) {
+      if (signal?.aborted) {
+        throw new Error('This operation was aborted')
+      }
+
       const content =
         chunk.choices[0]?.delta?.content
 

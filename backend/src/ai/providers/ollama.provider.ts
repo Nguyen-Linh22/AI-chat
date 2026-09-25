@@ -11,7 +11,8 @@ export class OllamaProvider implements AIProvider {
 
   async generateResponse(
     prompt: string,
-    model: string
+    model: string,
+    signal?: AbortSignal
   ): Promise<string> {
     const response = await fetch(
       `${this.baseUrl}/api/generate`,
@@ -24,7 +25,8 @@ export class OllamaProvider implements AIProvider {
           model,
           prompt,
           stream: false
-        })
+        }),
+        signal
       }
     )
 
@@ -44,9 +46,6 @@ export class OllamaProvider implements AIProvider {
     model: string,
     signal?: AbortSignal
   ): AsyncGenerator<string> {
-    console.log('OLLAMA STREAM URL:', this.baseUrl)
-    console.log('OLLAMA STREAM MODEL:', model)
-
     const response = await fetch(
       `${this.baseUrl}/api/generate`,
       {
@@ -81,6 +80,13 @@ export class OllamaProvider implements AIProvider {
     let buffer = ''
 
     while (true) {
+      if (signal?.aborted) {
+        try {
+          await reader.cancel()
+        } catch {}
+        throw new Error('This operation was aborted')
+      }
+
       const { value, done } =
         await reader.read()
 

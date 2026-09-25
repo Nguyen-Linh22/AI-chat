@@ -1,3 +1,5 @@
+export const MAX_AI_CONTEXT_CHARS = 30_000
+
 export const buildChatPrompt = (
   userMessage: string,
   context: string,

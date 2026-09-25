@@ -8,16 +8,20 @@ const storage = multer.diskStorage({
   },
 
   filename: (_req, file, cb) => {
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(file.originalname)}`
+    const ext = path.extname(file.originalname).toLowerCase()
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`
 
     cb(null, uniqueName)
   }
 })
 
+export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // 10 MB
+
 export const upload = multer({
   storage,
+  preservePath: true,
   limits: {
-    fileSize: 10 * 1024 * 1024
+    fileSize: MAX_FILE_SIZE_BYTES
   }
 })
 

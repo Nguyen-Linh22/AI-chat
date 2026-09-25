@@ -1,5 +1,7 @@
 import { Request, Response } from 'express'
 import { createAttachment } from '../services/attachment.service.js'
+import { safeDeleteFile } from '../utils/file.util.js'
+import { FileExtractionError } from '../services/file-extraction.service.js'
 
 export const createAttachmentController = async (
   req: Request,
@@ -49,8 +51,16 @@ export const createAttachmentController = async (
   } catch (error) {
     console.error('Create attachment error:', error)
 
+    if (error instanceof FileExtractionError) {
+      return res.status(400).json({
+        message: 'Không thể xử lý nội dung file'
+      })
+    }
+
     return res.status(500).json({
       message: 'Đã xảy ra lỗi khi lưu file'
     })
+  } finally {
+    safeDeleteFile(req.file?.path)
   }
 }

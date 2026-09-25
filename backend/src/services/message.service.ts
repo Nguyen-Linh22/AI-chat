@@ -1,13 +1,4 @@
-import { PrismaPg } from '@prisma/adapter-pg'
-import { PrismaClient } from '../generated/prisma/client.js'
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!
-})
-
-const prisma = new PrismaClient({
-  adapter
-})
+import { prisma } from '../lib/prisma.js'
 
 export const createMessage = async (
   chatId: string,
@@ -126,8 +117,20 @@ export const deleteMessage = async (
 
 export const createAssistantMessage = async (
   chatId: string,
+  userId: string,
   content: string
 ) => {
+  const chat = await prisma.chatSession.findFirst({
+    where: {
+      id: chatId,
+      userId
+    }
+  })
+
+  if (!chat) {
+    return null
+  }
+
   const message = await prisma.message.create({
     data: {
       sessionId: chatId,
@@ -142,13 +145,17 @@ export const createAssistantMessage = async (
 export const updateAssistantMessage = async (
   chatId: string,
   messageId: string,
+  userId: string,
   content: string
 ) => {
   const message = await prisma.message.findFirst({
     where: {
       id: messageId,
       sessionId: chatId,
-      role: 'ai'
+      role: 'ai',
+      session: {
+        userId
+      }
     }
   })
 

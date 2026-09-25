@@ -2,8 +2,11 @@ import { Request, Response } from 'express'
 import {
   registerUser,
   loginUser,
-  getCurrentUser
+  getCurrentUser,
+  revokeUserSessions
 } from '../services/auth.service.js'
+
+const isProduction = () => process.env.NODE_ENV === 'production'
 
 export const register = async (
   req: Request,
@@ -48,13 +51,13 @@ export const login = async (
   password
 )
 
-res.cookie('token', accessToken, {
-  httpOnly: true,
-  secure: false,
-  sameSite: 'lax',
-  path: '/',
-  maxAge: 7 * 24 * 60 * 60 * 1000
-})
+    res.cookie('token', accessToken, {
+      httpOnly: true,
+      secure: isProduction(),
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    })
 
 return res.status(200).json({
   message: 'Đăng nhập thành công',
@@ -112,13 +115,23 @@ export const me = async (
     })
   }
 }
-export const logout = (
-  _req: Request,
+export const logout = async (
+  req: Request,
   res: Response
 ) => {
+  try {
+    const userId = req.userId
+
+    if (userId) {
+      await revokeUserSessions(userId)
+    }
+  } catch (error) {
+    console.error('Revoke user session error on logout:', error)
+  }
+
   res.clearCookie('token', {
     httpOnly: true,
-    secure: false,
+    secure: isProduction(),
     sameSite: 'lax',
     path: '/'
   })

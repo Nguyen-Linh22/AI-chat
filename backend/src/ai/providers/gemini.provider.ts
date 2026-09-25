@@ -12,12 +12,16 @@ export class GeminiProvider implements AIProvider {
 
   async generateResponse(
     prompt: string,
-    model: string
+    model: string,
+    signal?: AbortSignal
   ): Promise<string> {
     const response =
       await this.client.models.generateContent({
         model,
-        contents: prompt
+        contents: prompt,
+        config: {
+          abortSignal: signal
+        }
       })
 
     return response.text ?? ''
@@ -38,6 +42,10 @@ export class GeminiProvider implements AIProvider {
       })
 
     for await (const chunk of stream) {
+      if (signal?.aborted) {
+        throw new Error('This operation was aborted')
+      }
+
       const text = chunk.text
 
       if (text) {

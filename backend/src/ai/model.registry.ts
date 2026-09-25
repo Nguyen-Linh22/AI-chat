@@ -43,3 +43,7 @@ export const getModelById = (
     ) ?? null
   )
 }
+
+export const isSupportedModelId = (modelId: string): boolean => {
+  return AI_MODELS.some((model) => model.id === modelId)
+}

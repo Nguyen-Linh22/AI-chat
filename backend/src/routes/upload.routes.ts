@@ -4,30 +4,16 @@ import { uploadSingleFile } from '../middlewares/upload.middleware.js'
 import { validateUploadedFile } from '../validators/file.validator.js'
 import { authMiddleware } from '../middlewares/auth.middleware.js'
 import { createAttachmentController } from '../controllers/attachment.controller.js'
+import { validate } from '../middlewares/validate.middleware.js'
+import { messageIdParamsSchema } from '../validators/params.validator.js'
 
 const router = Router()
 
-router.post(
-  '/test',
-  uploadSingleFile,
-  validateUploadedFile,
-  (req, res) => {
-    return res.status(200).json({
-      message: 'Upload file thành công',
-      file: {
-        originalname: req.file!.originalname,
-        filename: req.file!.filename,
-        mimetype: req.file!.mimetype,
-        size: req.file!.size,
-        path: req.file!.path
-      }
-    })
-  }
-)
 
 router.post(
   '/:messageId',
   authMiddleware,
+  validate(messageIdParamsSchema, 'params'),
   uploadSingleFile,
   validateUploadedFile,
   createAttachmentController

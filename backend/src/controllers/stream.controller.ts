@@ -5,14 +5,22 @@ import {
 } from '../services/message.service.js'
 import { getChatHistory } from '../ai/context/chat-history.service.js'
 import { buildChatContext } from '../ai/context/chat.context.js'
-import { buildChatPrompt } from '../ai/prompts/chat.prompt.js'
+import { buildChatPrompt, MAX_AI_CONTEXT_CHARS } from '../ai/prompts/chat.prompt.js'
 import { getModelById } from '../ai/model.registry.js'
 import { createAIProvider } from '../ai/ai.router.js'
 import { getAttachmentContext } from '../services/attachment-context.service.js'
-import { uploadFileToCloudinary } from '../services/cloudinary.service.js'
-import { extractFileText } from '../services/file-extraction.service.js'
+import { uploadFileToCloudinary, deleteFileFromCloudinary } from '../services/cloudinary.service.js'
+import { extractFileText, isExtractableMimeType, FileExtractionError } from '../services/file-extraction.service.js'
 import fs from 'fs'
 import { prisma } from '../lib/prisma.js'
+import { safeDeleteFile } from '../utils/file.util.js'
+import { AI_TIMEOUT_MS } from '../ai/ai.config.js'
+import {
+  logAiRequestStart,
+  logAiRequestCompleted,
+  logAiRequestTimeout,
+  logAiRequestFailed
+} from '../utils/ai-audit.util.js'
 
 export const streamChatResponse = async (
   req: Request,
@@ -20,48 +28,37 @@ export const streamChatResponse = async (
 ) => {
   let fullResponse = ''
   const chatId = req.params.id as string
+  const file = req.file
+  const startTime = Date.now()
+
+  const abortController = new AbortController()
+  let isTimedOut = false
+
+  const timeoutId = setTimeout(() => {
+    isTimedOut = true
+    abortController.abort()
+  }, AI_TIMEOUT_MS)
+
+  res.on('close', () => {
+    if (!res.writableEnded) {
+      abortController.abort()
+    }
+  })
+
+  let selectedModel: ReturnType<typeof getModelById> = null
+  const userId = req.userId
 
   try {
-    console.log('STREAM: bắt đầu controller')
-
-    const userId = req.userId
     const { content, modelId } = req.body
-    const file = req.file
-
-    const abortController = new AbortController()
-
-    res.on('close', () => {
-      if (!res.writableEnded) {
-        console.log('STREAM: client đã hủy request')
-        abortController.abort()
-      }
-    })
 
     if (!userId) {
+      clearTimeout(timeoutId)
       return res.status(401).json({
         message: 'Bạn chưa đăng nhập'
       })
     }
 
-    if (!chatId) {
-      return res.status(400).json({
-        message: 'Chat ID không hợp lệ'
-      })
-    }
-
-    if (!content || !content.trim()) {
-      return res.status(400).json({
-        message: 'Nội dung tin nhắn không được để trống'
-      })
-    }
-
-    if (!modelId) {
-      return res.status(400).json({
-        message: 'Model ID không được để trống'
-      })
-    }
-
-    const selectedModel = getModelById(modelId)
+    selectedModel = getModelById(modelId)
 
     if (!selectedModel) {
       return res.status(400).json({
@@ -75,8 +72,6 @@ export const streamChatResponse = async (
       content
     )
 
-    console.log('STREAM: đã tạo user message')
-
     if (!userMessage) {
       return res.status(404).json({
         message: 'Không tìm thấy cuộc trò chuyện'
@@ -85,13 +80,14 @@ export const streamChatResponse = async (
 
     let createdAttachment = null
     if (file) {
+      let uploadedPublicId: string | undefined
+      let uploadedResourceType: string = 'image'
+      let isSavedInDb = false
+
       try {
         let extractedText: string | null = null
 
-        if (
-          file.mimetype === 'text/plain' ||
-          file.mimetype === 'application/pdf'
-        ) {
+        if (isExtractableMimeType(file.mimetype)) {
           extractedText = await extractFileText(
             file.path,
             file.mimetype
@@ -103,6 +99,8 @@ export const streamChatResponse = async (
             file.path,
             file.originalname
           )
+        uploadedPublicId = cloudinaryResult.public_id
+        uploadedResourceType = cloudinaryResult.resource_type || 'image'
 
         createdAttachment = await prisma.attachment.create({
           data: {
@@ -114,23 +112,28 @@ export const streamChatResponse = async (
             extractedText
           }
         })
-
-        fs.unlinkSync(file.path)
-
-        console.log('STREAM: đã lưu attachment')
+        isSavedInDb = true
       } catch (error) {
         console.error(
           'STREAM: không thể xử lý file:',
           error
         )
 
-        if (fs.existsSync(file.path)) {
-          fs.unlinkSync(file.path)
+        if (uploadedPublicId && !isSavedInDb) {
+          await deleteFileFromCloudinary(uploadedPublicId, uploadedResourceType)
+        }
+
+        if (error instanceof FileExtractionError) {
+          return res.status(400).json({
+            message: 'Không thể xử lý nội dung file'
+          })
         }
 
         return res.status(500).json({
           message: 'Không thể xử lý file đính kèm'
         })
+      } finally {
+        safeDeleteFile(file.path)
       }
     }
 
@@ -138,8 +141,6 @@ export const streamChatResponse = async (
       chatId,
       userId
     )
-
-    console.log('STREAM: đã lấy chat history')
 
     if (!history) {
       return res.status(404).json({
@@ -150,7 +151,7 @@ export const streamChatResponse = async (
     const context = buildChatContext(history)
 
     const attachmentContext =
-      await getAttachmentContext(userMessage.id)
+      await getAttachmentContext(userMessage.id, userId)
 
     const prompt = buildChatPrompt(
       content,
@@ -158,14 +159,25 @@ export const streamChatResponse = async (
       attachmentContext
     )
 
-    const provider = createAIProvider(selectedModel.provider)
+    if (prompt.length > MAX_AI_CONTEXT_CHARS) {
+      return res.status(413).json({
+        message: 'Nội dung cuộc trò chuyện quá lớn để xử lý.'
+      })
+    }
 
-    console.log('STREAM: đã tạo AI provider')
+    const provider = createAIProvider(selectedModel.provider)
 
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')
     res.setHeader('Connection', 'keep-alive')
     res.flushHeaders()
+
+    logAiRequestStart({
+      userId,
+      chatId,
+      provider: selectedModel.provider,
+      model: selectedModel.model
+    })
 
     const stream = provider.generateResponseStream(
       prompt,
@@ -173,11 +185,7 @@ export const streamChatResponse = async (
       abortController.signal
     )
 
-    console.log('STREAM: bắt đầu streaming')
-
     for await (const chunk of stream) {
-      console.log('STREAM CHUNK:', chunk)
-
       fullResponse += chunk
 
       res.write(
@@ -188,10 +196,17 @@ export const streamChatResponse = async (
       )
     }
 
-    console.log('STREAM: AI đã hoàn tất')
+    logAiRequestCompleted({
+      userId,
+      chatId,
+      provider: selectedModel.provider,
+      model: selectedModel.model,
+      durationMs: Date.now() - startTime
+    })
 
     const assistantMessage = await createAssistantMessage(
       chatId,
+      userId,
       fullResponse
     )
 
@@ -209,6 +224,8 @@ export const streamChatResponse = async (
         : []
     }
 
+    clearTimeout(timeoutId)
+
     res.write(
       `data: ${JSON.stringify({
         type: 'done',
@@ -218,21 +235,48 @@ export const streamChatResponse = async (
     )
 
     res.end()
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      error.name === 'AbortError'
-    ) {
-      console.log('STREAM: generation đã bị hủy')
+  } catch (error: any) {
+    clearTimeout(timeoutId)
+    const durationMs = Date.now() - startTime
 
-      if (fullResponse.trim()) {
+    if (isTimedOut) {
+      logAiRequestTimeout({
+        provider: selectedModel?.provider || 'unknown',
+        model: selectedModel?.model || 'unknown',
+        durationMs
+      })
+
+      if (!res.headersSent) {
+        return res.status(504).json({
+          message: 'AI phản hồi quá lâu. Vui lòng thử lại.'
+        })
+      }
+
+      if (!res.writableEnded) {
+        res.write(
+          `data: ${JSON.stringify({
+            type: 'error',
+            message: 'AI phản hồi quá lâu. Vui lòng thử lại.'
+          })}\n\n`
+        )
+
+        res.end()
+      }
+
+      return
+    }
+
+    if (
+      (error instanceof Error && error.name === 'AbortError') ||
+      abortController.signal.aborted
+    ) {
+      if (fullResponse.trim() && userId) {
         try {
           await createAssistantMessage(
             chatId,
+            userId,
             fullResponse
           )
-
-          console.log('STREAM: đã lưu partial AI message')
         } catch (saveError) {
           console.error(
             'STREAM: không thể lưu partial AI message:',
@@ -247,6 +291,13 @@ export const streamChatResponse = async (
 
       return
     }
+
+    logAiRequestFailed({
+      provider: selectedModel?.provider || 'unknown',
+      model: selectedModel?.model || 'unknown',
+      errorName: error?.name || 'Error',
+      durationMs
+    })
 
     console.error('Stream chat error:', error)
 
@@ -266,5 +317,8 @@ export const streamChatResponse = async (
 
       res.end()
     }
+  } finally {
+    clearTimeout(timeoutId)
+    safeDeleteFile(file?.path)
   }
 }
