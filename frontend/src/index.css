@@ -1,1 +1,95 @@
 @import "tailwindcss";
+
+/* ===== AI Typewriter & Streaming Effects ===== */
+
+/* Con trỏ máy đánh chữ (Typewriter Cursor) nhấp nháy ở cuối dòng */
+@keyframes typewriter-cursor {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.8));
+  }
+  50% {
+    opacity: 0.1;
+    filter: none;
+  }
+}
+
+.ai-cursor {
+  display: inline-block;
+  color: #60a5fa;
+  animation: typewriter-cursor 0.75s ease-in-out infinite;
+  font-weight: 700;
+  vertical-align: baseline;
+  line-height: 1;
+}
+
+/* Hiệu ứng làm mờ nhẹ (fade-in) tự nhiên khi chữ xuất hiện */
+@keyframes typewriter-fade-in {
+  from {
+    opacity: 0.7;
+    filter: blur(0.4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.ai-typewriter-container {
+  animation: typewriter-fade-in 0.25s ease-out;
+}
+
+/* Nút Cuộn xuống dưới (Smart Scroll to bottom) */
+@keyframes scroll-button-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.scroll-to-bottom-btn {
+  animation: scroll-button-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ===== Chat Transition & Skeleton Effects ===== */
+
+/* Content Fade-in / Cross-fade khi chuyển đổi chat (150ms - 200ms) */
+@keyframes chat-cross-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-cross-fade {
+  animation: chat-cross-fade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Skeleton Loading với hiệu ứng Shimmer quét sáng */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(55, 65, 81, 0.6) 0%,
+    rgba(75, 85, 99, 0.85) 50%,
+    rgba(55, 65, 81, 0.6) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}

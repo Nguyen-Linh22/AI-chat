@@ -83,9 +83,13 @@ export const streamMessage = async (
       }
 
       if (parsed.type === 'done') {
+        const assistantMsg = parsed.message
         return {
           userMessage: parsed.userMessage,
-          assistantMessage: parsed.message
+          assistantMessage: {
+            ...assistantMsg,
+            role: assistantMsg.role === 'ai' ? 'assistant' : assistantMsg.role
+          }
         }
       }
     }

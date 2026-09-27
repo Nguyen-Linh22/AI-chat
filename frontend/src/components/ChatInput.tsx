@@ -3,6 +3,7 @@ import { useChatStore } from '../stores/chatStore'
 import { useAIStore } from '../stores/aiStore'
 import { useMessageStore } from '../stores/messageStore'
 import { streamMessage } from '../services/streamService'
+import { useTypewriterQueue } from '../hooks/useTypewriterQueue'
 
 function ChatInput() {
   const currentChatId = useChatStore((state) => state.currentChatId)
@@ -10,17 +11,24 @@ function ChatInput() {
 
   const addMessage = useMessageStore((state) => state.addMessage)
   const updateMessage = useMessageStore((state) => state.updateMessage)
+  const streamingMessageId = useMessageStore((state) => state.streamingMessageId)
   const setStreamingMessageId = useMessageStore((state) => state.setStreamingMessageId)
+  const abortCurrentStream = useMessageStore((state) => state.abortCurrentStream)
+  const setAbortCurrentStream = useMessageStore((state) => state.setAbortCurrentStream)
   const replaceMessage = useMessageStore((state) => state.replaceMessage)
 
   const [content, setContent] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [isTyping, setIsTyping] = useState(false)
   const [isCooldown, setIsCooldown] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+  // true khi user chủ động bấm Dừng (phân biệt với lỗi thật sự)
+  const isStoppingRef = useRef(false)
+  const { enqueue, waitDrained, flushAll, reset: resetQueue } = useTypewriterQueue()
 
   const handleSelectFile = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -38,13 +46,25 @@ function ChatInput() {
   }
 
   const handleStop = () => {
+    isStoppingRef.current = true
+    // Hủy request backend (nếu còn chạy)
     abortControllerRef.current?.abort()
+    // Flush ngay toàn bộ ký tự đang chờ trong queue
+    flushAll()
+  }
+
+  const handleStopAction = () => {
+    if (abortCurrentStream) {
+      abortCurrentStream()
+    } else {
+      handleStop()
+    }
   }
 
   const handleSendMessage = async () => {
     const trimmedContent = content.trim()
 
-    if (!trimmedContent || !currentChatId || !selectedModelId || isSending || isCooldown) {
+    if (!trimmedContent || !currentChatId || !selectedModelId || isSending || isTyping || Boolean(streamingMessageId) || isCooldown) {
       return
     }
 
@@ -53,10 +73,12 @@ function ChatInput() {
 
     try {
       setIsSending(true)
+      setIsTyping(false)
       setSendError(null)
 
       const controller = new AbortController()
       abortControllerRef.current = controller
+      setAbortCurrentStream(handleStop)
 
       // Thêm user message vào UI
       addMessage({
@@ -80,19 +102,25 @@ function ChatInput() {
 
       setStreamingMessageId(assistantMessageId)
 
-      let assistantContent = ''
 
       const result = await streamMessage(
         currentChatId,
         trimmedContent,
         selectedModelId,
         (chunk) => {
-          assistantContent += chunk
-          updateMessage(assistantMessageId, assistantContent)
+          enqueue(chunk, (content) =>
+            updateMessage(assistantMessageId, content)
+          )
         },
         controller.signal,
         selectedFile
       )
+
+      // Đợi typewriter drain xong rồi mới replace bằng message từ server
+      setIsTyping(true)
+      setIsSending(false)
+      await waitDrained()
+      setIsTyping(false)
 
       replaceMessage(
         userMessageId,
@@ -112,21 +140,27 @@ function ChatInput() {
         setIsCooldown(false)
       }, 1500)
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
+      if (isStoppingRef.current) {
+        // User bấm Dừng: flushAll() đã được gọi, không cần reset
+      } else if (error instanceof DOMException && error.name === 'AbortError') {
         console.log('STREAM: người dùng đã dừng generation')
-        return
+      } else {
+        resetQueue()
+        console.error('Không thể streaming message:', error)
+        setSendError('Không thể gửi tin nhắn. Vui lòng thử lại.')
       }
-
-      console.error('Không thể streaming message:', error)
-      setSendError('Không thể gửi tin nhắn. Vui lòng thử lại.')
     } finally {
+      isStoppingRef.current = false
       setIsSending(false)
+      setIsTyping(false)
       setStreamingMessageId(null)
+      setAbortCurrentStream(null)
       abortControllerRef.current = null
     }
   }
 
-  const isDisabled = isSending || isCooldown || !selectedModelId
+  const isActive = isSending || isTyping || Boolean(streamingMessageId)
+  const isDisabled = isActive || isCooldown || !selectedModelId
 
   return (
     <div className="shrink-0 border-t border-gray-700 bg-gray-900 p-4">
@@ -159,7 +193,7 @@ function ChatInput() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isSending}
+            disabled={isActive}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl text-gray-400 transition hover:bg-gray-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             title="Đính kèm file"
           >
@@ -183,11 +217,11 @@ function ChatInput() {
               setSendError(null)
             }}
             onKeyDown={(event) => {
-              if (event.key === 'Enter') {
+              if (event.key === 'Enter' && !isActive) {
                 handleSendMessage()
               }
             }}
-            disabled={isSending}
+            disabled={isActive}
             placeholder="Nhập tin nhắn..."
             className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-white outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
           />
@@ -195,11 +229,11 @@ function ChatInput() {
           {/* Send / Stop */}
           <button
             type="button"
-            onClick={isSending ? handleStop : handleSendMessage}
-            disabled={!isSending && isDisabled}
+            onClick={isActive ? handleStopAction : handleSendMessage}
+            disabled={!isActive && isDisabled}
             className="flex h-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 px-4 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSending ? 'Dừng' : 'Gửi'}
+            {isActive ? 'Dừng' : 'Gửi'}
           </button>
         </div>
 

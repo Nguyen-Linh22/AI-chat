@@ -33,9 +33,16 @@ function Sidebar() {
 
       addChat(chat)
       setCurrentChatId(chat.id)
+      navigate(`/c/${chat.id}`)
     } catch (error) {
       console.error('Không thể tạo chat mới:', error)
     }
+  }
+
+  const handleSelectChat = (chatId: string) => {
+    if (currentChatId === chatId) return
+    setCurrentChatId(chatId)
+    navigate(`/c/${chatId}`)
   }
 
   const handleRenameChat = async (
@@ -90,8 +97,10 @@ function Sidebar() {
       if (currentChatId === chatId) {
         if (remainingChats.length > 0) {
           setCurrentChatId(remainingChats[0].id)
+          navigate(`/c/${remainingChats[0].id}`)
         } else {
           setCurrentChatId(null)
+          navigate('/chat')
         }
       }
     } catch (error) {
@@ -102,6 +111,8 @@ function Sidebar() {
   const handleLogout = async () => {
     try {
       await logout()
+    } catch (error) {
+      console.error('Không thể đăng xuất:', error)
     } finally {
       clearUser()
       navigate('/login')
@@ -129,44 +140,70 @@ function Sidebar() {
         </h2>
 
         <div className="space-y-1">
-          {chats.map((chat) => (
-            <div
-              key={chat.id}
-              className="group flex items-center gap-1 rounded-lg hover:bg-gray-700"
-            >
-              <button
-                type="button"
-                onClick={() => setCurrentChatId(chat.id)}
-                className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-left text-sm ${
-                  currentChatId === chat.id
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-300'
+          {chats.map((chat) => {
+            const isActive = currentChatId === chat.id
+            return (
+              <div
+                key={chat.id}
+                className={`group relative flex items-center rounded-xl transition-all duration-200 ease-out ${
+                  isActive
+                    ? 'bg-gray-700/90 text-white shadow-sm ring-1 ring-white/10'
+                    : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
                 }`}
               >
-                {chat.title}
-              </button>
+                {/* Active Indicator Bar (Thanh chỉ báo đổi màu êm dịu) */}
+                <div
+                  className={`absolute left-1.5 h-4 w-1 rounded-full bg-blue-500 transition-all duration-200 ease-out ${
+                    isActive
+                      ? 'scale-y-100 opacity-100 shadow-[0_0_8px_rgba(59,130,246,0.6)]'
+                      : 'scale-y-0 opacity-0'
+                  }`}
+                />
 
-              <button
-                type="button"
-                onClick={() =>
-                  handleRenameChat(chat.id, chat.title)
-                }
-                className="hidden rounded-md px-2 py-1 text-xs text-gray-400 hover:bg-gray-600 hover:text-white group-hover:block"
-                title="Đổi tên chat"
-              >
-                ✎
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectChat(chat.id)}
+                  className="flex min-w-0 flex-1 items-center gap-2 py-2.5 pl-4 pr-1 text-left text-sm transition-colors duration-200"
+                  title={chat.title}
+                >
+                  <span
+                    className={`text-xs transition-colors duration-200 ${
+                      isActive
+                        ? 'text-blue-400'
+                        : 'text-gray-500 group-hover:text-gray-400'
+                    }`}
+                  >
+                    💬
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">
+                    {chat.title}
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleDeleteChat(chat.id)}
-                className="mr-1 hidden rounded-md px-2 py-1 text-xs text-gray-400 hover:bg-gray-600 hover:text-red-400 group-hover:block"
-                title="Xóa chat"
-              >
-                ×
-              </button>
-            </div>
-          ))}
+                <div className="flex items-center gap-0.5 pr-1.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleRenameChat(chat.id, chat.title)
+                    }
+                    className="rounded-md p-1 text-xs text-gray-400 transition hover:bg-gray-600 hover:text-white"
+                    title="Đổi tên chat"
+                  >
+                    ✎
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteChat(chat.id)}
+                    className="rounded-md p-1 text-xs text-gray-400 transition hover:bg-gray-600 hover:text-red-400"
+                    title="Xóa chat"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            )
+          })}
 
           {chats.length === 0 && (
             <p className="px-3 py-2 text-sm text-gray-500">

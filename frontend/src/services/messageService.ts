@@ -31,7 +31,10 @@ export const getMessages = async (
 
   const data = await response.json()
 
-  return data.messages
+  return (data.messages as Message[]).map((msg) => ({
+    ...msg,
+    role: msg.role === ('ai' as string) ? 'assistant' : msg.role
+  })) as Message[]
 }
 
 export interface SendMessageResponse {

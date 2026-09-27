@@ -24,3 +24,11 @@ Thumbs.db
 # Prisma
 prisma/*.db
 prisma/*.db-journal
+
+# Playwright auth state
+e2e/.auth/
+
+# Test & coverage artifacts
+coverage/
+playwright-report/
+test-results/
