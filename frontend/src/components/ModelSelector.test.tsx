@@ -109,4 +109,37 @@ describe('ModelSelector', () => {
       'openai-gpt-5-mini'
     )
   })
+
+  it('should change the selected model when clicking custom dropdown option', async () => {
+    const user = userEvent.setup()
+
+    useAIStoreMock.mockImplementation((selector: (state: unknown) => unknown) =>
+      selector({
+        models: [
+          {
+            id: 'ollama-qwen3-1.7b',
+            name: 'Qwen 3 1.7B',
+          },
+          {
+            id: 'openai-gpt-5-mini',
+            name: 'GPT-5 Mini',
+          },
+        ],
+        selectedModelId: 'ollama-qwen3-1.7b',
+        setSelectedModelId: setSelectedModelIdMock,
+      })
+    )
+
+    render(<ModelSelector />)
+
+    // Click trigger button to open custom dropdown
+    const triggerBtn = screen.getByRole('button', { name: /Qwen 3 1.7B/i })
+    await user.click(triggerBtn)
+
+    // Click on custom dropdown GPT-5 Mini option
+    const options = screen.getAllByRole('option', { name: /GPT-5 Mini/i })
+    await user.click(options[1])
+
+    expect(setSelectedModelIdMock).toHaveBeenCalledWith('openai-gpt-5-mini')
+  })
 })

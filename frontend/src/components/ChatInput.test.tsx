@@ -451,4 +451,190 @@ describe('ChatInput', () => {
 
     resolveStream()
   })
+
+  it('should send message when Enter is pressed in normal composer', async () => {
+    const user = userEvent.setup()
+
+    mockStreamMessage.mockResolvedValue({
+      userMessage: {
+        id: 'user-1',
+        chatSessionId: 'chat-123',
+        createdAt: new Date().toISOString(),
+        role: 'user',
+        content: 'Testing enter submit',
+        attachments: [],
+      },
+      assistantMessage: {
+        id: 'assistant-1',
+        chatSessionId: 'chat-123',
+        createdAt: new Date().toISOString(),
+        role: 'assistant',
+        content: 'Received',
+        attachments: [],
+      },
+    })
+
+    render(<ChatInput />)
+
+    const textarea = screen.getByPlaceholderText('Nhập tin nhắn...')
+    await user.type(textarea, 'Testing enter submit{Enter}')
+
+    expect(mockStreamMessage).toHaveBeenCalledTimes(1)
+    expect(mockStreamMessage.mock.calls[0][1]).toBe('Testing enter submit')
+  })
+
+  it('should allow newline and NOT send message when Shift + Enter is pressed', async () => {
+    const user = userEvent.setup()
+
+    render(<ChatInput />)
+
+    const textarea = screen.getByPlaceholderText('Nhập tin nhắn...')
+    await user.type(textarea, 'Line 1{Shift>}{Enter}{/Shift}Line 2')
+
+    expect(mockStreamMessage).not.toHaveBeenCalled()
+    expect((textarea as HTMLTextAreaElement).value).toContain('Line 1')
+    expect((textarea as HTMLTextAreaElement).value).toContain('Line 2')
+  })
+
+  it('should not send message when Enter is pressed on empty or whitespace content', async () => {
+    const user = userEvent.setup()
+
+    render(<ChatInput />)
+
+    const textarea = screen.getByPlaceholderText('Nhập tin nhắn...')
+    await user.type(textarea, '   {Enter}')
+
+    expect(mockStreamMessage).not.toHaveBeenCalled()
+  })
+
+  it('should open ExpandedEditorModal when Expand button is clicked and synchronize draft', async () => {
+    const user = userEvent.setup()
+
+    render(<ChatInput />)
+
+    const textarea = screen.getByPlaceholderText('Nhập tin nhắn...')
+    await user.type(textarea, 'Draft before expand')
+
+    const expandBtn = screen.getByTitle('Mở rộng trình soạn thảo')
+    await user.click(expandBtn)
+
+    // Modal should be open
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('Soạn tin nhắn')).toBeInTheDocument()
+
+    const modalTextarea = screen.getByPlaceholderText('Nhập nội dung tin nhắn chi tiết, đoạn mã, hoặc tài liệu...') as HTMLTextAreaElement
+    expect(modalTextarea.value).toBe('Draft before expand')
+
+    // Modify inside modal
+    await user.type(modalTextarea, ' and updated')
+
+    // Close modal via close button
+    const closeBtn = screen.getByTitle('Đóng (Esc)')
+    await user.click(closeBtn)
+
+    // Modal closed
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    // Composer retains updated draft
+    expect((screen.getByPlaceholderText('Nhập tin nhắn...') as HTMLTextAreaElement).value).toBe('Draft before expand and updated')
+  })
+
+  it('should preserve draft when Escape is pressed to close ExpandedEditorModal', async () => {
+    const user = userEvent.setup()
+
+    render(<ChatInput />)
+
+    const textarea = screen.getByPlaceholderText('Nhập tin nhắn...')
+    await user.type(textarea, 'Important draft')
+
+    const expandBtn = screen.getByTitle('Mở rộng trình soạn thảo')
+    await user.click(expandBtn)
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    // Press Escape
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect((screen.getByPlaceholderText('Nhập tin nhắn...') as HTMLTextAreaElement).value).toBe('Important draft')
+  })
+
+  it('should send message via Ctrl + Enter in ExpandedEditorModal and close modal on success', async () => {
+    const user = userEvent.setup()
+
+    mockStreamMessage.mockResolvedValue({
+      userMessage: {
+        id: 'user-1',
+        chatSessionId: 'chat-123',
+        createdAt: new Date().toISOString(),
+        role: 'user',
+        content: 'Long prompt from modal',
+        attachments: [],
+      },
+      assistantMessage: {
+        id: 'assistant-1',
+        chatSessionId: 'chat-123',
+        createdAt: new Date().toISOString(),
+        role: 'assistant',
+        content: 'Response',
+        attachments: [],
+      },
+    })
+
+    render(<ChatInput />)
+
+    const textarea = screen.getByPlaceholderText('Nhập tin nhắn...')
+    await user.type(textarea, 'Long prompt from modal')
+
+    const expandBtn = screen.getByTitle('Mở rộng trình soạn thảo')
+    await user.click(expandBtn)
+
+    const modalTextarea = screen.getByPlaceholderText('Nhập nội dung tin nhắn chi tiết, đoạn mã, hoặc tài liệu...')
+    // Press Ctrl+Enter inside modal
+    await user.type(modalTextarea, '{Control>}{Enter}{/Control}')
+
+    expect(mockStreamMessage).toHaveBeenCalledTimes(1)
+    expect(mockStreamMessage.mock.calls[0][1]).toBe('Long prompt from modal')
+
+    // Modal should close on send
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('should render file attachment inside composer and remove it without clearing text draft', async () => {
+    const user = userEvent.setup()
+
+    render(<ChatInput />)
+
+    const textarea = screen.getByPlaceholderText('Nhập tin nhắn...')
+    await user.type(textarea, 'Draft text before attachment')
+
+    const file = new File(['file content'], 'sample-document.pdf', {
+      type: 'application/pdf',
+    })
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+    await user.upload(fileInput, file)
+
+    // Verify file chip is rendered with name and accessible remove button
+    expect(screen.getByText('sample-document.pdf')).toBeInTheDocument()
+    const removeBtn = screen.getByRole('button', {
+      name: 'Xóa file sample-document.pdf',
+    })
+    expect(removeBtn).toBeInTheDocument()
+    expect(removeBtn).toHaveAttribute('title', 'Xóa file sample-document.pdf')
+
+    // Text draft should still be intact
+    expect((textarea as HTMLTextAreaElement).value).toBe('Draft text before attachment')
+
+    // Click remove button
+    await user.click(removeBtn)
+
+    // File is removed
+    expect(screen.queryByText('sample-document.pdf')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Xóa file sample-document.pdf' })).not.toBeInTheDocument()
+
+    // Text draft remains intact after file removal
+    expect((textarea as HTMLTextAreaElement).value).toBe('Draft text before attachment')
+  })
 })
+
+

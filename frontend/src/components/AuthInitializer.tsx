@@ -5,6 +5,7 @@ import { getAIModels } from '../services/aiService'
 import { useAuthStore } from '../stores/authStore'
 import { useChatStore } from '../stores/chatStore'
 import { useAIStore } from '../stores/aiStore'
+import { useMessageStore } from '../stores/messageStore'
 
 function AuthInitializer() {
   const setUser = useAuthStore((state) => state.setUser)
@@ -38,6 +39,7 @@ function AuthInitializer() {
           clearUser()
           setChats([])
           setCurrentChatId(null)
+          useMessageStore.getState().clearAll()
           return
         }
 
@@ -64,6 +66,7 @@ function AuthInitializer() {
         clearUser()
         setChats([])
         setCurrentChatId(null)
+        useMessageStore.getState().clearAll()
       }
     }
 

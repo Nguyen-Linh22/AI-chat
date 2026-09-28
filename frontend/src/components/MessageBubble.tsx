@@ -28,7 +28,7 @@ function renderChildrenWithCursor(children: React.ReactNode): React.ReactNode {
             {part}
             {index < parts.length - 1 && (
               <span
-                className="ai-cursor inline-block ml-0.5 text-blue-400 select-none align-baseline"
+                className="ai-cursor inline-block ml-0.5 text-[#1B8F3D] select-none align-baseline"
                 aria-hidden="true"
               >
                 ▌
@@ -104,26 +104,24 @@ function MessageBubble({
 
   return (
     <div
-      className={`flex w-full ${
-        isUser ? 'justify-end' : 'justify-start'
-      }`}
+      className={`chat-message-enter group flex w-full ${isUser ? 'justify-end' : 'justify-start'
+        }`}
     >
       <div
-        className={`max-w-[75%] rounded-2xl px-4 py-3 ${
-          isUser
-            ? 'rounded-br-md bg-blue-600 text-white'
-            : 'rounded-bl-md bg-gray-800 text-gray-100'
-        }`}
+        className={`rounded-2xl px-4 py-3 shadow-xs ${isUser
+            ? 'max-w-[85%] sm:max-w-[75%] rounded-br-md bg-[#1E293B] border border-gray-700/60 text-white'
+            : 'w-full rounded-bl-md bg-white dark:bg-[#111827]/95 border border-slate-200/90 dark:border-gray-800 text-slate-800 dark:text-gray-100 shadow-xs dark:shadow-none'
+          }`}
       >
         {!isUser && isStreaming ? (
-          <div className="mb-1 flex items-center justify-between">
+          <div className="mb-1.5 flex items-center justify-between">
             <span className="text-xs font-semibold opacity-70">AI</span>
-            <span className="flex items-center gap-1.5 text-[11px] font-medium text-blue-400">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+            <span className="flex items-center gap-1.5 text-[11px] font-medium text-[#1B8F3D]">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#1B8F3D] opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#1B8F3D]"></span>
               </span>
-              <span>Đang nhập...</span>
+              <span>AI đang trả lời...</span>
             </span>
           </div>
         ) : (
@@ -140,7 +138,7 @@ function MessageBubble({
                 href={attachment.fileUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2 rounded-lg bg-black/20 px-3 py-2 text-sm hover:bg-black/30"
+                className="flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-black/20 text-slate-800 dark:text-gray-200 px-3 py-2 text-sm hover:bg-slate-200 dark:hover:bg-black/30"
               >
                 <span>📎</span>
 
@@ -215,7 +213,7 @@ function MessageBubble({
                       onClick={() =>
                         handleCodeCopy(cleanContent)
                       }
-                      className="absolute right-2 top-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:text-white"
+                      className="absolute right-2 top-2 rounded bg-gray-700 px-2 py-1 text-xs text-gray-300 hover:text-white cursor-pointer"
                     >
                       {isCodeCopied ? '✓ Copied' : 'Copy'}
                     </button>
@@ -236,17 +234,17 @@ function MessageBubble({
         </div>
 
         {!isUser && !isStreaming && (
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2 border-t border-slate-200/80 dark:border-gray-800/80 pt-2 opacity-90 transition-opacity duration-150 group-hover:opacity-100">
             <button
               type="button"
               onClick={handleCopy}
               title="Sao chép nội dung"
-              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-gray-400 transition-all hover:bg-gray-700 hover:text-gray-100"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs text-slate-500 dark:text-gray-400 transition-all duration-150 hover:bg-slate-100 dark:hover:bg-gray-800 hover:text-slate-800 dark:hover:text-gray-200 active:scale-95 cursor-pointer"
             >
               {isCopied ? (
                 <>
-                  <span>✓</span>
-                  <span>Đã copy</span>
+                  <span className="text-[#1B8F3D] font-bold">✓</span>
+                  <span className="text-[#1B8F3D]">Đã copy</span>
                 </>
               ) : (
                 <>
@@ -261,7 +259,7 @@ function MessageBubble({
                 type="button"
                 onClick={onRegenerate}
                 title="Tạo lại câu trả lời"
-                className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-gray-400 transition-all hover:bg-gray-700 hover:text-blue-300"
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs text-slate-500 dark:text-gray-400 transition-all duration-150 hover:bg-slate-100 dark:hover:bg-gray-800 hover:text-[#1B8F3D] active:scale-95 cursor-pointer"
               >
                 <span>↻</span>
                 <span>Regenerate</span>

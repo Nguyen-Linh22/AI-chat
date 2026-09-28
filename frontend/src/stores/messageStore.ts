@@ -8,17 +8,29 @@ interface MessageState {
   streamingMessageId: string | null
   abortCurrentStream: (() => void) | null
 
+  // Pagination state for reverse infinite scroll
+  nextCursor: string | null
+  hasMoreOlder: boolean
+  loadingOlder: boolean
+  olderError: string | null
+  paginationCache: Record<string, { nextCursor: string | null; hasMore: boolean }>
+
   // In-Memory RAM Cache cho từng cuộc trò chuyện (0ms latency khi chuyển tab)
   messagesCache: Record<string, Message[]>
   // Vị trí cuộn đã lưu cho mỗi chat (Scroll Restoration)
   scrollPositions: Record<string, number>
 
   setMessages: (messages: Message[]) => void
-  setCachedMessages: (chatId: string, messages: Message[]) => void
+  setCachedMessages: (chatId: string, messages: Message[], nextCursor?: string | null, hasMore?: boolean) => void
   getCachedMessages: (chatId: string) => Message[] | undefined
   saveScrollPosition: (chatId: string, scrollTop: number) => void
   getScrollPosition: (chatId: string) => number | undefined
   switchChat: (chatId: string) => boolean
+
+  setPagination: (chatId: string, nextCursor: string | null, hasMore: boolean) => void
+  prependMessages: (chatId: string, olderMessages: Message[]) => void
+  setLoadingOlder: (loading: boolean) => void
+  setOlderError: (error: string | null) => void
 
   addMessage: (message: Message) => void
 
@@ -46,6 +58,7 @@ interface MessageState {
   ) => void
 
   clearMessages: () => void
+  clearAll: () => void
 
   setLoadingMessages: (
     loading: boolean
@@ -64,19 +77,30 @@ export const useMessageStore =
     streamingMessageId: null,
     abortCurrentStream: null,
     messagesCache: {},
+    paginationCache: {},
     scrollPositions: {},
+    nextCursor: null,
+    hasMoreOlder: false,
+    loadingOlder: false,
+    olderError: null,
 
     setMessages: (messages) =>
       set({
         messages
       }),
 
-    setCachedMessages: (chatId, messages) =>
+    setCachedMessages: (chatId, messages, nextCursor = null, hasMore = false) =>
       set((state) => ({
         messages,
+        nextCursor,
+        hasMoreOlder: hasMore,
         messagesCache: {
           ...state.messagesCache,
           [chatId]: messages
+        },
+        paginationCache: {
+          ...state.paginationCache,
+          [chatId]: { nextCursor, hasMore }
         }
       })),
 
@@ -94,23 +118,59 @@ export const useMessageStore =
 
     switchChat: (chatId) => {
       const cached = get().messagesCache[chatId]
+      const cachedPagination = get().paginationCache[chatId]
       if (cached) {
         set({
           messages: cached,
+          nextCursor: cachedPagination?.nextCursor ?? null,
+          hasMoreOlder: cachedPagination?.hasMore ?? false,
           loadingMessages: false,
+          loadingOlder: false,
           messageError: null,
+          olderError: null,
           streamingMessageId: null
         })
         return true // Cache hit: Instant Render (0ms latency)
       }
       set({
         messages: [],
+        nextCursor: null,
+        hasMoreOlder: false,
         loadingMessages: true,
+        loadingOlder: false,
         messageError: null,
+        olderError: null,
         streamingMessageId: null
       })
       return false // Cache miss: Cần tải từ server
     },
+
+    setPagination: (chatId, nextCursor, hasMore) =>
+      set((state) => ({
+        nextCursor,
+        hasMoreOlder: hasMore,
+        paginationCache: {
+          ...state.paginationCache,
+          [chatId]: { nextCursor, hasMore }
+        }
+      })),
+
+    prependMessages: (chatId, olderMessages) =>
+      set((state) => {
+        const existingIds = new Set(state.messages.map((m) => m.id))
+        const uniqueOlder = olderMessages.filter((m) => !existingIds.has(m.id))
+        const newMessages = [...uniqueOlder, ...state.messages]
+        return {
+          messages: newMessages,
+          messagesCache: {
+            ...state.messagesCache,
+            [chatId]: newMessages
+          }
+        }
+      }),
+
+    setLoadingOlder: (loading) => set({ loadingOlder: loading }),
+    setOlderError: (error) => set({ olderError: error }),
 
     addMessage: (message) =>
       set((state) => {
@@ -201,8 +261,28 @@ export const useMessageStore =
     clearMessages: () =>
       set({
         messages: [],
+        nextCursor: null,
+        hasMoreOlder: false,
+        loadingOlder: false,
+        olderError: null,
         streamingMessageId: null,
         abortCurrentStream: null
+      }),
+
+    clearAll: () =>
+      set({
+        messages: [],
+        messagesCache: {},
+        paginationCache: {},
+        scrollPositions: {},
+        nextCursor: null,
+        hasMoreOlder: false,
+        loadingOlder: false,
+        olderError: null,
+        streamingMessageId: null,
+        abortCurrentStream: null,
+        loadingMessages: false,
+        messageError: null
       }),
 
     setLoadingMessages: (loading) =>

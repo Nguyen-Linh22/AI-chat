@@ -16,7 +16,10 @@ export const paginationQuerySchema = z.object({
     .int('Limit phải là số nguyên')
     .min(1, 'Limit phải là số nguyên từ 1 đến 100')
     .max(100, 'Limit phải là số nguyên từ 1 đến 100')
-    .default(20)
+    .default(30),
+
+  before: z.string().uuid('Cursor before phải là UUID hợp lệ').optional()
 })
 
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>
+

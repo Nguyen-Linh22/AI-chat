@@ -1,22 +1,69 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ===== Universal Button Cursor Pointer Rules ===== */
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+select,
+summary {
+  cursor: pointer;
+}
+
+button:hover,
+[role="button"]:hover,
+input[type="button"]:hover,
+input[type="submit"]:hover,
+input[type="reset"]:hover {
+  cursor: pointer;
+}
+
+button:disabled,
+button[disabled],
+[role="button"][aria-disabled="true"],
+[role="button"]:disabled,
+input:disabled,
+input[type="button"]:disabled,
+input[type="submit"]:disabled {
+  cursor: not-allowed;
+}
+
+button:disabled:hover,
+button[disabled]:hover,
+input:disabled:hover {
+  cursor: not-allowed;
+}
+
 /* ===== AI Typewriter & Streaming Effects ===== */
 
 /* Con trỏ máy đánh chữ (Typewriter Cursor) nhấp nháy ở cuối dòng */
 @keyframes typewriter-cursor {
   0%, 100% {
     opacity: 1;
-    filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.8));
+    filter: drop-shadow(0 0 5px rgba(27, 143, 61, 0.75));
   }
   50% {
-    opacity: 0.1;
+    opacity: 0.15;
     filter: none;
   }
 }
 
 .ai-cursor {
   display: inline-block;
-  color: #60a5fa;
+  color: #1B8F3D;
   animation: typewriter-cursor 0.75s ease-in-out infinite;
   font-weight: 700;
   vertical-align: baseline;
@@ -39,6 +86,70 @@
   animation: typewriter-fade-in 0.25s ease-out;
 }
 
+/* Dropdown menu entrance animation (150ms - 200ms) */
+@keyframes dropdown-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-dropdown-fade {
+  animation: dropdown-fade 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Message Entrance Animation (150ms - 250ms) */
+@keyframes message-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-message-enter {
+  animation: message-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Suggested Prompts Entrance & Stagger (200ms - 300ms) */
+@keyframes prompt-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-prompt-card {
+  animation: prompt-card-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stagger-0 {
+  animation-delay: 0ms;
+}
+
+.stagger-1 {
+  animation-delay: 50ms;
+}
+
+.stagger-2 {
+  animation-delay: 100ms;
+}
+
+.stagger-3 {
+  animation-delay: 150ms;
+}
+
 /* Nút Cuộn xuống dưới (Smart Scroll to bottom) */
 @keyframes scroll-button-enter {
   from {
@@ -53,6 +164,51 @@
 
 .scroll-to-bottom-btn {
   animation: scroll-button-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Modal and Interactive Shake Animations */
+@keyframes ui-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20%, 60% {
+    transform: translateX(-6px);
+  }
+  40%, 80% {
+    transform: translateX(6px);
+  }
+}
+
+.animate-ui-shake {
+  animation: ui-shake 0.25s ease-in-out;
+}
+
+@keyframes modal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-modal-fade {
+  animation: modal-fade 0.2s ease-out forwards;
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-modal-enter {
+  animation: modal-enter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* ===== Chat Transition & Skeleton Effects ===== */
@@ -92,4 +248,222 @@
   );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* ===== Auth Design System Tokens & Animations ===== */
+
+:root {
+  --brand-red: #B91E2B;
+  --brand-red-hover: #9E1924;
+  --brand-red-soft: rgba(185, 30, 43, 0.12);
+  --brand-red-glow: rgba(185, 30, 43, 0.25);
+  --brand-green: #1B8F3D;
+  --brand-green-hover: #167632;
+  --brand-green-soft: rgba(27, 143, 61, 0.12);
+  --brand-green-glow: rgba(27, 143, 61, 0.25);
+}
+
+/* Subtle Shake Animation on Validation Error (250ms - 300ms) */
+@keyframes auth-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20%, 60% {
+    transform: translateX(-5px);
+  }
+  40%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+.animate-auth-shake {
+  animation: auth-shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Subtle Aurora Ambient Mesh Blobs (25s - 30s very slow, subtle motion) */
+@keyframes aurora-float-1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -20px) scale(1.08);
+  }
+}
+
+@keyframes aurora-float-2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-25px, 25px) scale(1.06);
+  }
+}
+
+.animate-aurora-1 {
+  animation: aurora-float-1 26s ease-in-out infinite;
+}
+
+.animate-aurora-2 {
+  animation: aurora-float-2 30s ease-in-out infinite;
+}
+
+/* Subtle AI Distant Network Drift (24s very slow, calming motion) */
+@keyframes network-drift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-12px, 10px) scale(1.015);
+  }
+}
+
+.animate-network-drift {
+  animation: network-drift 24s ease-in-out infinite;
+}
+
+/* Sliding Overlay panel transitions (300ms - 500ms smooth physical cubic-bezier) */
+@keyframes slide-panel-to-left {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0%);
+  }
+}
+
+@keyframes slide-panel-to-right {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0%);
+  }
+}
+
+@keyframes slide-form-to-left {
+  from {
+    transform: translateX(100%);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateX(0%);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-form-to-right {
+  from {
+    transform: translateX(-100%);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateX(0%);
+    opacity: 1;
+  }
+}
+
+.animate-slide-left {
+  animation: slide-panel-to-left 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-right {
+  animation: slide-panel-to-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-form-left {
+  animation: slide-form-to-left 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-form-right {
+  animation: slide-form-to-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Smooth Form Fade & Slide */
+@keyframes auth-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-auth-fade {
+  animation: auth-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Dark autofill fix to prevent bright yellow browser styling */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px #0b0f19 inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Floating Label Pure CSS Support */
+.floating-label-idle {
+  top: 50%;
+  transform: translateY(-50%);
+  left: 1rem;
+  font-size: 0.875rem;
+  color: rgb(156 163 175);
+}
+
+.floating-label-active {
+  top: 0;
+  transform: translateY(-50%);
+  left: 0.75rem;
+  font-size: 0.75rem;
+  padding-left: 0.375rem;
+  padding-right: 0.375rem;
+  background-color: #111827;
+  border-radius: 0.375rem;
+}
+
+.peer:focus ~ .floating-label-idle {
+  top: 0 !important;
+  transform: translateY(-50%) !important;
+  left: 0.75rem !important;
+  font-size: 0.75rem !important;
+  padding-left: 0.375rem !important;
+  padding-right: 0.375rem !important;
+  background-color: #111827 !important;
+  border-radius: 0.375rem !important;
+  color: #B91E2B !important;
+}
+
+.peer:not(:placeholder-shown) ~ .floating-label-idle {
+  top: 0 !important;
+  transform: translateY(-50%) !important;
+  left: 0.75rem !important;
+  font-size: 0.75rem !important;
+  padding-left: 0.375rem !important;
+  padding-right: 0.375rem !important;
+  background-color: #111827 !important;
+  border-radius: 0.375rem !important;
+}
+
+/* Accessibility: Prefers-reduced-motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  .animate-auth-shake,
+  .animate-aurora-1,
+  .animate-aurora-2,
+  .animate-network-drift,
+  .animate-slide-left,
+  .animate-slide-right,
+  .animate-slide-form-left,
+  .animate-slide-form-right,
+  .animate-auth-fade,
+  .animate-dropdown-fade,
+  .chat-message-enter,
+  .animate-prompt-card,
+  .chat-cross-fade,
+  .scroll-to-bottom-btn {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
 }

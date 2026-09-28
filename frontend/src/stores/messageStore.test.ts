@@ -10,7 +10,12 @@ describe('messageStore', () => {
       streamingMessageId: null,
       abortCurrentStream: null,
       messagesCache: {},
+      paginationCache: {},
       scrollPositions: {},
+      nextCursor: null,
+      hasMoreOlder: false,
+      loadingOlder: false,
+      olderError: null,
     })
   })
 
@@ -23,7 +28,12 @@ describe('messageStore', () => {
     expect(state.streamingMessageId).toBeNull()
     expect(state.abortCurrentStream).toBeNull()
     expect(state.messagesCache).toEqual({})
+    expect(state.paginationCache).toEqual({})
     expect(state.scrollPositions).toEqual({})
+    expect(state.nextCursor).toBeNull()
+    expect(state.hasMoreOlder).toBe(false)
+    expect(state.loadingOlder).toBe(false)
+    expect(state.olderError).toBeNull()
   })
 
   it('should set the messages', () => {
@@ -650,5 +660,107 @@ describe('messageStore', () => {
     expect(
       useMessageStore.getState().messageError
     ).toBeNull()
+  })
+
+  it('should reset all messages, caches, scroll positions, and errors on clearAll', () => {
+    const abortMock = vi.fn()
+    const message = {
+      id: 'msg-1',
+      chatSessionId: 'chat-1',
+      role: 'user' as const,
+      content: 'Hello',
+      createdAt: '2026-09-27T00:00:00.000Z',
+    }
+
+    useMessageStore.setState({
+      messages: [message as any],
+      messagesCache: {
+        'chat-1': [message as any],
+      },
+      scrollPositions: {
+        'chat-1': 250,
+      },
+      streamingMessageId: 'stream-1',
+      abortCurrentStream: abortMock,
+      loadingMessages: true,
+      messageError: 'Some error',
+    })
+
+    useMessageStore.getState().clearAll()
+
+    const state = useMessageStore.getState()
+    expect(state.messages).toEqual([])
+    expect(state.messagesCache).toEqual({})
+    expect(state.paginationCache).toEqual({})
+    expect(state.scrollPositions).toEqual({})
+    expect(state.streamingMessageId).toBeNull()
+    expect(state.abortCurrentStream).toBeNull()
+    expect(state.loadingMessages).toBe(false)
+    expect(state.messageError).toBeNull()
+    expect(state.nextCursor).toBeNull()
+    expect(state.hasMoreOlder).toBe(false)
+    expect(state.loadingOlder).toBe(false)
+    expect(state.olderError).toBeNull()
+  })
+
+  it('should set pagination and cache pagination per chat', () => {
+    useMessageStore.getState().setPagination('chat-1', 'cursor-abc', true)
+
+    const state = useMessageStore.getState()
+    expect(state.nextCursor).toBe('cursor-abc')
+    expect(state.hasMoreOlder).toBe(true)
+    expect(state.paginationCache['chat-1']).toEqual({
+      nextCursor: 'cursor-abc',
+      hasMore: true,
+    })
+  })
+
+  it('should prepend older messages and deduplicate by id', () => {
+    const existingMsg = {
+      id: 'msg-2',
+      chatSessionId: 'chat-1',
+      role: 'user' as const,
+      content: 'Current message',
+      createdAt: '2026-09-27T00:00:02.000Z',
+      attachments: [],
+    }
+
+    useMessageStore.setState({
+      messages: [existingMsg],
+      messagesCache: {
+        'chat-1': [existingMsg],
+      },
+    })
+
+    const olderMsg1 = {
+      id: 'msg-1',
+      chatSessionId: 'chat-1',
+      role: 'user' as const,
+      content: 'Older message 1',
+      createdAt: '2026-09-27T00:00:01.000Z',
+      attachments: [],
+    }
+
+    // Pass olderMsg1 and duplicate existingMsg
+    useMessageStore.getState().prependMessages('chat-1', [olderMsg1, existingMsg])
+
+    const state = useMessageStore.getState()
+    expect(state.messages).toHaveLength(2)
+    expect(state.messages[0]).toEqual(olderMsg1)
+    expect(state.messages[1]).toEqual(existingMsg)
+    expect(state.messagesCache['chat-1']).toEqual([olderMsg1, existingMsg])
+  })
+
+  it('should update loadingOlder and olderError states', () => {
+    useMessageStore.getState().setLoadingOlder(true)
+    expect(useMessageStore.getState().loadingOlder).toBe(true)
+
+    useMessageStore.getState().setOlderError('Không thể tải tin nhắn cũ')
+    expect(useMessageStore.getState().olderError).toBe('Không thể tải tin nhắn cũ')
+
+    useMessageStore.getState().setLoadingOlder(false)
+    useMessageStore.getState().setOlderError(null)
+    expect(useMessageStore.getState().loadingOlder).toBe(false)
+    expect(useMessageStore.getState().olderError).toBeNull()
   })
 })

@@ -84,8 +84,12 @@ describe('Message API', () => {
 
     expect(response.body).toHaveProperty('messages')
     expect(response.body).toHaveProperty('pagination')
+    expect(response.body).toHaveProperty('nextCursor')
+    expect(response.body).toHaveProperty('hasMore')
 
     expect(response.body.messages).toEqual([])
+    expect(response.body.hasMore).toBe(false)
+    expect(response.body.nextCursor).toBeNull()
 
     expect(response.body.pagination).toEqual({
       page: 1,
@@ -93,6 +97,63 @@ describe('Message API', () => {
       total: 0,
       totalPages: 0
     })
+  })
+
+  it('GET /api/chats/:id/messages - should support cursor pagination with before parameter', async () => {
+    const agent = await createTestUser()
+    const chatId = await createTestChat(agent)
+
+    // Insert 5 messages directly into database with distinct timestamps
+    const { prisma } = await import('../../src/lib/prisma.js')
+    const now = Date.now()
+    for (let i = 1; i <= 5; i++) {
+      await prisma.message.create({
+        data: {
+          sessionId: chatId,
+          role: 'user',
+          content: `Message ${i}`,
+          createdAt: new Date(now + i * 1000)
+        }
+      })
+    }
+
+    // Initial load: limit = 2 (should return newest: Message 4, Message 5)
+    const initialRes = await agent
+      .get(`/api/chats/${chatId}/messages`)
+      .query({ limit: 2 })
+
+    expect(initialRes.status).toBe(200)
+    expect(initialRes.body.messages).toHaveLength(2)
+    expect(initialRes.body.messages[0].content).toBe('Message 4')
+    expect(initialRes.body.messages[1].content).toBe('Message 5')
+    expect(initialRes.body.hasMore).toBe(true)
+    expect(initialRes.body.nextCursor).toBeTruthy()
+
+    const cursor = initialRes.body.nextCursor
+
+    // Older load: before = cursor, limit = 2 (should return Message 2, Message 3)
+    const olderRes = await agent
+      .get(`/api/chats/${chatId}/messages`)
+      .query({ limit: 2, before: cursor })
+
+    expect(olderRes.status).toBe(200)
+    expect(olderRes.body.messages).toHaveLength(2)
+    expect(olderRes.body.messages[0].content).toBe('Message 2')
+    expect(olderRes.body.messages[1].content).toBe('Message 3')
+    expect(olderRes.body.hasMore).toBe(true)
+
+    const oldestCursor = olderRes.body.nextCursor
+
+    // Oldest load: before = oldestCursor, limit = 2 (should return Message 1, hasMore: false)
+    const finalRes = await agent
+      .get(`/api/chats/${chatId}/messages`)
+      .query({ limit: 2, before: oldestCursor })
+
+    expect(finalRes.status).toBe(200)
+    expect(finalRes.body.messages).toHaveLength(1)
+    expect(finalRes.body.messages[0].content).toBe('Message 1')
+    expect(finalRes.body.hasMore).toBe(false)
+    expect(finalRes.body.nextCursor).toBeNull()
   })
 
   it('GET /api/chats/:id/messages - should return 404 for another user chat', async () => {

@@ -135,4 +135,58 @@ describe('chatStore', () => {
     expect(state.chats).toEqual([chat2])
     expect(state.currentChatId).toBeNull()
   })
+
+  it('should reset currentChatId to null when setChats is called and currentChatId is not in the new chat list', () => {
+    useChatStore.getState().setCurrentChatId('old-chat-id')
+
+    useChatStore.getState().setChats([
+      {
+        id: 'new-chat-id',
+        title: 'New user chat',
+      },
+    ])
+
+    const state = useChatStore.getState()
+    expect(state.currentChatId).toBeNull()
+    expect(state.chats).toEqual([
+      {
+        id: 'new-chat-id',
+        title: 'New user chat',
+      },
+    ])
+  })
+
+  it('should keep currentChatId when setChats is called and currentChatId is in the new chat list', () => {
+    useChatStore.getState().setCurrentChatId('chat-1')
+
+    useChatStore.getState().setChats([
+      {
+        id: 'chat-1',
+        title: 'Chat 1',
+      },
+      {
+        id: 'chat-2',
+        title: 'Chat 2',
+      },
+    ])
+
+    const state = useChatStore.getState()
+    expect(state.currentChatId).toBe('chat-1')
+  })
+
+  it('should clear all chats and currentChatId on clearChats', () => {
+    useChatStore.getState().setChats([
+      {
+        id: 'chat-1',
+        title: 'Chat 1',
+      },
+    ])
+    useChatStore.getState().setCurrentChatId('chat-1')
+
+    useChatStore.getState().clearChats()
+
+    const state = useChatStore.getState()
+    expect(state.chats).toEqual([])
+    expect(state.currentChatId).toBeNull()
+  })
 })

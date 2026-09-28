@@ -6,7 +6,7 @@ interface ChatLayoutProps {
 
 function ChatLayout({ children }: ChatLayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="h-screen w-screen overflow-hidden bg-[#F8FAFC] dark:bg-[#0B0F17] text-slate-800 dark:text-white transition-colors duration-200">
       {children}
     </div>
   )

@@ -162,14 +162,16 @@ export const getMessagesController = async (
       })
     }
 
-    const page = req.query.page as unknown as number
-    const limit = req.query.limit as unknown as number
+    const page = req.query.page ? Number(req.query.page) : 1
+    const limit = req.query.limit ? Number(req.query.limit) : 30
+    const before = req.query.before as string | undefined
 
     const result = await getMessages(
       chatId,
       userId,
       page,
-      limit
+      limit,
+      before
     )
 
     if (!result) {

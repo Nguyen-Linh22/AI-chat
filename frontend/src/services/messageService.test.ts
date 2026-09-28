@@ -29,21 +29,27 @@ describe('messageService', () => {
 
     vi.spyOn(apiClient, 'get').mockResolvedValue({
       ok: true,
-      json: async () => ({ messages: mockMessages }),
+      json: async () => ({
+        messages: mockMessages,
+        nextCursor: 'msg-cursor-1',
+        hasMore: true,
+      }),
     } as Response)
 
-    const messages = await getMessages('chat-1')
+    const result = await getMessages('chat-1', 30, 'before-cursor')
 
     expect(apiClient.get).toHaveBeenCalledWith(
-      '/api/chats/chat-1/messages?limit=100'
+      '/api/chats/chat-1/messages?limit=30&before=before-cursor'
     )
-    expect(messages).toEqual([
+    expect(result.messages).toEqual([
       mockMessages[0],
       {
         ...mockMessages[1],
         role: 'assistant',
       },
     ])
+    expect(result.nextCursor).toBe('msg-cursor-1')
+    expect(result.hasMore).toBe(true)
   })
 
   it('should throw an error when get messages response is not ok', async () => {
@@ -56,7 +62,7 @@ describe('messageService', () => {
     ).rejects.toThrow('Không thể lấy danh sách messages')
 
     expect(apiClient.get).toHaveBeenCalledWith(
-      '/api/chats/chat-1/messages?limit=100'
+      '/api/chats/chat-1/messages?limit=30'
     )
   })
 

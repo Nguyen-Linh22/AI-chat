@@ -30,8 +30,9 @@ export const createMessage = async (
 export const getMessages = async (
   chatId: string,
   userId: string,
-  page: number,
-  limit: number
+  page: number = 1,
+  limit: number = 30,
+  before?: string
 ) => {
   const chat = await prisma.chatSession.findFirst({
     where: {
@@ -44,33 +45,105 @@ export const getMessages = async (
     return null
   }
 
-  const skip = (page - 1) * limit
+  // Cap limit between 1 and 50 per requirement
+  const effectiveLimit = Math.min(Math.max(limit, 1), 50)
 
-  const [messages, total] = await Promise.all([
-    prisma.message.findMany({
+  let messages: any[] = []
+  let hasMore = false
+  let nextCursor: string | null = null
+
+  if (before) {
+    const cursorMessage = await prisma.message.findFirst({
+      where: {
+        id: before,
+        sessionId: chatId
+      }
+    })
+
+    if (!cursorMessage) {
+      return {
+        messages: [],
+        nextCursor: null,
+        hasMore: false,
+        pagination: {
+          page,
+          limit: effectiveLimit,
+          total: 0,
+          totalPages: 0
+        }
+      }
+    }
+
+    // Query messages strictly older than the cursor message:
+    // createdAt < cursor.createdAt OR (createdAt == cursor.createdAt AND id < cursor.id)
+    const rawMessages = await prisma.message.findMany({
+      where: {
+        sessionId: chatId,
+        OR: [
+          { createdAt: { lt: cursorMessage.createdAt } },
+          {
+            createdAt: cursorMessage.createdAt,
+            id: { lt: cursorMessage.id }
+          }
+        ]
+      },
+      include: {
+        attachments: true
+      },
+      orderBy: [
+        { createdAt: 'desc' },
+        { id: 'desc' }
+      ],
+      take: effectiveLimit + 1
+    })
+
+    if (rawMessages.length > effectiveLimit) {
+      hasMore = true
+      const sliced = rawMessages.slice(0, effectiveLimit)
+      nextCursor = sliced[sliced.length - 1].id
+      messages = sliced.reverse()
+    } else {
+      hasMore = false
+      nextCursor = null
+      messages = rawMessages.reverse()
+    }
+  } else {
+    // Initial fetch: newest messages
+    const rawMessages = await prisma.message.findMany({
       where: {
         sessionId: chatId
       },
       include: {
         attachments: true
       },
-      orderBy: {
-        createdAt: 'asc'
-      },
-      skip,
-      take: limit
-    }),
-
-    prisma.message.count({
-      where: {
-        sessionId: chatId
-      }
+      orderBy: [
+        { createdAt: 'desc' },
+        { id: 'desc' }
+      ],
+      take: effectiveLimit + 1
     })
-  ])
+
+    if (rawMessages.length > effectiveLimit) {
+      hasMore = true
+      const sliced = rawMessages.slice(0, effectiveLimit)
+      nextCursor = sliced[sliced.length - 1].id
+      messages = sliced.reverse()
+    } else {
+      hasMore = false
+      nextCursor = null
+      messages = rawMessages.reverse()
+    }
+  }
+
+  const total = await prisma.message.count({
+    where: {
+      sessionId: chatId
+    }
+  })
 
   const normalizedMessages = messages.map((message) => ({
     ...message,
-    attachments: message.attachments.map((attachment) => ({
+    attachments: message.attachments.map((attachment: any) => ({
       ...attachment,
       sizeBytes: attachment.sizeBytes.toString()
     }))
@@ -78,11 +151,13 @@ export const getMessages = async (
 
   return {
     messages: normalizedMessages,
+    nextCursor,
+    hasMore,
     pagination: {
       page,
-      limit,
+      limit: effectiveLimit,
       total,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / effectiveLimit)
     }
   }
 }

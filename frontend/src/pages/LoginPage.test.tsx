@@ -4,14 +4,21 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import LoginPage from './LoginPage'
 
-const { postMock, getChatsMock, setUserMock, setChatsMock, navigateMock } =
-  vi.hoisted(() => ({
-    postMock: vi.fn(),
-    getChatsMock: vi.fn(),
-    setUserMock: vi.fn(),
-    setChatsMock: vi.fn(),
-    navigateMock: vi.fn(),
-  }))
+const {
+  postMock,
+  getChatsMock,
+  setUserMock,
+  setChatsMock,
+  setCurrentChatIdMock,
+  navigateMock,
+} = vi.hoisted(() => ({
+  postMock: vi.fn(),
+  getChatsMock: vi.fn(),
+  setUserMock: vi.fn(),
+  setChatsMock: vi.fn(),
+  setCurrentChatIdMock: vi.fn(),
+  navigateMock: vi.fn(),
+}))
 
 vi.mock('../services/apiClient', () => ({
   apiClient: {
@@ -31,9 +38,15 @@ vi.mock('../stores/authStore', () => ({
 }))
 
 vi.mock('../stores/chatStore', () => ({
-  useChatStore: (selector: (state: { setChats: typeof setChatsMock }) => unknown) =>
+  useChatStore: (
+    selector: (state: {
+      setChats: typeof setChatsMock
+      setCurrentChatId: typeof setCurrentChatIdMock
+    }) => unknown
+  ) =>
     selector({
       setChats: setChatsMock,
+      setCurrentChatId: setCurrentChatIdMock,
     }),
 }))
 
@@ -142,6 +155,7 @@ describe('LoginPage', () => {
     expect(setUserMock).toHaveBeenCalledWith(userData)
     expect(getChatsMock).toHaveBeenCalledTimes(1)
     expect(setChatsMock).toHaveBeenCalledWith(chats)
+    expect(setCurrentChatIdMock).toHaveBeenCalledWith(null)
     expect(navigateMock).toHaveBeenCalledWith('/chat')
   })
 

@@ -12,6 +12,7 @@ interface ChatState {
   addChat: (chat: ChatSession) => void
   updateChat: (chat: ChatSession) => void
   removeChat: (chatId: string) => void
+  clearChats: () => void
 }
 
 export const useChatStore = create<ChatState>()(
@@ -21,7 +22,13 @@ export const useChatStore = create<ChatState>()(
       currentChatId: null,
 
       setChats: (chats) =>
-        set({ chats }),
+        set((state) => ({
+          chats,
+          currentChatId:
+            state.currentChatId && chats.some((item) => item.id === state.currentChatId)
+              ? state.currentChatId
+              : null
+        })),
 
       setCurrentChatId: (chatId) =>
         set({
@@ -51,7 +58,13 @@ export const useChatStore = create<ChatState>()(
             state.currentChatId === chatId
               ? null
               : state.currentChatId
-        }))
+        })),
+
+      clearChats: () =>
+        set({
+          chats: [],
+          currentChatId: null
+        })
     }),
     {
       name: 'chat-store'

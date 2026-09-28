@@ -23,6 +23,10 @@ const {
   waitDrainedMock,
   flushAllMock,
   resetQueueMock,
+  prependMessagesMock,
+  setPaginationMock,
+  setLoadingOlderMock,
+  setOlderErrorMock,
 } = vi.hoisted(() => ({
   useParamsMock: vi.fn(),
   getMessagesMock: vi.fn(),
@@ -47,6 +51,11 @@ const {
   waitDrainedMock: vi.fn(),
   flushAllMock: vi.fn(),
   resetQueueMock: vi.fn(),
+
+  prependMessagesMock: vi.fn(),
+  setPaginationMock: vi.fn(),
+  setLoadingOlderMock: vi.fn(),
+  setOlderErrorMock: vi.fn(),
 }))
 
 vi.mock('react-router-dom', () => ({
@@ -124,17 +133,27 @@ const createMessage = (
 
 const configureStores = ({
   currentChatId = null as string | null,
+  chats = [] as { id: string; title: string }[],
   messages = [] as ReturnType<typeof createMessage>[],
   loadingMessages = false,
   messageError = null as string | null,
   selectedModelId = 'ollama-qwen3-1.7b' as string | null,
   streamingMessageId = null as string | null,
+  nextCursor = null as string | null,
+  hasMoreOlder = false,
+  loadingOlder = false,
+  olderError = null as string | null,
+  prependMessages = prependMessagesMock,
+  setPagination = setPaginationMock,
+  setLoadingOlder = setLoadingOlderMock,
+  setOlderError = setOlderErrorMock,
   setCurrentChatId = vi.fn(),
 } = {}) => {
   useChatStoreMock.mockImplementation((selector: (state: unknown) => unknown) => {
     const state = {
       currentChatId,
       setCurrentChatId,
+      chats,
     }
     return selector ? selector(state) : state
   })
@@ -152,6 +171,10 @@ const configureStores = ({
       streamingMessageId,
       loadingMessages,
       messageError,
+      nextCursor,
+      hasMoreOlder,
+      loadingOlder,
+      olderError,
 
       switchChat: switchChatMock,
       setCachedMessages: setCachedMessagesMock,
@@ -163,6 +186,10 @@ const configureStores = ({
       setAbortCurrentStream: setAbortCurrentStreamMock,
       saveScrollPosition: saveScrollPositionMock,
       getScrollPosition: getScrollPositionMock,
+      prependMessages,
+      setPagination,
+      setLoadingOlder,
+      setOlderError,
     }
     return selector ? selector(state) : state
   })
@@ -173,6 +200,7 @@ describe('ChatArea', () => {
     vi.clearAllMocks()
 
     HTMLDivElement.prototype.scrollTo = vi.fn()
+    Element.prototype.scrollIntoView = vi.fn()
 
     useParamsMock.mockReturnValue({
       chatId: undefined,
@@ -461,4 +489,60 @@ describe('ChatArea', () => {
 
     expect(regenerateMessageMock).not.toHaveBeenCalled()
   })
+
+  it('should render brand and active chat title in header breadcrumb', () => {
+    configureStores({
+      currentChatId: 'chat-1',
+      chats: [
+        {
+          id: 'chat-1',
+          title: 'Cơ học lượng tử',
+        },
+      ],
+      messages: [],
+    })
+
+    render(<ChatArea />)
+
+    expect(screen.getByText('AI Chat')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Cơ học lượng tử' })
+    ).toBeInTheDocument()
+  })
+
+  it('should render top loading indicator when loading older messages', () => {
+    switchChatMock.mockReturnValue(true)
+
+    configureStores({
+      currentChatId: 'chat-123',
+      messages: [
+        createMessage('m1', 'user', 'Hello'),
+        createMessage('m2', 'assistant', 'World'),
+      ],
+      loadingOlder: true,
+    })
+
+    render(<ChatArea />)
+
+    expect(screen.getByText('Đang tải tin nhắn cũ...')).toBeInTheDocument()
+  })
+
+  it('should render older messages error banner with retry button', () => {
+    switchChatMock.mockReturnValue(true)
+
+    configureStores({
+      currentChatId: 'chat-123',
+      messages: [
+        createMessage('m1', 'user', 'Hello'),
+        createMessage('m2', 'assistant', 'World'),
+      ],
+      olderError: 'Không thể tải tin nhắn cũ.',
+    })
+
+    render(<ChatArea />)
+
+    expect(screen.getByText('Không thể tải tin nhắn cũ.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Thử lại' })).toBeInTheDocument()
+  })
 })
+

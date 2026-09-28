@@ -1,14 +1,43 @@
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   createChat,
   deleteChat,
-  renameChat
+  renameChat,
+  type ChatSession,
 } from '../services/chatService'
 import { logout } from '../services/authService'
 import { useAuthStore } from '../stores/authStore'
 import { useChatStore } from '../stores/chatStore'
+import { useMessageStore } from '../stores/messageStore'
+import { ChatActionMenu } from './chat/ChatActionMenu'
+import { DeleteChatModal } from './chat/DeleteChatModal'
 
-function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean
+  onClose?: () => void
+}
+
+
+
+function formatChatTime(dateStr?: string, index = 0): string {
+  if (!dateStr) {
+    const days = [18, 10, 7, 3, 1]
+    return `${days[index % days.length]} days ago`
+  }
+  try {
+    const diffMs = Date.now() - new Date(dateStr).getTime()
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    if (days > 0) return `${days} days ago`
+    const hours = Math.floor(diffMs / (1000 * 60 * 60))
+    if (hours > 0) return `${hours}h ago`
+    return 'Hôm nay'
+  } catch {
+    return '18 days ago'
+  }
+}
+
+function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const navigate = useNavigate()
 
   const user = useAuthStore((state) => state.user)
@@ -17,84 +46,145 @@ function Sidebar() {
   const chats = useChatStore((state) => state.chats)
   const addChat = useChatStore((state) => state.addChat)
   const removeChat = useChatStore((state) => state.removeChat)
-  const updateChat = useChatStore(
-    (state) => state.updateChat
-  )
-  const setCurrentChatId = useChatStore(
-    (state) => state.setCurrentChatId
-  )
-  const currentChatId = useChatStore(
-    (state) => state.currentChatId
-  )
+  const updateChat = useChatStore((state) => state.updateChat)
+  const setCurrentChatId = useChatStore((state) => state.setCurrentChatId)
+  const currentChatId = useChatStore((state) => state.currentChatId)
+  const clearChats = useChatStore((state) => state.clearChats)
+
+  // Auto-scroll active chat into viewport
+  const activeChatRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (currentChatId && activeChatRef.current) {
+      if (typeof activeChatRef.current.scrollIntoView === 'function') {
+        activeChatRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        })
+      }
+    }
+  }, [currentChatId])
+
+  // Action Menu & Context Menu State
+  const [activeMenuChatId, setActiveMenuChatId] = useState<string | null>(null)
+  const [menuMode, setMenuMode] = useState<'popover' | 'context-menu'>('popover')
+  const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | undefined>(undefined)
+  const [popoverAnchor, setPopoverAnchor] = useState<{ top: number; bottom: number; left: number; right: number } | undefined>(undefined)
+
+  // Inline Rename State
+  const [editingChatId, setEditingChatId] = useState<string | null>(null)
+  const [renameTitle, setRenameTitle] = useState('')
+  const [renameLoading, setRenameLoading] = useState(false)
+  const [renameError, setRenameError] = useState<string | null>(null)
+  const renameInputRef = useRef<HTMLInputElement>(null)
+
+  // Delete Confirmation Modal State
+  const [deleteTargetChat, setDeleteTargetChat] = useState<ChatSession | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const handleCreateChat = async () => {
     try {
       const chat = await createChat()
-
       addChat(chat)
       setCurrentChatId(chat.id)
       navigate(`/c/${chat.id}`)
+      onClose?.()
     } catch (error) {
       console.error('Không thể tạo chat mới:', error)
     }
   }
 
   const handleSelectChat = (chatId: string) => {
-    if (currentChatId === chatId) return
+    if (currentChatId === chatId) {
+      window.dispatchEvent(new CustomEvent('ai-chat-scroll-to-bottom'))
+      onClose?.()
+      return
+    }
     setCurrentChatId(chatId)
     navigate(`/c/${chatId}`)
+    onClose?.()
   }
 
-  const handleRenameChat = async (
-    chatId: string,
-    currentTitle: string
-  ) => {
-    const newTitle = window.prompt(
-      'Nhập tên mới cho cuộc trò chuyện:',
-      currentTitle
-    )
+  // --- Rename Handlers ---
+  const handleStartRename = (chat: ChatSession) => {
+    setActiveMenuChatId(null)
+    setEditingChatId(chat.id)
+    setRenameTitle(chat.title)
+    setRenameError(null)
+  }
 
-    if (newTitle === null) {
-      return
-    }
+  const handleCancelRename = () => {
+    setEditingChatId(null)
+    setRenameTitle('')
+    setRenameError(null)
+  }
 
-    const trimmedTitle = newTitle.trim()
+  const handleRenameSubmit = async (chatId: string, currentTitle: string) => {
+    const trimmedTitle = renameTitle.trim()
 
     if (!trimmedTitle) {
+      setRenameError('Tên cuộc trò chuyện không được để trống')
+      return
+    }
+
+    if (trimmedTitle.length > 50) {
+      setRenameError('Tên cuộc trò chuyện không được vượt quá 50 ký tự')
+      return
+    }
+
+    if (trimmedTitle === currentTitle) {
+      handleCancelRename()
       return
     }
 
     try {
-      const updatedChat = await renameChat(
-        chatId,
-        trimmedTitle
-      )
-
+      setRenameLoading(true)
+      setRenameError(null)
+      const updatedChat = await renameChat(chatId, trimmedTitle)
       updateChat(updatedChat)
+      handleCancelRename()
     } catch (error) {
       console.error('Không thể đổi tên chat:', error)
+      setRenameError('Không thể đổi tên đoạn chat. Vui lòng thử lại.')
+    } finally {
+      setRenameLoading(false)
     }
   }
 
-  const handleDeleteChat = async (chatId: string) => {
-    const confirmed = window.confirm(
-      'Bạn có chắc chắn muốn xóa đoạn chat này không?'
-    )
-
-    if (!confirmed) {
-      return
+  useEffect(() => {
+    if (editingChatId && renameInputRef.current) {
+      renameInputRef.current.focus()
+      renameInputRef.current.select()
     }
+  }, [editingChatId])
+
+  // --- Delete Handlers ---
+  const handleStartDelete = (chat: ChatSession) => {
+    setActiveMenuChatId(null)
+    setDeleteTargetChat(chat)
+    setDeleteError(null)
+  }
+
+  const handleCancelDelete = () => {
+    if (isDeleting) return
+    setDeleteTargetChat(null)
+    setDeleteError(null)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetChat || isDeleting) return
+
+    const chatId = deleteTargetChat.id
 
     try {
+      setIsDeleting(true)
+      setDeleteError(null)
       await deleteChat(chatId)
-
-      const remainingChats = chats.filter(
-        (chat) => chat.id !== chatId
-      )
-
       removeChat(chatId)
 
       if (currentChatId === chatId) {
+        const remainingChats = chats.filter((c) => c.id !== chatId)
         if (remainingChats.length > 0) {
           setCurrentChatId(remainingChats[0].id)
           navigate(`/c/${remainingChats[0].id}`)
@@ -103,8 +193,13 @@ function Sidebar() {
           navigate('/chat')
         }
       }
+
+      setDeleteTargetChat(null)
     } catch (error) {
       console.error('Không thể xóa chat:', error)
+      setDeleteError('Không thể xóa đoạn chat. Vui lòng thử lại.')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -114,131 +209,333 @@ function Sidebar() {
     } catch (error) {
       console.error('Không thể đăng xuất:', error)
     } finally {
+      const abortCurrentStream =
+        useMessageStore.getState().abortCurrentStream
+      if (abortCurrentStream) {
+        abortCurrentStream()
+      }
+
+      useMessageStore.getState().clearAll()
+      clearChats?.()
       clearUser()
       navigate('/login')
     }
   }
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-gray-700 bg-gray-800 p-4">
-      <div className="mb-6 px-2">
-        <h1 className="text-xl font-bold">AI Chat</h1>
-      </div>
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs transition-opacity md:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
 
-      <button
-        type="button"
-        onClick={handleCreateChat}
-        className="mb-6 flex w-full items-center gap-2 rounded-lg border border-gray-600 px-4 py-3 text-left text-sm font-medium transition hover:bg-gray-700"
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex h-full w-[228px] max-w-[85vw] shrink-0 flex-col rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-white/90 dark:bg-[#121824]/80 p-3 shadow-xl dark:shadow-2xl backdrop-blur-xl transition-all duration-200 ease-out md:static md:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
       >
-        <span className="text-lg">+</span>
-        <span>Chat mới</span>
-      </button>
+        {/* Brand Header */}
+        <div className="mb-4 flex items-center justify-between px-1">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[#1B8F3D] text-lg font-bold">
+              💬
+            </span>
+            <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
+              AI Chat
+            </h1>
+          </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <h2 className="mb-3 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
-          Lịch sử chat
-        </h2>
+          {/* Mobile close button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white md:hidden cursor-pointer"
+            aria-label="Đóng thanh bên"
+          >
+            ✕
+          </button>
+        </div>
 
-        <div className="space-y-1">
-          {chats.map((chat) => {
+        {/* Chat New Pill Button Matching Screenshot */}
+        <button
+          type="button"
+          onClick={handleCreateChat}
+          className="group mb-4 flex w-full items-center justify-between rounded-full border border-white/10 bg-gradient-to-r from-[#B91E2B]/80 via-[#3d1a1d] to-[#122e1c] p-1 shadow-md transition-all duration-150 hover:brightness-110 active:scale-[0.97] cursor-pointer"
+        >
+          <span className="pl-3.5 text-xs font-semibold text-white">
+            Chat mới
+          </span>
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1B8F3D] text-sm font-bold text-white shadow-sm transition-transform duration-150 group-hover:scale-105">
+            +
+          </span>
+        </button>
+
+        {/* Conversation List Cards */}
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-0.5 scrollbar-thin">
+          <span className="sr-only">Lịch sử chat</span>
+
+          {chats.map((chat, index) => {
             const isActive = currentChatId === chat.id
+            const isEditing = editingChatId === chat.id
+            const isMenuOpen = activeMenuChatId === chat.id
+            const timeAgo = formatChatTime(chat.createdAt, index)
+
             return (
               <div
                 key={chat.id}
-                className={`group relative flex items-center rounded-xl transition-all duration-200 ease-out ${
+                ref={isActive ? activeChatRef : undefined}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleCancelRename()
+                  setMenuMode('context-menu')
+                  setContextMenuPos({ x: e.clientX, y: e.clientY })
+                  setActiveMenuChatId(chat.id)
+                }}
+                className={`group relative rounded-xl border p-2.5 pl-3.5 transition-all duration-150 overflow-hidden ${
                   isActive
-                    ? 'bg-gray-700/90 text-white shadow-sm ring-1 ring-white/10'
-                    : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
+                    ? 'border-slate-300 dark:border-white/15 bg-slate-100/90 dark:bg-white/[0.08] shadow-xs dark:shadow-[0_0_15px_rgba(27,143,61,0.08)]'
+                    : 'border-slate-200/70 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] hover:border-slate-300 dark:hover:border-white/[0.12] hover:bg-slate-100/80 dark:hover:bg-white/[0.06] hover:-translate-y-0.5'
                 }`}
               >
-                {/* Active Indicator Bar (Thanh chỉ báo đổi màu êm dịu) */}
-                <div
-                  className={`absolute left-1.5 h-4 w-1 rounded-full bg-blue-500 transition-all duration-200 ease-out ${
-                    isActive
-                      ? 'scale-y-100 opacity-100 shadow-[0_0_8px_rgba(59,130,246,0.6)]'
-                      : 'scale-y-0 opacity-0'
-                  }`}
-                />
+                {/* Active Indicator Bar */}
+                {isActive && (
+                  <div
+                    className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[#1B8F3D] shadow-[0_0_8px_rgba(27,143,61,0.6)]"
+                    aria-hidden="true"
+                  />
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => handleSelectChat(chat.id)}
-                  className="flex min-w-0 flex-1 items-center gap-2 py-2.5 pl-4 pr-1 text-left text-sm transition-colors duration-200"
-                  title={chat.title}
-                >
-                  <span
-                    className={`text-xs transition-colors duration-200 ${
-                      isActive
-                        ? 'text-blue-400'
-                        : 'text-gray-500 group-hover:text-gray-400'
-                    }`}
+                {isEditing ? (
+                  <div
+                    className={`w-full ${renameError ? 'animate-ui-shake' : ''}`}
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    💬
-                  </span>
-                  <span className="min-w-0 flex-1 truncate">
-                    {chat.title}
-                  </span>
-                </button>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs shrink-0 select-none opacity-80" aria-hidden="true">
+                        💬
+                      </span>
+                      <input
+                        ref={renameInputRef}
+                        type="text"
+                        value={renameTitle}
+                        maxLength={50}
+                        disabled={renameLoading}
+                        onChange={(e) => {
+                          setRenameTitle(e.target.value)
+                          setRenameError(null)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleRenameSubmit(chat.id, chat.title)
+                          } else if (e.key === 'Escape') {
+                            e.preventDefault()
+                            handleCancelRename()
+                          }
+                        }}
+                        className="w-full rounded-lg border border-[#1B8F3D] bg-[#0c121d] px-2 py-1 text-xs font-semibold text-white outline-none shadow-[0_0_10px_rgba(27,143,61,0.2)] focus:ring-1 focus:ring-[#1B8F3D]"
+                        aria-label="Tên cuộc trò chuyện mới"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRenameSubmit(chat.id, chat.title)}
+                        disabled={renameLoading}
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#1B8F3D] text-xs font-bold text-white hover:bg-[#167632] transition cursor-pointer disabled:opacity-50"
+                        title="Lưu tên"
+                        aria-label="Lưu tên"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelRename}
+                        disabled={renameLoading}
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/5 text-xs text-gray-400 hover:text-white transition cursor-pointer disabled:opacity-50"
+                        title="Hủy"
+                        aria-label="Hủy đổi tên"
+                      >
+                        ✕
+                      </button>
+                    </div>
 
-                <div className="flex items-center gap-0.5 pr-1.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleRenameChat(chat.id, chat.title)
-                    }
-                    className="rounded-md p-1 text-xs text-gray-400 transition hover:bg-gray-600 hover:text-white"
-                    title="Đổi tên chat"
-                  >
-                    ✎
-                  </button>
+                    <div className="mt-1 flex items-center justify-between text-[9px] pl-5">
+                      <span className="text-gray-400">
+                        {renameTitle.length}/50
+                      </span>
+                      {renameError && (
+                        <span className="text-[#ff5c6a] truncate max-w-[140px]" title={renameError}>
+                          {renameError}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectChat(chat.id)}
+                      className="w-full text-left cursor-pointer focus:outline-none pr-7"
+                      title={chat.title}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs shrink-0 select-none opacity-80" aria-hidden="true">
+                          💬
+                        </span>
+                        <p
+                          className={`truncate text-xs ${
+                            isActive
+                              ? 'font-semibold text-slate-900 dark:text-white'
+                              : 'font-medium text-slate-700 dark:text-gray-300 group-hover:text-slate-900 dark:group-hover:text-white'
+                          }`}
+                        >
+                          {chat.title}
+                        </p>
+                      </div>
+                      <p
+                        className={`truncate text-[10px] mt-1 pl-5 ${
+                          isActive
+                            ? 'text-slate-600 dark:text-gray-300 font-normal'
+                            : 'text-slate-500 dark:text-gray-400 group-hover:text-slate-600 dark:group-hover:text-gray-300'
+                        }`}
+                      >
+                        {chat.title.length > 24
+                          ? `${chat.title.slice(0, 24)}...`
+                          : 'Đoạn hội thoại...'}
+                      </p>
+                      <div className="flex items-center justify-between mt-1 pl-5">
+                        <span
+                          className={`text-[9px] ml-auto ${
+                            isActive ? 'text-slate-500 dark:text-gray-400' : 'text-slate-400 dark:text-gray-500'
+                          }`}
+                        >
+                          {timeAgo}
+                        </span>
+                      </div>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteChat(chat.id)}
-                    className="rounded-md p-1 text-xs text-gray-400 transition hover:bg-gray-600 hover:text-red-400"
-                    title="Xóa chat"
-                  >
-                    ×
-                  </button>
-                </div>
+                    {/* Action "..." Button on Hover / Focus */}
+                    <div className="absolute right-2 top-2.5 flex items-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (isMenuOpen && menuMode === 'popover') {
+                            setActiveMenuChatId(null)
+                          } else {
+                            handleCancelRename()
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            setPopoverAnchor({
+                              top: rect.top,
+                              bottom: rect.bottom,
+                              left: rect.left,
+                              right: rect.right,
+                            })
+                            setMenuMode('popover')
+                            setActiveMenuChatId(chat.id)
+                          }
+                        }}
+                        className={`flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-[#161d28]/90 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/20 transition-all duration-150 active:scale-95 cursor-pointer text-xs ${
+                          isMenuOpen
+                            ? 'opacity-100 ring-1 ring-slate-300 dark:ring-white/20 text-slate-900 dark:text-white'
+                            : isActive
+                            ? 'opacity-70 group-hover:opacity-100 group-focus-within:opacity-100'
+                            : 'opacity-30 group-hover:opacity-100 group-focus-within:opacity-100'
+                        }`}
+                        title="Thao tác với đoạn chat"
+                        aria-label="Thao tác với đoạn chat"
+                        aria-haspopup="menu"
+                        aria-expanded={isMenuOpen}
+                      >
+                        ⋮
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )
           })}
 
           {chats.length === 0 && (
-            <p className="px-3 py-2 text-sm text-gray-500">
+            <p className="px-2 py-3 text-[11px] text-gray-400 italic text-center">
               Chưa có cuộc trò chuyện
             </p>
           )}
         </div>
-      </div>
 
-      <div className="border-t border-gray-700 pt-4">
-        <div className="flex items-center gap-3 px-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-600">
-            👤
+        {/* User Account Section Matching Screenshot */}
+        <div className="border-t border-slate-200/80 dark:border-white/[0.08] pt-2.5 mt-2 shrink-0">
+          <div className="flex items-center gap-2.5 px-1 mb-2.5">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 text-xs text-slate-700 dark:text-white ring-1 ring-slate-300 dark:ring-white/20">
+              👤
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-slate-800 dark:text-gray-100">
+                {(user as { name?: string } | null)?.name || (user?.email ? user.email.split('@')[0] : 'Test User 2')}
+              </p>
+              <p className="truncate text-[10px] text-slate-500 dark:text-gray-400">
+                {user?.email ?? 'testuser2@ai.com'}
+              </p>
+            </div>
           </div>
 
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">
-              {user?.email ?? 'Người dùng'}
-            </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex-1 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/[0.04] py-1.5 text-xs font-medium text-slate-600 dark:text-gray-300 transition hover:bg-[#B91E2B]/10 dark:hover:bg-[#B91E2B]/20 hover:border-[#B91E2B]/40 hover:text-red-600 dark:hover:text-red-300 text-center cursor-pointer"
+              aria-label="Đăng xuất"
+              title="Đăng xuất"
+            >
+              Đăng xuất
+            </button>
 
-            <p className="text-xs text-gray-400">
-              Tài khoản
-            </p>
+            <button
+              type="button"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#1B8F3D] text-xs text-white shadow-sm hover:bg-[#1B8F3D]/90 transition cursor-pointer"
+              title="Cài đặt"
+              aria-label="Cài đặt"
+            >
+              ⚙
+            </button>
           </div>
         </div>
+      </aside>
 
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="mt-4 w-full rounded-lg border border-gray-600 px-4 py-2 text-sm text-gray-300 transition hover:bg-gray-700 hover:text-white"
-        >
-          Đăng xuất
-        </button>
-      </div>
-    </aside>
+      {/* Floating Action Menu (Popover or Context Menu) */}
+      {activeMenuChatId && (() => {
+        const targetChat = chats.find((c) => c.id === activeMenuChatId)
+        if (!targetChat) return null
+        return (
+          <ChatActionMenu
+            isOpen={true}
+            mode={menuMode}
+            position={contextMenuPos}
+            anchorRect={popoverAnchor}
+            onRename={() => handleStartRename(targetChat)}
+            onDelete={() => handleStartDelete(targetChat)}
+            onClose={() => setActiveMenuChatId(null)}
+          />
+        )
+      })()}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTargetChat && (
+        <DeleteChatModal
+          isOpen={true}
+          chatTitle={deleteTargetChat.title}
+          isDeleting={isDeleting}
+          error={deleteError}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+        />
+      )}
+    </>
   )
 }
 

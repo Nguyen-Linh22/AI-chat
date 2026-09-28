@@ -18,11 +18,25 @@ export interface Message {
   attachments: Attachment[]
 }
 
+export interface GetMessagesResponse {
+  messages: Message[]
+  nextCursor: string | null
+  hasMore: boolean
+}
+
 export const getMessages = async (
-  chatId: string
-): Promise<Message[]> => {
+  chatId: string,
+  limit: number = 30,
+  before?: string
+): Promise<GetMessagesResponse> => {
+  const params = new URLSearchParams()
+  params.set('limit', limit.toString())
+  if (before) {
+    params.set('before', before)
+  }
+
   const response = await apiClient.get(
-    `/api/chats/${chatId}/messages?limit=100`
+    `/api/chats/${chatId}/messages?${params.toString()}`
   )
 
   if (!response.ok) {
@@ -31,10 +45,16 @@ export const getMessages = async (
 
   const data = await response.json()
 
-  return (data.messages as Message[]).map((msg) => ({
+  const normalizedMessages = (data.messages as Message[]).map((msg) => ({
     ...msg,
     role: msg.role === ('ai' as string) ? 'assistant' : msg.role
   })) as Message[]
+
+  return {
+    messages: normalizedMessages,
+    nextCursor: data.nextCursor ?? null,
+    hasMore: Boolean(data.hasMore)
+  }
 }
 
 export interface SendMessageResponse {
