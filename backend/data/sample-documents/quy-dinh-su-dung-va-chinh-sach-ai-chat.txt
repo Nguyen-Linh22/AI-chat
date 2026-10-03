@@ -1,0 +1,45 @@
+# QUY ĐỊNH DỊCH VỤ, CHÍNH SÁCH HOÀN TIỀN VÀ HẠN MỨC SỬ DỤNG AI CHAT
+
+Cập nhật lần cuối: Tháng 09/2026
+Phiên bản tài liệu: 1.0.0
+
+## 1. Giới thiệu tổng quan về nền tảng AI Chat
+Nền tảng AI Chat là hệ thống trợ lý ảo thông minh đa mô hình, tích hợp các công nghệ xử lý ngôn ngữ tự nhiên tiên tiến như Google Gemini, Qwen và OpenAI. Ứng dụng cung cấp các tính năng trò chuyện theo thời gian thực (Server-Sent Events streaming), quản lý lịch sử hội thoại, phân tích tài liệu đính kèm và truy vấn tri thức chuyên sâu (RAG - Retrieval Augmented Generation).
+
+## 2. Các gói dịch vụ và Hạn mức Token
+Hệ thống cung cấp 3 hạng gói dịch vụ cho người dùng:
+- Gói Miễn phí (Free Tier): 
+  + Hạn mức 50 tin nhắn mỗi ngày.
+  + Hỗ trợ mô hình tiêu chuẩn Qwen 3 1.7B và Gemini 2.5 Flash.
+  + Dung lượng tệp đính kèm tối đa 5MB mỗi tệp, tối đa 3 tệp mỗi ngày.
+- Gói Chuyên nghiệp (Pro Tier - 199.000 VNĐ / tháng):
+  + Không giới hạn số lượng tin nhắn cơ bản.
+  + Hạn mức 2.000.000 token xử lý tốc độ cao mỗi tháng.
+  + Truy cập các mô hình nâng cao: GPT-4o, Gemini 2.5 Pro và Qwen Plus.
+  + Dung lượng tệp đính kèm tối đa 50MB, hỗ trợ tải lên tài liệu PDF, DOCX, TXT.
+  + Ưu tiên băng thông đường truyền và thời gian phản hồi dưới 500ms.
+- Gói Doanh nghiệp (Enterprise Tier - Theo hợp đồng):
+  + Tùy chỉnh mô hình riêng và kết nối cơ sở tri thức nội bộ bảo mật.
+  + Hạn mức token chuyên dụng và cam kết SLA hoạt động 99.9%.
+
+## 3. Chính sách Hoàn tiền và Hủy đăng ký
+Chính sách hoàn tiền của AI Chat được thiết kế minh bạch và đảm bảo quyền lợi tối đa cho khách hàng:
+- Điều kiện hoàn tiền 100%: Người dùng đăng ký gói Pro lần đầu có quyền yêu cầu hoàn tiền 100% trong vòng 7 ngày kể từ ngày thanh toán nếu phát sinh lỗi hệ thống hoặc không hài lòng với dịch vụ, với điều kiện tổng lượng token đã tiêu thụ chưa vượt quá 100.000 token.
+- Hoàn tiền theo tỷ lệ sử dụng (Prorated Refund): Trường hợp có sự cố kỹ thuật gián đoạn dịch vụ kéo dài hơn 24 giờ liên tục được xác nhận bởi đội ngũ kỹ thuật, người dùng sẽ được hoàn tiền tương ứng với số ngày gián đoạn hoặc được cộng thêm 7 ngày sử dụng miễn phí.
+- Trường hợp không áp dụng hoàn tiền:
+  + Yêu cầu gửi sau thời hạn 7 ngày kể từ ngày thanh toán.
+  + Tài khoản bị khóa do vi phạm Điều khoản Sử dụng (spam, tấn công dịch vụ, lạm dụng mã độc).
+  + Người dùng đã tiêu thụ trên 50% hạn mức token của tháng thanh toán.
+- Thời gian xử lý hoàn tiền: Yêu cầu hoàn tiền được xét duyệt trong vòng 24 - 48 giờ làm việc. Tiền sẽ được hoàn trả về tài khoản ngân hàng hoặc thẻ thanh toán ban đầu của khách hàng trong vòng 3 - 5 ngày làm việc tùy thuộc vào ngân hàng thụ hưởng.
+
+## 4. Bảo mật dữ liệu và Quyền riêng tư người dùng
+Chúng tôi cam kết bảo vệ dữ liệu người dùng theo tiêu chuẩn an toàn thông tin cao nhất:
+- Dữ liệu tin nhắn và tệp đính kèm được mã hóa khi truyền tải (TLS 1.3) và khi lưu trữ (AES-256).
+- Nội dung hội thoại cá nhân của người dùng KHÔNG bao giờ được sử dụng để huấn luyện (train) các mô hình AI công cộng khi chưa có sự đồng ý bằng văn bản.
+- Người dùng có toàn quyền xóa lịch sử đoạn chat hoặc yêu cầu xóa vĩnh viễn toàn bộ tài khoản và dữ liệu liên quan bất kỳ lúc nào thông qua phần Cài đặt tài khoản. Sau khi xác nhận xóa, dữ liệu sẽ được thanh lọc hoàn toàn khỏi máy chủ lưu trữ trong vòng 30 ngày.
+
+## 5. Hướng dẫn Xử lý sự cố và Kênh hỗ trợ kỹ thuật
+Khi gặp sự cố gián đoạn kết nối, lỗi sinh văn bản hoặc vấn đề thanh toán, người dùng có thể thực hiện theo các bước sau:
+- Bước 1: Làm mới trang (Ctrl + F5) hoặc kiểm tra trạng thái mạng cá nhân.
+- Bước 2: Kiểm tra hạn mức sử dụng trong phần Thông tin tài khoản để đảm bảo tài khoản chưa vượt quá quota ngày/tháng.
+- Bước 3: Nếu lỗi vẫn tiếp diễn, gửi thông báo lỗi kèm ảnh chụp màn hình đến bộ phận Chăm sóc khách hàng qua email: support@aichatclone.vn hoặc hotline: 1900 8888 (hoạt động từ 8h00 đến 21h00 các ngày từ Thứ Hai đến Thứ Bảy).
