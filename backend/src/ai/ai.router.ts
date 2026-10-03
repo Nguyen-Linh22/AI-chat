@@ -10,6 +10,11 @@ export const createAIProvider = (
 ): AIProvider => {
   switch (providerName) {
     case 'ollama':
+      if (process.env.NODE_ENV === 'production' && !process.env.OLLAMA_BASE_URL) {
+        throw new Error(
+          'OLLAMA_BASE_URL chưa được cấu hình cho môi trường production'
+        )
+      }
       return new OllamaProvider()
 
     case 'openai': {

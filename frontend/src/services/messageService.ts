@@ -1,4 +1,4 @@
-import { apiClient } from './apiClient'
+import { apiClient, API_URL } from './apiClient'
 
 export interface Attachment {
   id: string
@@ -92,7 +92,7 @@ export const regenerateMessage = async (
   signal?: AbortSignal
 ): Promise<void> => {
   const response = await fetch(
-    `http://localhost:3000/api/chats/${chatId}/messages/${messageId}/regenerate`,
+    `${API_URL}/api/chats/${chatId}/messages/${messageId}/regenerate`,
     {
       method: 'POST',
       headers: {

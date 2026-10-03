@@ -1,4 +1,5 @@
 import type { Message } from './messageService'
+import { API_URL } from './apiClient'
 
 interface StreamMessageResult {
   userMessage: Message
@@ -23,7 +24,7 @@ export const streamMessage = async (
   }
 
   const response = await fetch(
-    `http://localhost:3000/api/chats/${chatId}/messages/stream`,
+    `${API_URL}/api/chats/${chatId}/messages/stream`,
     {
       method: 'POST',
       credentials: 'include',
