@@ -8,9 +8,13 @@ import authRouter from './routes/auth.routes.js'
 import chatRouter from './routes/chat.routes.js'
 import messageRouter from './routes/message.routes.js'
 import { loggerMiddleware } from './middlewares/logger.middleware.js'
+import { csrfProtectionMiddleware } from './middlewares/csrf.middleware.js'
+import { getAllowedOrigins } from './config/cors.config.js'
 import uploadRouter from './routes/upload.routes.js'
 import aiRouter from './routes/ai.routes.js'
 import { errorHandler } from './middlewares/error.middleware.js'
+
+export { getAllowedOrigins }
 
 const app = express()
 
@@ -60,12 +64,6 @@ app.use((_req, res, next) => {
   next()
 })
 
-export const getAllowedOrigins = (): string[] => {
-  if (process.env.FRONTEND_URL) {
-    return [process.env.FRONTEND_URL]
-  }
-  return process.env.NODE_ENV === 'production' ? [] : ['http://localhost:5173']
-}
 
 app.use(
   cors({
@@ -94,6 +92,7 @@ app.get('/', (_req, res) => {
   })
 })
 
+app.use('/api', csrfProtectionMiddleware)
 app.use('/api', healthRouter)
 app.use('/api/auth', authRouter)
 app.use('/api/chats', chatRouter)
