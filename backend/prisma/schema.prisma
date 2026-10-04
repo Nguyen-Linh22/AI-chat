@@ -47,10 +47,11 @@ model Attachment {
   fileName      String   @db.VarChar(255)
   fileUrl       String   @db.VarChar(2048)
   fileType      String   @db.VarChar(100)
-  sizeBytes     BigInt
-  extractedText String?  @db.Text
-  createdAt     DateTime @default(now())
-  message       Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  sizeBytes          BigInt
+  extractedText      String?  @db.Text
+  cloudinaryPublicId String?  @db.VarChar(255)
+  createdAt          DateTime @default(now())
+  message            Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@index([messageId])
 }

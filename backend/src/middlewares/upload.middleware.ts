@@ -1,10 +1,12 @@
 import multer from 'multer'
 import { Request, Response, NextFunction } from 'express'
 import path from 'path'
+import { UPLOAD_DIR, ensureUploadDir } from '../config/upload.config.js'
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    cb(null, 'uploads/')
+    const destDir = ensureUploadDir(UPLOAD_DIR)
+    cb(null, destDir)
   },
 
   filename: (_req, file, cb) => {

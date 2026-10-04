@@ -4,6 +4,9 @@ node_modules/
 .env
 .env.e2e
 
+# Temporary uploads
+uploads/
+
 # Prisma generated client
 /src/generated/prisma
 

@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js'
+import { cleanupCloudinaryAttachments } from './cloudinary.service.js'
 
 export const createMessage = async (
   chatId: string,
@@ -174,11 +175,18 @@ export const deleteMessage = async (
       session: {
         userId
       }
+    },
+    include: {
+      attachments: true
     }
   })
 
   if (!message) {
     return null
+  }
+
+  if (message.attachments && message.attachments.length > 0) {
+    await cleanupCloudinaryAttachments(message.attachments)
   }
 
   await prisma.message.delete({

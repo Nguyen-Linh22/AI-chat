@@ -109,7 +109,8 @@ export const streamChatResponse = async (
             fileUrl: cloudinaryResult.secure_url,
             fileType: file.mimetype,
             sizeBytes: BigInt(file.size),
-            extractedText
+            extractedText,
+            cloudinaryPublicId: uploadedPublicId
           }
         })
         isSavedInDb = true

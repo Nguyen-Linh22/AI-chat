@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js'
+import { cleanupCloudinaryAttachments } from './cloudinary.service.js'
 
 export const createChat = async (userId: string) => {
   const chat = await prisma.chatSession.create({
@@ -75,6 +76,22 @@ export const deleteChat = async (
 
   if (!chat) {
     return null
+  }
+
+  const attachments = await prisma.attachment.findMany({
+    where: {
+      message: {
+        sessionId: chatId
+      }
+    },
+    select: {
+      cloudinaryPublicId: true,
+      fileType: true
+    }
+  })
+
+  if (attachments.length > 0) {
+    await cleanupCloudinaryAttachments(attachments)
   }
 
   await prisma.chatSession.delete({
