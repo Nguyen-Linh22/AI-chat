@@ -2,7 +2,7 @@ import request from 'supertest'
 import { describe, it, expect, afterEach } from 'vitest'
 import app from '../../src/app.js'
 import { prisma } from '../../src/lib/prisma.js'
-import { authRateLimiter } from '../../src/middlewares/rate-limit.middleware.js'
+import { authRateLimiter, uploadRateLimiter } from '../../src/middlewares/rate-limit.middleware.js'
 
 const createTestUser = async () => {
   const agent = request.agent(app)
@@ -415,4 +415,24 @@ describe('Attachment API', () => {
     expect(attachment?.fileType).toBe('application/pdf')
     expect(attachment?.extractedText).toContain('PDF extraction test')
   })
+
+  it('should return 429 when exceeding the upload rate limit of 10 requests per 15 minutes', async () => {
+    const { agent, messageId } = await createTestMessage()
+
+    for (let i = 0; i < 10; i++) {
+      const res = await agent
+        .post(`/api/uploads/${messageId}`)
+        .attach('file', Buffer.from(`Valid text content ${i}`), `test-${i}.txt`)
+      expect(res.status).toBe(201)
+    }
+
+    const response = await agent
+      .post(`/api/uploads/${messageId}`)
+      .attach('file', Buffer.from('Valid text content 11'), 'test-11.txt')
+
+    expect(response.status).toBe(429)
+    expect(response.body).toEqual({
+      message: 'Bạn đã tải lên quá nhiều file. Vui lòng thử lại sau 15 phút.'
+    })
+  }, 30000)
 })

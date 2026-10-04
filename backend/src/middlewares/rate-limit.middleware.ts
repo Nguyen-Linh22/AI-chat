@@ -57,6 +57,38 @@ export const aiRateLimiter = rateLimit({
 })
 
 /**
+ * Rate limiter cho các endpoint upload file đính kèm.
+ * Chống spam upload, bảo vệ dung lượng đĩa tạm thời, RAM và Cloudinary quota.
+ * Giới hạn: 10 requests / 15 phút theo User ID (hoặc IP nếu chưa qua auth).
+ */
+export const uploadRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 phút
+  limit: 10, // tối đa 10 requests / 15 phút / user
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request): string => {
+    // Ưu tiên định danh theo userId của user đã đăng nhập
+    if (req.userId) {
+      return `user_${req.userId}`
+    }
+    // Fallback theo chuẩn IP an toàn (hỗ trợ cả IPv4 và IPv6)
+    const rawIp = req.ip || req.socket.remoteAddress || 'anonymous'
+    return ipKeyGenerator(rawIp)
+  },
+  message: {
+    message: 'Bạn đã tải lên quá nhiều file. Vui lòng thử lại sau 15 phút.'
+  },
+  handler: (req: Request, res: Response, _next, options) => {
+    logRateLimitExceeded({
+      route: req.originalUrl || req.path,
+      userId: req.userId,
+      ip: req.ip || req.socket.remoteAddress
+    })
+    res.status(options.statusCode).json(options.message)
+  }
+})
+
+/**
  * Quản lý số lượng yêu cầu AI đang xử lý đồng thời trên mỗi user.
  * Chống tình huống một user mở nhiều luồng stream/chat song song làm cạn kiệt tài nguyên server.
  * Giới hạn: tối đa 1 yêu cầu AI đang hoạt động cùng lúc trên mỗi user.
