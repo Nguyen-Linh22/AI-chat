@@ -322,6 +322,7 @@ describe('Authentication API', () => {
       expect(authCookie).toContain('SameSite=Lax')
       expect(authCookie).toContain('Path=/')
       expect(authCookie).toContain('Max-Age=604800')
+      expect(authCookie).not.toContain('Domain=')
 
       expect(response.body).not.toHaveProperty('accessToken')
       expect(response.body).not.toHaveProperty('token')
@@ -373,6 +374,15 @@ describe('Authentication API', () => {
         .post('/api/auth/logout')
 
       expect(logoutResponse.status).toBe(200)
+
+      const logoutCookies = logoutResponse.headers['set-cookie'] as unknown as string[]
+      expect(logoutCookies).toBeDefined()
+      const clearCookie = logoutCookies.find((cookie: string) => cookie.startsWith('token='))
+      expect(clearCookie).toBeDefined()
+      expect(clearCookie).toContain('HttpOnly')
+      expect(clearCookie).toContain('SameSite=Lax')
+      expect(clearCookie).toContain('Path=/')
+      expect(clearCookie).not.toContain('Domain=')
 
       const afterLogout = await request(app)
         .get('/api/auth/me')

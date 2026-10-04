@@ -5,8 +5,12 @@ import {
   getCurrentUser,
   revokeUserSessions
 } from '../services/auth.service.js'
+import {
+  getAuthCookieOptions,
+  getAuthClearCookieOptions
+} from '../config/cookie.config.js'
 
-const isProduction = () => process.env.NODE_ENV === 'production'
+export { getAuthCookieOptions, getAuthClearCookieOptions }
 
 export const register = async (
   req: Request,
@@ -51,13 +55,7 @@ export const login = async (
   password
 )
 
-    res.cookie('token', accessToken, {
-      httpOnly: true,
-      secure: isProduction(),
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000
-    })
+    res.cookie('token', accessToken, getAuthCookieOptions())
 
 return res.status(200).json({
   message: 'Đăng nhập thành công',
@@ -129,12 +127,7 @@ export const logout = async (
     console.error('Revoke user session error on logout:', error)
   }
 
-  res.clearCookie('token', {
-    httpOnly: true,
-    secure: isProduction(),
-    sameSite: 'lax',
-    path: '/'
-  })
+  res.clearCookie('token', getAuthClearCookieOptions())
 
   return res.status(200).json({
     message: 'Đăng xuất thành công'
