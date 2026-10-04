@@ -225,7 +225,9 @@ export const deleteMessageController = async (
 
     return res.status(200).json({
       message: 'Xóa tin nhắn thành công',
-      data: message
+      data: {
+        id: message.id
+      }
     })
   } catch (error) {
     console.error('Delete message error:', error)

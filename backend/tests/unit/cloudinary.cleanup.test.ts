@@ -248,6 +248,24 @@ describe('Cloudinary Orphan Cleanup & Asset Lifecycle', () => {
       })
       expect(result).toBeDefined()
     })
+
+    it('should normalize BigInt sizeBytes on attachments to prevent JSON serialization errors', async () => {
+      prismaMessageFindFirstMock.mockResolvedValueOnce({
+        id: 'msg-bigint',
+        sessionId: 'chat-1',
+        attachments: [
+          { cloudinaryPublicId: 'cloud_msg_att_bigint', fileType: 'text/plain', sizeBytes: 1234567890123456789n }
+        ]
+      })
+      cloudinaryDestroyMock.mockResolvedValue({ result: 'ok' })
+      prismaMessageDeleteMock.mockResolvedValueOnce({ id: 'msg-bigint' })
+
+      const result = await deleteMessage('chat-1', 'msg-bigint', 'user-1')
+
+      expect(result).toBeDefined()
+      expect(result?.attachments[0].sizeBytes).toBe('1234567890123456789')
+      expect(() => JSON.stringify(result)).not.toThrow()
+    })
   })
 
   describe('Chat Deletion Orphan Cleanup', () => {

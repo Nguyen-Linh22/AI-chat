@@ -1,6 +1,7 @@
 import request from 'supertest'
 import { describe, expect, it, afterEach } from 'vitest'
 import app from '../../src/app.js'
+import { prisma } from '../../src/lib/prisma.js'
 import {
   authRateLimiter,
   aiRateLimiter
@@ -302,5 +303,81 @@ describe('Message API', () => {
       .delete(`/api/chats/${chatId}/messages/${messageId}`)
 
     expect(response.status).toBe(404)
+  })
+
+  it('DELETE /api/chats/:chatId/messages/:messageId - delete message with attachment (BigInt sizeBytes) succeeds with 200 and no BigInt serialization error', async () => {
+    const agent = await createTestUser()
+    const chatId = await createTestChat(agent)
+
+    // Create a message in DB with an attachment containing BigInt sizeBytes
+    const message = await prisma.message.create({
+      data: {
+        sessionId: chatId,
+        role: 'user',
+        content: 'Message with attachment to delete',
+        attachments: {
+          create: {
+            fileName: 'test-doc.txt',
+            fileUrl: 'https://res.cloudinary.com/test/raw/upload/test-doc.txt',
+            fileType: 'text/plain',
+            sizeBytes: BigInt(1024),
+            cloudinaryPublicId: 'test_doc_public_id'
+          }
+        }
+      },
+      include: {
+        attachments: true
+      }
+    })
+
+    expect(message.attachments[0].sizeBytes).toBe(1024n)
+
+    const response = await agent
+      .delete(`/api/chats/${chatId}/messages/${message.id}`)
+
+    expect(response.status).toBe(200)
+    expect(response.body).toEqual({
+      message: 'Xóa tin nhắn thành công',
+      data: {
+        id: message.id
+      }
+    })
+
+    // Verify message is deleted from DB
+    const dbMessage = await prisma.message.findUnique({
+      where: { id: message.id }
+    })
+    expect(dbMessage).toBeNull()
+
+    // Verify attachment is cascaded and deleted from DB
+    const dbAttachment = await prisma.attachment.findUnique({
+      where: { id: message.attachments[0].id }
+    })
+    expect(dbAttachment).toBeNull()
+  })
+
+  it('DELETE /api/chats/:chatId/messages/:messageId - cannot delete message from another user chat', async () => {
+    const owner = await createTestUser()
+    const otherUser = await createTestUser()
+
+    const chatId = await createTestChat(owner)
+    const message = await prisma.message.create({
+      data: {
+        sessionId: chatId,
+        role: 'user',
+        content: 'Owner message'
+      }
+    })
+
+    const response = await otherUser
+      .delete(`/api/chats/${chatId}/messages/${message.id}`)
+
+    expect(response.status).toBe(404)
+
+    // Verify message still exists
+    const dbMessage = await prisma.message.findUnique({
+      where: { id: message.id }
+    })
+    expect(dbMessage).not.toBeNull()
   })
 })

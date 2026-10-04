@@ -195,7 +195,15 @@ export const deleteMessage = async (
     }
   })
 
-  return message
+  return {
+    ...message,
+    attachments: message.attachments?.map((attachment: any) => ({
+      ...attachment,
+      ...(attachment.sizeBytes !== undefined
+        ? { sizeBytes: attachment.sizeBytes.toString() }
+        : {})
+    })) ?? []
+  }
 }
 
 export const createAssistantMessage = async (
