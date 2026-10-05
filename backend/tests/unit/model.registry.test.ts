@@ -8,6 +8,12 @@ import {
 
 const EXPECTED_MODELS = [
   {
+    id: 'gemini-3.6-flash',
+    name: 'Gemini 3.6 Flash',
+    provider: 'gemini',
+    model: 'gemini-3.6-flash'
+  },
+  {
     id: 'ollama-qwen3-1.7b',
     name: 'Qwen 3 1.7B',
     provider: 'ollama',
@@ -20,12 +26,6 @@ const EXPECTED_MODELS = [
     model: 'gpt-5-mini'
   },
   {
-    id: 'gemini-3.6-flash',
-    name: 'Gemini 3.6 Flash',
-    provider: 'gemini',
-    model: 'gemini-3.6-flash'
-  },
-  {
     id: 'groq-gpt-oss-20b',
     name: 'GPT OSS 20B (Groq)',
     provider: 'groq',
@@ -34,7 +34,15 @@ const EXPECTED_MODELS = [
 ]
 
 describe('AI model registry policy', () => {
-  it('exposes all 4 registry models in production', () => {
+  it('places Gemini 3.6 Flash at index 0 as the production default model', () => {
+    expect(AI_MODELS[0].id).toBe('gemini-3.6-flash')
+    expect(AI_MODELS[0].provider).toBe('gemini')
+
+    const prodModels = getVisibleAIModels({ nodeEnv: 'production' })
+    expect(prodModels[0].id).toBe('gemini-3.6-flash')
+  })
+
+  it('exposes all 4 registry models in production with Gemini first', () => {
     const models = getVisibleAIModels({
       nodeEnv: 'production',
       provider: 'gemini',
@@ -42,13 +50,15 @@ describe('AI model registry policy', () => {
     })
     expect(models).toHaveLength(4)
     expect(models).toEqual(EXPECTED_MODELS)
+    expect(models[0].id).toBe('gemini-3.6-flash')
   })
 
-  it('exposes all 4 registry models in development and test', () => {
+  it('exposes all 4 registry models in development and test with Gemini first', () => {
     for (const nodeEnv of ['development', 'test']) {
       const models = getVisibleAIModels({ nodeEnv })
       expect(models).toHaveLength(4)
       expect(models).toEqual(EXPECTED_MODELS)
+      expect(models[0].id).toBe('gemini-3.6-flash')
     }
   })
 

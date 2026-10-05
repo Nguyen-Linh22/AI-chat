@@ -14,6 +14,12 @@ export interface AIModel {
 
 export const AI_MODELS: AIModel[] = [
   {
+    id: 'gemini-3.6-flash',
+    name: 'Gemini 3.6 Flash',
+    provider: 'gemini',
+    model: 'gemini-3.6-flash'
+  },
+  {
     id: 'ollama-qwen3-1.7b',
     name: 'Qwen 3 1.7B',
     provider: 'ollama',
@@ -25,13 +31,7 @@ export const AI_MODELS: AIModel[] = [
     provider: 'openai',
     model: 'gpt-5-mini'
   },
-    {
-    id: 'gemini-3.6-flash',
-    name: 'Gemini 3.6 Flash',
-    provider: 'gemini',
-    model: 'gemini-3.6-flash'
-  },
-    {
+  {
     id: 'groq-gpt-oss-20b',
     name: 'GPT OSS 20B (Groq)',
     provider: 'groq',
