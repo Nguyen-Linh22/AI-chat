@@ -39,7 +39,7 @@ export const AI_MODELS: AIModel[] = [
   }
 ]
 
-interface ModelPolicyOptions {
+export interface ModelPolicyOptions {
   nodeEnv?: string
   provider?: AIProviderName
   geminiModel?: GeminiGenerationModel
@@ -47,25 +47,15 @@ interface ModelPolicyOptions {
 
 /**
  * Returns the models a client may select in the current environment.
- * Production is restricted to the configured provider; development and test
- * retain the complete registry for local provider and mock coverage.
+ * The complete AI_MODELS registry is exposed across all environments (production,
+ * development, and test) to support dynamic model and provider selection.
  */
 export const getVisibleAIModels = ({
   nodeEnv = process.env.NODE_ENV,
   provider = AI_PROVIDER,
   geminiModel = GEMINI_MODEL
 }: ModelPolicyOptions = {}): AIModel[] => {
-  if (nodeEnv !== 'production') {
-    return AI_MODELS
-  }
-
-  return AI_MODELS.filter((model) => {
-    if (model.provider !== provider) {
-      return false
-    }
-
-    return provider !== 'gemini' || model.model === geminiModel
-  })
+  return AI_MODELS
 }
 
 export const getModelById = (
