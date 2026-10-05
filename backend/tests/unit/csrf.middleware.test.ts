@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import express, { Request, Response } from 'express'
 import request from 'supertest'
 import { csrfProtectionMiddleware } from '../../src/middlewares/csrf.middleware.js'
@@ -123,15 +123,31 @@ describe('CSRF Protection Middleware (Origin Validation)', () => {
       process.env.FRONTEND_URL = 'https://ai-chat-linhh.vercel.app'
     })
 
-    it('F. should block POST request with malicious Origin with 403', async () => {
+    it('F. should block POST request with malicious Origin with 403 and log warning', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const app = createTestApp()
       const res = await request(app)
         .post('/api/test')
         .set('Origin', 'https://evil-attacker.com')
+        .set('Cookie', 'token=secret-token')
         .send({ data: 'exploit' })
 
       expect(res.status).toBe(403)
       expect(res.body.message).toContain('CSRF protection')
+
+      expect(warnSpy).toHaveBeenCalled()
+      const warnCall = warnSpy.mock.calls.find((call) =>
+        typeof call[0] === 'string' && call[0].includes('CSRF blocked')
+      )
+      expect(warnCall).toBeDefined()
+      expect(warnCall![0]).toContain('method=POST')
+      expect(warnCall![0]).toContain('path=/api/test')
+      expect(warnCall![0]).toContain('origin=https://evil-attacker.com')
+      // Security: no token or body leaked
+      expect(warnCall![0]).not.toContain('secret-token')
+      expect(warnCall![0]).not.toContain('exploit')
+
+      warnSpy.mockRestore()
     })
 
     it('G. should block PATCH request with malicious Origin with 403', async () => {
@@ -157,9 +173,10 @@ describe('CSRF Protection Middleware (Origin Validation)', () => {
   })
 
   describe('Missing Origin Behavior in Production vs Development (I & J)', () => {
-    it('I. should reject state-changing request in production when Origin and Referer are missing', async () => {
+    it('I. should reject state-changing request in production when Origin and Referer are missing and log warning', async () => {
       process.env.NODE_ENV = 'production'
       process.env.FRONTEND_URL = 'https://ai-chat-linhh.vercel.app'
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const app = createTestApp()
 
       const res = await request(app)
@@ -168,6 +185,17 @@ describe('CSRF Protection Middleware (Origin Validation)', () => {
 
       expect(res.status).toBe(403)
       expect(res.body.message).toContain('thiếu header nguồn gốc')
+
+      expect(warnSpy).toHaveBeenCalled()
+      const warnCall = warnSpy.mock.calls.find((call) =>
+        typeof call[0] === 'string' && call[0].includes('CSRF blocked')
+      )
+      expect(warnCall).toBeDefined()
+      expect(warnCall![0]).toContain('method=POST')
+      expect(warnCall![0]).toContain('path=/api/test')
+      expect(warnCall![0]).toContain('origin=none')
+
+      warnSpy.mockRestore()
     })
 
     it('J. should allow state-changing request in development/test without Origin header', async () => {

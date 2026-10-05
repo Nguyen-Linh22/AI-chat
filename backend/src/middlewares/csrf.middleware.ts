@@ -52,6 +52,9 @@ export const csrfProtectionMiddleware = (
   if (requestOrigin) {
     const isAllowed = allowedOrigins.includes(requestOrigin)
     if (!isAllowed) {
+      console.warn(
+        `CSRF blocked: method=${req.method} path=${req.originalUrl || req.path} origin=${requestOrigin}`
+      )
       return res.status(403).json({
         message: 'CSRF protection: Nguồn gốc yêu cầu không hợp lệ'
       })
@@ -62,6 +65,9 @@ export const csrfProtectionMiddleware = (
   // 3. Nếu request không có header Origin / Referer:
   // - Trong production: Từ chối các request thay đổi trạng thái để phòng chống tấn công qua script/form ẩn danh.
   if (isProduction) {
+    console.warn(
+      `CSRF blocked: method=${req.method} path=${req.originalUrl || req.path} origin=none`
+    )
     return res.status(403).json({
       message: 'CSRF protection: Yêu cầu bị từ chối do thiếu header nguồn gốc'
     })

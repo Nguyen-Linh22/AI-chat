@@ -1,8 +1,9 @@
 import { Request, Response } from 'express'
 import { getHealthStatus } from '../services/health.service.js'
 
-export const healthCheck = (_req: Request, res: Response) => {
-  const healthStatus = getHealthStatus()
+export const healthCheck = async (_req: Request, res: Response) => {
+  const healthStatus = await getHealthStatus()
+  const statusCode = healthStatus.status === 'ok' ? 200 : 503
 
-  res.json(healthStatus)
+  return res.status(statusCode).json(healthStatus)
 }

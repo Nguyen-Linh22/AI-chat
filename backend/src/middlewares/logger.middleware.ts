@@ -2,10 +2,16 @@ import { Request, Response, NextFunction } from 'express'
 
 export const loggerMiddleware = (
   req: Request,
-  _res: Response,
+  res: Response,
   next: NextFunction
 ) => {
-  console.log(`${req.method} ${req.url}`)
+  const start = Date.now()
+
+  res.on('finish', () => {
+    const durationMs = Date.now() - start
+    const url = req.originalUrl || req.url
+    console.log(`${req.method} ${url} ${res.statusCode} ${durationMs}ms`)
+  })
 
   next()
 }
