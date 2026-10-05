@@ -1,6 +1,30 @@
 import { rateLimit, ipKeyGenerator } from 'express-rate-limit'
 import { Request, Response, NextFunction } from 'express'
 import { logRateLimitExceeded } from '../utils/ai-audit.util.js'
+import { safeDeleteFile } from '../utils/file.util.js'
+
+/**
+ * Rate limiter chung bảo vệ toàn bộ API (General API protection).
+ * Bảo vệ server Render Free, database connection pool (đặc biệt là GET /api/health)
+ * và chống các hành vi spam/crawler diện rộng.
+ * Giới hạn: 300 requests / 15 phút theo IP nguồn.
+ */
+export const generalRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 phút
+  limit: 300, // tối đa 300 requests / 15 phút / IP
+  standardHeaders: true, // Thêm RateLimit-* headers chuẩn RFC
+  legacyHeaders: false, // Bỏ X-RateLimit-* cũ
+  message: {
+    message: 'Quá nhiều yêu cầu từ địa chỉ IP này. Vui lòng thử lại sau.'
+  },
+  handler: (req: Request, res: Response, _next, options) => {
+    logRateLimitExceeded({
+      route: req.originalUrl || req.path,
+      ip: req.ip || req.socket.remoteAddress
+    })
+    res.status(options.statusCode).json(options.message)
+  }
+})
 
 /**
  * Rate limiter cho các endpoint xác thực (Auth: Login, Register).
@@ -79,6 +103,9 @@ export const uploadRateLimiter = rateLimit({
     message: 'Bạn đã tải lên quá nhiều file. Vui lòng thử lại sau 15 phút.'
   },
   handler: (req: Request, res: Response, _next, options) => {
+    if (req.file?.path) {
+      safeDeleteFile(req.file.path)
+    }
     logRateLimitExceeded({
       route: req.originalUrl || req.path,
       userId: req.userId,
@@ -87,6 +114,22 @@ export const uploadRateLimiter = rateLimit({
     res.status(options.statusCode).json(options.message)
   }
 })
+
+/**
+ * Rate limiter có điều kiện cho upload file trong stream endpoint.
+ * Nếu request có chứa file (req.file tồn tại sau khi qua multer),
+ * áp dụng uploadRateLimiter. Nếu không có file, cho qua next().
+ */
+export const conditionalUploadRateLimiter = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.file) {
+    return next()
+  }
+  return uploadRateLimiter(req, res, next)
+}
 
 /**
  * Quản lý số lượng yêu cầu AI đang xử lý đồng thời trên mỗi user.

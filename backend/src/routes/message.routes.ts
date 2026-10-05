@@ -30,7 +30,11 @@ import { paginationQuerySchema } from '../validators/pagination.validator.js'
 
 import { uploadSingleFile } from '../middlewares/upload.middleware.js'
 import { validateUploadedFile } from '../validators/file.validator.js'
-import { aiRateLimiter, concurrentAiLimiter } from '../middlewares/rate-limit.middleware.js'
+import {
+  aiRateLimiter,
+  concurrentAiLimiter,
+  conditionalUploadRateLimiter
+} from '../middlewares/rate-limit.middleware.js'
 
 const router = Router()
 
@@ -41,6 +45,7 @@ router.post(
   aiRateLimiter,
   validate(chatIdParamsSchema, 'params'),
   uploadSingleFile,
+  conditionalUploadRateLimiter,
   validate(streamMessageSchema, 'body'),
   validateUploadedFile,
   streamChatResponse

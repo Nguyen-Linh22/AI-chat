@@ -26,3 +26,55 @@ export const ensureUploadDir = (dirPath: string = getUploadDir()): string => {
   }
   return dirPath
 }
+
+export interface CleanupResult {
+  cleanedCount: number
+  errorCount: number
+}
+
+/**
+ * Dọn dẹp các file rác trong thư mục uploads tạm thời.
+ * Chỉ xử lý các file có thời gian chỉnh sửa (mtime) cũ hơn khoảng thời gian an toàn maxAgeMs (mặc định: 1 giờ),
+ * tránh vô tình xóa các file đang được upload trong lúc server khởi động lại.
+ * An toàn: Không đụng Cloudinary, không đụng database, không xóa thư mục gốc.
+ */
+export const cleanupTempUploads = (
+  dirPath: string = getUploadDir(),
+  maxAgeMs: number = 60 * 60 * 1000 // 1 giờ
+): CleanupResult => {
+  const result: CleanupResult = {
+    cleanedCount: 0,
+    errorCount: 0
+  }
+
+  try {
+    ensureUploadDir(dirPath)
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+    const now = Date.now()
+
+    for (const entry of entries) {
+      if (!entry.isFile()) {
+        continue
+      }
+
+      const filePath = path.join(dirPath, entry.name)
+      try {
+        const stats = fs.statSync(filePath)
+        const fileAgeMs = now - stats.mtimeMs
+
+        if (fileAgeMs >= maxAgeMs) {
+          fs.unlinkSync(filePath)
+          result.cleanedCount++
+        }
+      } catch (fileErr) {
+        console.warn(`[UPLOAD_CLEANUP] Không thể dọn file tạm "${filePath}":`, fileErr)
+        result.errorCount++
+      }
+    }
+  } catch (dirErr) {
+    console.warn(`[UPLOAD_CLEANUP] Không thể đọc thư mục uploads "${dirPath}":`, dirErr)
+    result.errorCount++
+  }
+
+  return result
+}

@@ -13,6 +13,7 @@ import { getAllowedOrigins } from './config/cors.config.js'
 import uploadRouter from './routes/upload.routes.js'
 import aiRouter from './routes/ai.routes.js'
 import { errorHandler } from './middlewares/error.middleware.js'
+import { generalRateLimiter } from './middlewares/rate-limit.middleware.js'
 
 export { getAllowedOrigins }
 
@@ -92,6 +93,7 @@ app.get('/', (_req, res) => {
   })
 })
 
+app.use('/api', generalRateLimiter)
 app.use('/api', csrfProtectionMiddleware)
 app.use('/api', healthRouter)
 app.use('/api/auth', authRouter)
