@@ -11,6 +11,14 @@ export const VALID_AI_PROVIDERS: readonly AIProviderName[] = [
   'openai'
 ] as const
 
+/** Gemini text-generation models approved for this application. */
+export const VALID_GEMINI_GENERATION_MODELS = [
+  'gemini-3.6-flash'
+] as const
+
+export type GeminiGenerationModel =
+  (typeof VALID_GEMINI_GENERATION_MODELS)[number]
+
 export const validateAIProvider = (
   provider?: string,
   nodeEnv = process.env.NODE_ENV
@@ -36,8 +44,37 @@ export const validateAIProvider = (
     : 'ollama'
 }
 
+export const validateGeminiModel = (
+  model: string | undefined,
+  provider: AIProviderName,
+  nodeEnv = process.env.NODE_ENV
+): GeminiGenerationModel | undefined => {
+  if (nodeEnv !== 'production' || provider !== 'gemini') {
+    return undefined
+  }
+
+  if (!model) {
+    throw new Error(
+      'GEMINI_MODEL chưa được cấu hình cho môi trường production khi AI_PROVIDER=gemini'
+    )
+  }
+
+  if (!VALID_GEMINI_GENERATION_MODELS.includes(model as GeminiGenerationModel)) {
+    throw new Error(
+      `GEMINI_MODEL không hợp lệ: "${model}". Các giá trị hợp lệ: ${VALID_GEMINI_GENERATION_MODELS.join(', ')}`
+    )
+  }
+
+  return model as GeminiGenerationModel
+}
+
 export const AI_PROVIDER: AIProviderName = validateAIProvider(
   process.env.AI_PROVIDER
+)
+
+export const GEMINI_MODEL = validateGeminiModel(
+  process.env.GEMINI_MODEL,
+  AI_PROVIDER
 )
 
 /**

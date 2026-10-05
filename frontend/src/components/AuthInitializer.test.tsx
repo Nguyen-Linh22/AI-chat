@@ -135,6 +135,26 @@ describe('AuthInitializer', () => {
     expect(setSelectedModelIdMock).not.toHaveBeenCalled()
   })
 
+  it('normalizes a selected model that is absent from the fetched list', async () => {
+    const models = [
+      { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash' },
+      { id: 'gpt-2', name: 'GPT 2' },
+    ]
+
+    getAIModelsMock.mockResolvedValue(models)
+    getAIStoreStateMock.mockReturnValue({
+      selectedModelId: 'ollama-qwen3-1.7b',
+    })
+
+    render(<AuthInitializer />)
+
+    await waitFor(() => {
+      expect(setModelsMock).toHaveBeenCalledWith(models)
+    })
+
+    expect(setSelectedModelIdMock).toHaveBeenCalledWith('gemini-3.6-flash')
+  })
+
   it('handles an empty AI model list', async () => {
     getAIModelsMock.mockResolvedValue([])
 

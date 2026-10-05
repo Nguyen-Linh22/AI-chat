@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { validateAIProvider, VALID_AI_PROVIDERS } from '../../src/ai/ai.config.js'
+import {
+  validateAIProvider,
+  validateGeminiModel,
+  VALID_AI_PROVIDERS
+} from '../../src/ai/ai.config.js'
 
 describe('AI Config - validateAIProvider', () => {
   it('should fallback to ollama in local development when AI_PROVIDER is unset', () => {
@@ -34,5 +38,28 @@ describe('AI Config - validateAIProvider', () => {
       const result = validateAIProvider(validProvider, 'production')
       expect(result).toBe(validProvider)
     })
+  })
+
+  it('should require GEMINI_MODEL for the Gemini production provider', () => {
+    expect(() => validateGeminiModel(undefined, 'gemini', 'production')).toThrow(
+      'GEMINI_MODEL chưa được cấu hình'
+    )
+  })
+
+  it('should accept the approved Gemini production model', () => {
+    expect(
+      validateGeminiModel('gemini-3.6-flash', 'gemini', 'production')
+    ).toBe('gemini-3.6-flash')
+  })
+
+  it('should reject an unapproved Gemini production model', () => {
+    expect(() =>
+      validateGeminiModel('gemini-unapproved', 'gemini', 'production')
+    ).toThrow(/GEMINI_MODEL không hợp lệ/)
+  })
+
+  it('should not require GEMINI_MODEL for non-Gemini production providers or non-production', () => {
+    expect(validateGeminiModel(undefined, 'openai', 'production')).toBeUndefined()
+    expect(validateGeminiModel(undefined, 'gemini', 'test')).toBeUndefined()
   })
 })

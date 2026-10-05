@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "node --env-file=.env.e2e ./node_modules/vitest/vitest.mjs run",
     "seed:rag": "tsx --env-file=.env scripts/seed-sample-doc.ts"
   },
   "keywords": [],

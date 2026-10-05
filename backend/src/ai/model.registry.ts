@@ -1,4 +1,9 @@
-import type { AIProviderName } from './ai.config.js'
+import {
+  AI_PROVIDER,
+  GEMINI_MODEL,
+  type AIProviderName,
+  type GeminiGenerationModel
+} from './ai.config.js'
 
 export interface AIModel {
   id: string
@@ -34,16 +39,49 @@ export const AI_MODELS: AIModel[] = [
   }
 ]
 
+interface ModelPolicyOptions {
+  nodeEnv?: string
+  provider?: AIProviderName
+  geminiModel?: GeminiGenerationModel
+}
+
+/**
+ * Returns the models a client may select in the current environment.
+ * Production is restricted to the configured provider; development and test
+ * retain the complete registry for local provider and mock coverage.
+ */
+export const getVisibleAIModels = ({
+  nodeEnv = process.env.NODE_ENV,
+  provider = AI_PROVIDER,
+  geminiModel = GEMINI_MODEL
+}: ModelPolicyOptions = {}): AIModel[] => {
+  if (nodeEnv !== 'production') {
+    return AI_MODELS
+  }
+
+  return AI_MODELS.filter((model) => {
+    if (model.provider !== provider) {
+      return false
+    }
+
+    return provider !== 'gemini' || model.model === geminiModel
+  })
+}
+
 export const getModelById = (
-  modelId: string
+  modelId: string,
+  policyOptions?: ModelPolicyOptions
 ): AIModel | null => {
   return (
-    AI_MODELS.find(
+    getVisibleAIModels(policyOptions).find(
       (model) => model.id === modelId
     ) ?? null
   )
 }
 
-export const isSupportedModelId = (modelId: string): boolean => {
-  return AI_MODELS.some((model) => model.id === modelId)
+export const isSupportedModelId = (
+  modelId: string,
+  policyOptions?: ModelPolicyOptions
+): boolean => {
+  return getModelById(modelId, policyOptions) !== null
 }

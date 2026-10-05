@@ -24,7 +24,12 @@ function AuthInitializer() {
         if (!isMounted) return
         setModels(models)
 
-        if (models.length > 0 && !useAIStore.getState().selectedModelId) {
+        const selectedModelId = useAIStore.getState().selectedModelId
+        const selectedModelIsAvailable = models.some(
+          (model) => model.id === selectedModelId
+        )
+
+        if (models.length > 0 && !selectedModelIsAvailable) {
           setSelectedModelId(models[0].id)
         }
       } catch (error) {
