@@ -80,12 +80,19 @@ function ModelSelector() {
   }
 
   const selectedModel =
-    models.find((model) => model.id === selectedModelId) || models[0]
+    models.find((model) => model.id === selectedModelId && model.available !== false) ||
+    models.find((model) => model.available !== false) ||
+    models.find((model) => model.id === selectedModelId) ||
+    models[0]
 
   const handleSelectModel = (modelId: string, event?: React.SyntheticEvent) => {
     if (event) {
       event.preventDefault()
       event.stopPropagation()
+    }
+    const targetModel = models.find((model) => model.id === modelId)
+    if (targetModel && targetModel.available === false) {
+      return
     }
     setSelectedModelId(modelId)
     setIsOpen(false)
@@ -125,13 +132,21 @@ function ModelSelector() {
         aria-label="Model"
         value={selectedModelId ?? ''}
         onChange={(event) => {
+          const target = models.find((m) => m.id === event.target.value)
+          if (target && target.available === false) {
+            return
+          }
           setSelectedModelId(event.target.value)
         }}
         className="sr-only"
         tabIndex={-1}
       >
         {models.map((model) => (
-          <option key={model.id} value={model.id}>
+          <option
+            key={model.id}
+            value={model.id}
+            disabled={model.available === false}
+          >
             {model.name}
           </option>
         ))}
@@ -145,6 +160,7 @@ function ModelSelector() {
           className="absolute right-0 top-full mt-2 z-50 w-72 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#151c27]/95 p-2 shadow-xl dark:shadow-2xl backdrop-blur-2xl animate-dropdown-fade space-y-1.5"
         >
           {models.map((model) => {
+            const isAvailable = model.available !== false
             const isSelected = model.id === (selectedModelId ?? models[0]?.id)
             const meta = MODEL_META[model.id] ?? {
               subtitle: model.provider ? `${model.provider} · ${model.model}` : 'Mô hình AI',
@@ -159,12 +175,25 @@ function ModelSelector() {
                 type="button"
                 role="option"
                 aria-selected={isSelected}
-                onMouseDown={(e) => handleSelectModel(model.id, e)}
-                onClick={(e) => handleSelectModel(model.id, e)}
-                className={`w-full rounded-xl p-2.5 text-left transition-all duration-150 flex items-center justify-between gap-2.5 cursor-pointer ${
-                  isSelected
-                    ? 'border border-amber-400/90 bg-amber-50/50 dark:bg-white/[0.04] shadow-xs dark:shadow-[0_0_12px_rgba(251,191,36,0.15)]'
-                    : 'border border-transparent hover:border-slate-200 dark:hover:border-white/10 hover:bg-slate-100/70 dark:hover:bg-white/[0.04]'
+                aria-disabled={!isAvailable}
+                disabled={!isAvailable}
+                title={!isAvailable ? (model.disabledReason || 'Mô hình không khả dụng trong môi trường này') : undefined}
+                onMouseDown={(e) => {
+                  if (isAvailable) {
+                    handleSelectModel(model.id, e)
+                  }
+                }}
+                onClick={(e) => {
+                  if (isAvailable) {
+                    handleSelectModel(model.id, e)
+                  }
+                }}
+                className={`w-full rounded-xl p-2.5 text-left transition-all duration-150 flex items-center justify-between gap-2.5 ${
+                  !isAvailable
+                    ? 'opacity-40 cursor-not-allowed border border-transparent select-none'
+                    : isSelected
+                    ? 'border border-amber-400/90 bg-amber-50/50 dark:bg-white/[0.04] shadow-xs dark:shadow-[0_0_12px_rgba(251,191,36,0.15)] cursor-pointer'
+                    : 'border border-transparent hover:border-slate-200 dark:hover:border-white/10 hover:bg-slate-100/70 dark:hover:bg-white/[0.04] cursor-pointer'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -176,10 +205,12 @@ function ModelSelector() {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span
                         className={`truncate text-xs font-semibold ${
-                          isSelected
+                          !isAvailable
+                            ? 'text-slate-400 dark:text-gray-500'
+                            : isSelected
                             ? meta.titleColor || 'text-amber-600 dark:text-amber-300'
                             : 'text-slate-800 dark:text-gray-100'
                         }`}
@@ -187,7 +218,11 @@ function ModelSelector() {
                         {model.name}
                       </span>
 
-                      {meta.badgeText && (
+                      {!isAvailable ? (
+                        <span className="rounded px-1.5 py-0.5 text-[9px] font-medium bg-slate-200/90 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300/40 dark:border-slate-700/50">
+                          {model.disabledReason || 'Không khả dụng'}
+                        </span>
+                      ) : meta.badgeText ? (
                         <span
                           className={`rounded px-1.5 py-0.2 text-[9px] font-medium ${
                             meta.badgeColor || 'bg-purple-900/60 text-purple-300'
@@ -195,7 +230,7 @@ function ModelSelector() {
                         >
                           {meta.badgeText}
                         </span>
-                      )}
+                      ) : null}
                     </div>
 
                     <p className="text-[11px] text-slate-500 dark:text-gray-400 truncate mt-0.5">

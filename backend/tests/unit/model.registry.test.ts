@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   AI_MODELS,
+  checkProviderAvailability,
   getModelById,
   getVisibleAIModels,
   isSupportedModelId
@@ -49,7 +50,8 @@ describe('AI model registry policy', () => {
       geminiModel: 'gemini-3.6-flash'
     })
     expect(models).toHaveLength(4)
-    expect(models).toEqual(EXPECTED_MODELS)
+    expect(models).toMatchObject(EXPECTED_MODELS)
+    expect(models.every((m) => typeof m.available === 'boolean')).toBe(true)
     expect(models[0].id).toBe('gemini-3.6-flash')
   })
 
@@ -57,21 +59,26 @@ describe('AI model registry policy', () => {
     for (const nodeEnv of ['development', 'test']) {
       const models = getVisibleAIModels({ nodeEnv })
       expect(models).toHaveLength(4)
-      expect(models).toEqual(EXPECTED_MODELS)
+      expect(models).toMatchObject(EXPECTED_MODELS)
+      expect(models.every((m) => typeof m.available === 'boolean')).toBe(true)
       expect(models[0].id).toBe('gemini-3.6-flash')
     }
   })
 
   it('finds each of the 4 models by ID via getModelById in all environments', () => {
     for (const expected of EXPECTED_MODELS) {
-      expect(getModelById(expected.id)).toEqual(expected)
-      expect(
-        getModelById(expected.id, {
-          nodeEnv: 'production',
-          provider: 'gemini',
-          geminiModel: 'gemini-3.6-flash'
-        })
-      ).toEqual(expected)
+      const model = getModelById(expected.id)
+      expect(model).toMatchObject(expected)
+      expect(typeof model?.available).toBe('boolean')
+
+      const prodModel = getModelById(expected.id, {
+        nodeEnv: 'production',
+        provider: 'gemini',
+        geminiModel: 'gemini-3.6-flash'
+      })
+      expect(prodModel).toMatchObject(expected)
+      expect(typeof prodModel?.available).toBe('boolean')
+
       expect(isSupportedModelId(expected.id)).toBe(true)
     }
   })
@@ -93,4 +100,89 @@ describe('AI model registry policy', () => {
     expect(getModelById('unknown-model')).toBeNull()
     expect(isSupportedModelId('unknown-model')).toBe(false)
   })
+
+  it('keeps isSupportedModelId independent of availability status', () => {
+    // Both available and disabled models should be supported IDs
+    expect(isSupportedModelId('gemini-3.6-flash')).toBe(true)
+    expect(isSupportedModelId('openai-gpt-5-mini')).toBe(true)
+    expect(isSupportedModelId('ollama-qwen3-1.7b')).toBe(true)
+    expect(isSupportedModelId('groq-gpt-oss-20b')).toBe(true)
+  })
 })
+
+describe('checkProviderAvailability policy', () => {
+  it('correctly handles Ollama availability between local and production', () => {
+    const originalOllamaUrl = process.env.OLLAMA_BASE_URL
+    try {
+      delete process.env.OLLAMA_BASE_URL
+
+      // In development, Ollama is always available locally
+      expect(checkProviderAvailability('ollama', 'development')).toEqual({
+        available: true
+      })
+      expect(checkProviderAvailability('ollama', 'test')).toEqual({
+        available: true
+      })
+
+      // In production without OLLAMA_BASE_URL, Ollama is disabled
+      expect(checkProviderAvailability('ollama', 'production')).toEqual({
+        available: false,
+        disabledReason: 'Chỉ khả dụng ở môi trường Local'
+      })
+
+      // In production with OLLAMA_BASE_URL, Ollama becomes available
+      process.env.OLLAMA_BASE_URL = 'https://ollama.internal'
+      expect(checkProviderAvailability('ollama', 'production')).toEqual({
+        available: true
+      })
+    } finally {
+      process.env.OLLAMA_BASE_URL = originalOllamaUrl
+    }
+  })
+
+  it('correctly handles Gemini, Groq, and OpenAI API key availability', () => {
+    const originalGemini = process.env.GEMINI_API_KEY
+    const originalGroq = process.env.GROQ_API_KEY
+    const originalOpenAI = process.env.OPENAI_API_KEY
+
+    try {
+      // Gemini
+      delete process.env.GEMINI_API_KEY
+      expect(checkProviderAvailability('gemini')).toEqual({
+        available: false,
+        disabledReason: 'Chưa cấu hình Gemini API key'
+      })
+      process.env.GEMINI_API_KEY = 'mock-key'
+      expect(checkProviderAvailability('gemini')).toEqual({
+        available: true
+      })
+
+      // Groq
+      delete process.env.GROQ_API_KEY
+      expect(checkProviderAvailability('groq')).toEqual({
+        available: false,
+        disabledReason: 'Chưa cấu hình Groq API key'
+      })
+      process.env.GROQ_API_KEY = 'mock-key'
+      expect(checkProviderAvailability('groq')).toEqual({
+        available: true
+      })
+
+      // OpenAI
+      delete process.env.OPENAI_API_KEY
+      expect(checkProviderAvailability('openai')).toEqual({
+        available: false,
+        disabledReason: 'Chưa cấu hình OpenAI API key'
+      })
+      process.env.OPENAI_API_KEY = 'mock-key'
+      expect(checkProviderAvailability('openai')).toEqual({
+        available: true
+      })
+    } finally {
+      process.env.GEMINI_API_KEY = originalGemini
+      process.env.GROQ_API_KEY = originalGroq
+      process.env.OPENAI_API_KEY = originalOpenAI
+    }
+  })
+})
+
