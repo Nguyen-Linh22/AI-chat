@@ -14,9 +14,12 @@ import MessageBubble from './MessageBubble'
 import ChatInput from './ChatInput'
 import ModelSelector from './ModelSelector'
 import ThemeToggle from './ThemeToggle'
+import ChatBackground from './chat/ChatBackground'
 
 interface ChatAreaProps {
   onOpenMobileSidebar?: () => void
+  isSidebarCollapsed?: boolean
+  onToggleSidebar?: () => void
 }
 
 const SUGGESTED_PROMPTS = [
@@ -78,7 +81,11 @@ const SUGGESTED_PROMPTS = [
   },
 ]
 
-function ChatArea({ onOpenMobileSidebar }: ChatAreaProps = {}) {
+function ChatArea({
+  onOpenMobileSidebar,
+  isSidebarCollapsed = false,
+  onToggleSidebar,
+}: ChatAreaProps = {}) {
   const { chatId: urlChatId } = useParams<{ chatId?: string }>()
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -440,6 +447,9 @@ function ChatArea({ onOpenMobileSidebar }: ChatAreaProps = {}) {
 
   return (
     <main className="relative flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden h-full">
+      {/* Background Star Effect Layer */}
+      <ChatBackground />
+
       {/* Soft Ambient Glows matching screenshot */}
       <div
         className="pointer-events-none absolute -top-24 right-1/4 h-[450px] w-[450px] rounded-full bg-[#1B8F3D]/10 dark:bg-[#1B8F3D]/20 blur-[130px] opacity-40 dark:opacity-100"
@@ -463,6 +473,20 @@ function ChatArea({ onOpenMobileSidebar }: ChatAreaProps = {}) {
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          )}
+
+          {isSidebarCollapsed && (
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              className="hidden md:flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-[#161d28]/90 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition active:scale-95 cursor-pointer"
+              aria-label="Mở thanh bên"
+              title="Mở thanh bên"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
           )}

@@ -747,4 +747,42 @@ describe('Sidebar', () => {
     const inactiveTitle = screen.getByText('Inactive Chat')
     expect(inactiveTitle.className).toContain('text-gray-300')
   })
+
+  it('should be expanded by default and render collapse button', () => {
+    const { container } = render(<Sidebar />)
+    const aside = container.querySelector('aside')
+    expect(aside?.className).toContain('w-[228px]')
+    expect(aside?.className).toContain('md:w-[228px]')
+    expect(screen.getByRole('button', { name: 'Thu gọn thanh bên' })).toBeInTheDocument()
+  })
+
+  it('should call onToggleCollapse when collapse button is clicked', () => {
+    const onToggleCollapse = vi.fn()
+    render(<Sidebar onToggleCollapse={onToggleCollapse} />)
+    const button = screen.getByRole('button', { name: 'Thu gọn thanh bên' })
+    fireEvent.click(button)
+    expect(onToggleCollapse).toHaveBeenCalledTimes(1)
+  })
+
+  it('should apply collapsed classes when isCollapsed is true', () => {
+    const { container } = render(<Sidebar isCollapsed={true} />)
+    const aside = container.querySelector('aside')
+    expect(aside?.className).toContain('md:w-0')
+    expect(aside?.className).toContain('md:opacity-0')
+    expect(aside?.className).toContain('md:pointer-events-none')
+  })
+
+  it('should maintain mobile sidebar behavior with isOpen', () => {
+    const onClose = vi.fn()
+    const { container, rerender } = render(<Sidebar isOpen={false} onClose={onClose} />)
+    let aside = container.querySelector('aside')
+    expect(aside?.className).toContain('-translate-x-full')
+
+    rerender(<Sidebar isOpen={true} onClose={onClose} />)
+    aside = container.querySelector('aside')
+    expect(aside?.className).toContain('translate-x-0')
+    const closeBtn = screen.getByRole('button', { name: 'Đóng thanh bên' })
+    fireEvent.click(closeBtn)
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
 })

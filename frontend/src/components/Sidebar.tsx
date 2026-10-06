@@ -16,6 +16,8 @@ import { DeleteChatModal } from './chat/DeleteChatModal'
 interface SidebarProps {
   isOpen?: boolean
   onClose?: () => void
+  isCollapsed?: boolean
+  onToggleCollapse?: () => void
 }
 
 
@@ -37,7 +39,12 @@ function formatChatTime(dateStr?: string, index = 0): string {
   }
 }
 
-function Sidebar({ isOpen = false, onClose }: SidebarProps) {
+function Sidebar({
+  isOpen = false,
+  onClose,
+  isCollapsed = false,
+  onToggleCollapse,
+}: SidebarProps) {
   const navigate = useNavigate()
 
   const user = useAuthStore((state) => state.user)
@@ -234,31 +241,51 @@ function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-full w-[228px] max-w-[85vw] shrink-0 flex-col rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-white/90 dark:bg-[#121824]/80 p-3 shadow-xl dark:shadow-2xl backdrop-blur-xl transition-all duration-200 ease-out md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-full max-w-[85vw] shrink-0 flex-col rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-white/90 dark:bg-[#121824]/80 shadow-xl dark:shadow-2xl backdrop-blur-xl transition-all duration-200 ease-in-out md:static md:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        } ${
+          isCollapsed
+            ? 'w-[228px] p-3 md:w-0 md:max-w-0 md:p-0 md:border-0 md:opacity-0 md:pointer-events-none md:overflow-hidden'
+            : 'w-[228px] p-3 md:w-[228px] md:opacity-100'
         }`}
       >
-        {/* Brand Header */}
-        <div className="mb-4 flex items-center justify-between px-1">
-          <div className="flex items-center gap-2.5">
-            <span className="text-[#1B8F3D] text-lg font-bold">
-              💬
-            </span>
-            <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
-              AI Chat
-            </h1>
-          </div>
+        <div className="flex flex-col h-full w-[204px] min-w-[204px]">
+          {/* Brand Header */}
+          <div className="mb-4 flex items-center justify-between px-1">
+            <div className="flex items-center gap-2.5">
+              <span className="text-[#1B8F3D] text-lg font-bold">
+                💬
+              </span>
+              <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
+                AI Chat
+              </h1>
+            </div>
 
-          {/* Mobile close button */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white md:hidden cursor-pointer"
-            aria-label="Đóng thanh bên"
-          >
-            ✕
-          </button>
-        </div>
+            <div className="flex items-center gap-1">
+              {/* Desktop collapse button */}
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                className="hidden md:flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-[#161d28]/90 text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 transition active:scale-95 cursor-pointer"
+                aria-label="Thu gọn thanh bên"
+                title="Thu gọn thanh bên"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
+              {/* Mobile close button */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white md:hidden cursor-pointer"
+                aria-label="Đóng thanh bên"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
 
         {/* Chat New Pill Button Matching Screenshot */}
         <button
@@ -505,7 +532,8 @@ function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             </button>
           </div>
         </div>
-      </aside>
+      </div>
+    </aside>
 
       {/* Floating Action Menu (Popover or Context Menu) */}
       {activeMenuChatId && (() => {
