@@ -157,4 +157,81 @@ describe('MessageBubble', () => {
 
     writeTextMock.mockRestore()
   })
+
+  it('should render a Markdown link as a clickable link with target="_blank" and rel="noopener noreferrer"', () => {
+    render(
+      <MessageBubble
+        role="ai"
+        content="[GitHub](https://github.com/Nguyen-Linh22/AI-chat)"
+      />
+    )
+
+    const link = screen.getByRole('link', { name: 'GitHub' })
+    expect(link).toBeInTheDocument()
+    expect(link).toHaveAttribute(
+      'href',
+      'https://github.com/Nguyen-Linh22/AI-chat'
+    )
+    expect(link).toHaveTextContent('GitHub')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
+  it('should automatically autolink a bare URL into a clickable link', () => {
+    render(
+      <MessageBubble
+        role="ai"
+        content="https://github.com/Nguyen-Linh22/AI-chat"
+      />
+    )
+
+    const link = screen.getByRole('link', {
+      name: 'https://github.com/Nguyen-Linh22/AI-chat',
+    })
+    expect(link).toBeInTheDocument()
+    expect(link).toHaveAttribute(
+      'href',
+      'https://github.com/Nguyen-Linh22/AI-chat'
+    )
+    expect(link.textContent).toContain('https://github.com/Nguyen-Linh22/AI-chat')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
+  it('should render a Markdown link inside normal text without corrupting surrounding content', () => {
+    render(
+      <MessageBubble
+        role="ai"
+        content="Visit [Neon](https://neon.tech) for the database."
+      />
+    )
+
+    expect(screen.getByText(/Visit/)).toBeInTheDocument()
+    expect(screen.getByText(/for the database\./)).toBeInTheDocument()
+
+    const link = screen.getByRole('link', { name: 'Neon' })
+    expect(link).toBeInTheDocument()
+    expect(link).toHaveAttribute('href', 'https://neon.tech')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
+  it('should render link and preserve cursor behavior during streaming', () => {
+    render(
+      <MessageBubble
+        role="ai"
+        content="Visit [Neon](https://neon.tech) for more info."
+        isStreaming
+      />
+    )
+
+    const link = screen.getByRole('link', { name: 'Neon' })
+    expect(link).toBeInTheDocument()
+    expect(link).toHaveAttribute('href', 'https://neon.tech')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+
+    expect(document.querySelector('.ai-typewriter-container')).toBeInTheDocument()
+    expect(document.querySelector('.ai-cursor')).toBeInTheDocument()
+  })
 })
