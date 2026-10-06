@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import type { Attachment } from '../services/messageService'
@@ -67,7 +68,7 @@ function MessageBubble({
   content,
   attachments = [],
   isStreaming = false,
-  onRegenerate
+  onRegenerate,
 }: MessageBubbleProps) {
   const [isCopied, setIsCopied] = useState(false)
   const [isCodeCopied, setIsCodeCopied] = useState(false)
@@ -104,14 +105,16 @@ function MessageBubble({
 
   return (
     <div
-      className={`chat-message-enter group flex w-full ${isUser ? 'justify-end' : 'justify-start'
-        }`}
+      className={`chat-message-enter group flex w-full ${
+        isUser ? 'justify-end' : 'justify-start'
+      }`}
     >
       <div
-        className={`rounded-2xl px-4 py-3 shadow-xs ${isUser
+        className={`rounded-2xl px-4 py-3 shadow-xs ${
+          isUser
             ? 'max-w-[85%] sm:max-w-[75%] rounded-br-md bg-[#1E293B] border border-gray-700/60 text-white'
             : 'w-full rounded-bl-md bg-white dark:bg-[#111827]/95 border border-slate-200/90 dark:border-gray-800 text-slate-800 dark:text-gray-100 shadow-xs dark:shadow-none'
-          }`}
+        }`}
       >
         {!isUser && isStreaming ? (
           <div className="mb-1.5 flex items-center justify-between">
@@ -158,7 +161,21 @@ function MessageBubble({
           )}
 
           <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
             components={{
+              a({ children, href, ...props }) {
+                return (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 underline hover:text-blue-400"
+                    {...props}
+                  >
+                    {renderChildrenWithCursor(children)}
+                  </a>
+                )
+              },
               p({ children, ...props }) {
                 return <p {...props}>{renderChildrenWithCursor(children)}</p>
               },
@@ -226,7 +243,7 @@ function MessageBubble({
                     {renderChildrenWithCursor(children)}
                   </code>
                 )
-              }
+              },
             }}
           >
             {isStreaming && content ? content + ' ▌' : content}
