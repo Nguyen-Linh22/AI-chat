@@ -5,6 +5,8 @@ export interface AIModel {
   name: string
   provider: string
   model: string
+  available: boolean
+  disabledReason?: string
 }
 
 export const getAIModels = async (): Promise<AIModel[]> => {

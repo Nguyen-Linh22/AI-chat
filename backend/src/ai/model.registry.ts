@@ -12,6 +12,11 @@ export interface AIModel {
   model: string
 }
 
+export interface VisibleAIModel extends AIModel {
+  available: boolean
+  disabledReason?: string
+}
+
 export const AI_MODELS: AIModel[] = [
   {
     id: 'gemini-3.6-flash',
@@ -45,23 +50,77 @@ export interface ModelPolicyOptions {
   geminiModel?: GeminiGenerationModel
 }
 
+export const checkProviderAvailability = (
+  provider: AIProviderName,
+  nodeEnv = process.env.NODE_ENV
+): { available: boolean; disabledReason?: string } => {
+  switch (provider) {
+    case 'gemini':
+      return process.env.GEMINI_API_KEY
+        ? { available: true }
+        : {
+            available: false,
+            disabledReason: 'Chưa cấu hình Gemini API key'
+          }
+
+    case 'groq':
+      return process.env.GROQ_API_KEY
+        ? { available: true }
+        : {
+            available: false,
+            disabledReason: 'Chưa cấu hình Groq API key'
+          }
+
+    case 'openai':
+      return process.env.OPENAI_API_KEY
+        ? { available: true }
+        : {
+            available: false,
+            disabledReason: 'Chưa cấu hình OpenAI API key'
+          }
+
+    case 'ollama':
+      if (nodeEnv === 'production' && !process.env.OLLAMA_BASE_URL) {
+        return {
+          available: false,
+          disabledReason: 'Chỉ khả dụng ở môi trường Local'
+        }
+      }
+
+      return { available: true }
+
+    default:
+      return {
+        available: false,
+        disabledReason: 'Provider không được hỗ trợ'
+      }
+  }
+}
+
 /**
- * Returns the models a client may select in the current environment.
- * The complete AI_MODELS registry is exposed across all environments (production,
- * development, and test) to support dynamic model and provider selection.
+ * Returns the models a client may see in the current environment.
+ *
+ * All registered models remain visible across environments.
+ * Availability is calculated from the current provider configuration.
  */
 export const getVisibleAIModels = ({
   nodeEnv = process.env.NODE_ENV,
   provider = AI_PROVIDER,
   geminiModel = GEMINI_MODEL
-}: ModelPolicyOptions = {}): AIModel[] => {
-  return AI_MODELS
+}: ModelPolicyOptions = {}): VisibleAIModel[] => {
+  void provider
+  void geminiModel
+
+  return AI_MODELS.map((model) => ({
+    ...model,
+    ...checkProviderAvailability(model.provider, nodeEnv)
+  }))
 }
 
 export const getModelById = (
   modelId: string,
   policyOptions?: ModelPolicyOptions
-): AIModel | null => {
+): VisibleAIModel | null => {
   return (
     getVisibleAIModels(policyOptions).find(
       (model) => model.id === modelId

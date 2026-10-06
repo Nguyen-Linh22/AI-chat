@@ -167,6 +167,66 @@ describe('AuthInitializer', () => {
     expect(setSelectedModelIdMock).not.toHaveBeenCalled()
   })
 
+  it('normalizes an unavailable selected model to the first available model', async () => {
+    const models = [
+      { id: 'ollama-qwen3-1.7b', name: 'Qwen 3 1.7B', available: false },
+      { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', available: true },
+    ]
+
+    getAIModelsMock.mockResolvedValue(models)
+    getAIStoreStateMock.mockReturnValue({
+      selectedModelId: 'ollama-qwen3-1.7b',
+    })
+
+    render(<AuthInitializer />)
+
+    await waitFor(() => {
+      expect(setModelsMock).toHaveBeenCalledWith(models)
+    })
+
+    expect(setSelectedModelIdMock).toHaveBeenCalledWith('gemini-3.6-flash')
+  })
+
+  it('keeps the existing selected model if it is available', async () => {
+    const models = [
+      { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', available: true },
+      { id: 'groq-gpt-oss-20b', name: 'GPT OSS 20B (Groq)', available: true },
+    ]
+
+    getAIModelsMock.mockResolvedValue(models)
+    getAIStoreStateMock.mockReturnValue({
+      selectedModelId: 'groq-gpt-oss-20b',
+    })
+
+    render(<AuthInitializer />)
+
+    await waitFor(() => {
+      expect(setModelsMock).toHaveBeenCalledWith(models)
+    })
+
+    expect(setSelectedModelIdMock).not.toHaveBeenCalled()
+  })
+
+  it('does not select a model if all returned models are unavailable', async () => {
+    const models = [
+      { id: 'ollama-qwen3-1.7b', name: 'Qwen 3 1.7B', available: false },
+      { id: 'openai-gpt-5-mini', name: 'GPT-5 Mini', available: false },
+    ]
+
+    getAIModelsMock.mockResolvedValue(models)
+    getAIStoreStateMock.mockReturnValue({
+      selectedModelId: null,
+    })
+
+    render(<AuthInitializer />)
+
+    await waitFor(() => {
+      expect(setModelsMock).toHaveBeenCalledWith(models)
+    })
+
+    expect(setSelectedModelIdMock).not.toHaveBeenCalled()
+  })
+
   it('continues auth initialization when loading AI models fails', async () => {
     const user = {
       id: 'user-1',

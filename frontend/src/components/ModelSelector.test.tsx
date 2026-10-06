@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import ModelSelector from './ModelSelector'
@@ -142,4 +142,89 @@ describe('ModelSelector', () => {
 
     expect(setSelectedModelIdMock).toHaveBeenCalledWith('openai-gpt-5-mini')
   })
+
+  it('should render unavailable models as disabled, dimmed, and with disabledReason', async () => {
+    const user = userEvent.setup()
+
+    useAIStoreMock.mockImplementation((selector: (state: unknown) => unknown) =>
+      selector({
+        models: [
+          {
+            id: 'gemini-3.6-flash',
+            name: 'Gemini 3.6 Flash',
+            available: true,
+          },
+          {
+            id: 'ollama-qwen3-1.7b',
+            name: 'Qwen 3 1.7B',
+            available: false,
+            disabledReason: 'Chỉ khả dụng ở môi trường Local',
+          },
+        ],
+        selectedModelId: 'gemini-3.6-flash',
+        setSelectedModelId: setSelectedModelIdMock,
+      })
+    )
+
+    render(<ModelSelector />)
+
+    // Check native select has disabled option for Qwen
+    const nativeSelect = screen.getByRole('combobox')
+    const nativeOptions = nativeSelect.querySelectorAll('option')
+    expect(nativeOptions[0]).not.toBeDisabled()
+    expect(nativeOptions[1]).toBeDisabled()
+
+    // Open custom dropdown
+    const triggerBtn = screen.getByRole('button', { name: /Gemini 3.6 Flash/i })
+    await user.click(triggerBtn)
+
+    const dropdown = screen.getByRole('listbox')
+
+    // Find custom dropdown option for Qwen
+    const disabledOption = within(dropdown).getByRole('option', { name: /Qwen 3 1.7B/i })
+    expect(disabledOption).toBeDisabled()
+    expect(disabledOption).toHaveAttribute('aria-disabled', 'true')
+    expect(disabledOption.className).toContain('opacity-40')
+    expect(disabledOption.className).toContain('cursor-not-allowed')
+    expect(screen.getByText('Chỉ khả dụng ở môi trường Local')).toBeInTheDocument()
+  })
+
+  it('should not change the selected model when clicking a disabled model option', async () => {
+    const user = userEvent.setup()
+
+    useAIStoreMock.mockImplementation((selector: (state: unknown) => unknown) =>
+      selector({
+        models: [
+          {
+            id: 'gemini-3.6-flash',
+            name: 'Gemini 3.6 Flash',
+            available: true,
+          },
+          {
+            id: 'openai-gpt-5-mini',
+            name: 'GPT-5 Mini',
+            available: false,
+            disabledReason: 'Chưa cấu hình OpenAI API key',
+          },
+        ],
+        selectedModelId: 'gemini-3.6-flash',
+        setSelectedModelId: setSelectedModelIdMock,
+      })
+    )
+
+    render(<ModelSelector />)
+
+    // Open custom dropdown
+    const triggerBtn = screen.getByRole('button', { name: /Gemini 3.6 Flash/i })
+    await user.click(triggerBtn)
+
+    const dropdown = screen.getByRole('listbox')
+
+    // Attempt to click disabled GPT-5 Mini option
+    const disabledOption = within(dropdown).getByRole('option', { name: /GPT-5 Mini/i })
+    await user.click(disabledOption)
+
+    expect(setSelectedModelIdMock).not.toHaveBeenCalled()
+  })
 })
+

@@ -25,12 +25,17 @@ function AuthInitializer() {
         setModels(models)
 
         const selectedModelId = useAIStore.getState().selectedModelId
-        const selectedModelIsAvailable = models.some(
-          (model) => model.id === selectedModelId
+        const activeModel = models.find(
+          (model) => model.id === selectedModelId && model.available !== false
         )
 
-        if (models.length > 0 && !selectedModelIsAvailable) {
-          setSelectedModelId(models[0].id)
+        if (!activeModel && models.length > 0) {
+          const firstAvailable = models.find(
+            (model) => model.available !== false
+          )
+          if (firstAvailable) {
+            setSelectedModelId(firstAvailable.id)
+          }
         }
       } catch (error) {
         console.error('Không thể lấy danh sách AI model:', error)
