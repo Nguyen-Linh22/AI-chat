@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import ChatArea from './ChatArea'
 
@@ -543,6 +543,34 @@ describe('ChatArea', () => {
 
     expect(screen.getByText('Không thể tải tin nhắn cũ.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Thử lại' })).toBeInTheDocument()
+  })
+
+  it('should render ChatBackground with pointer-events-none and aria-hidden', () => {
+    configureStores()
+    render(<ChatArea />)
+
+    const bg = screen.getByTestId('chat-background')
+    expect(bg).toBeInTheDocument()
+    expect(bg).toHaveAttribute('aria-hidden', 'true')
+    expect(bg).toHaveClass('pointer-events-none')
+  })
+
+  it('should render open sidebar button when isSidebarCollapsed is true and trigger onToggleSidebar', () => {
+    const onToggleSidebar = vi.fn()
+    configureStores()
+    render(<ChatArea isSidebarCollapsed={true} onToggleSidebar={onToggleSidebar} />)
+
+    const openBtn = screen.getByRole('button', { name: 'Mở thanh bên' })
+    expect(openBtn).toBeInTheDocument()
+    fireEvent.click(openBtn)
+    expect(onToggleSidebar).toHaveBeenCalledTimes(1)
+  })
+
+  it('should not render open sidebar button when isSidebarCollapsed is false', () => {
+    configureStores()
+    render(<ChatArea isSidebarCollapsed={false} />)
+
+    expect(screen.queryByRole('button', { name: 'Mở thanh bên' })).not.toBeInTheDocument()
   })
 })
 
