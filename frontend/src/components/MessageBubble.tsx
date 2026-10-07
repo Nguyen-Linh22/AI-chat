@@ -163,6 +163,28 @@ function MessageBubble({
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
+              img({ src, alt }) {
+                if (typeof src !== 'string') {
+                  return null
+                }
+
+                if (!src.startsWith('https://') && !src.startsWith('http://')) {
+                  return null
+                }
+
+                return (
+                  <span className="my-2.5 block">
+                    <img
+                      src={src}
+                      alt={alt && alt.trim() !== '' ? alt : 'Hình ảnh tài liệu'}
+                      loading="lazy"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      className="max-h-96 max-w-full rounded-xl border border-slate-200 object-contain shadow-xs dark:border-gray-800"
+                    />
+                  </span>
+                )
+              },
               a({ children, href, ...props }) {
                 return (
                   <a
