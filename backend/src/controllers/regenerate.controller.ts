@@ -5,6 +5,7 @@ import {
 import { getChatHistory } from '../ai/context/chat-history.service.js'
 import { buildChatContext } from '../ai/context/chat.context.js'
 import { buildChatPrompt, MAX_AI_CONTEXT_CHARS } from '../ai/prompts/chat.prompt.js'
+import { semanticSearch, buildContext } from '../rag/rag.service.js'
 import { getModelById } from '../ai/model.registry.js'
 import { createAIProvider } from '../ai/ai.router.js'
 import { prisma } from '../lib/prisma.js'
@@ -116,11 +117,34 @@ export const regenerateMessage = async (
     const context =
       buildChatContext(history)
 
+    let ragContext = ''
+
+    try {
+      if (previousUserMessage.content?.trim().length >= 3) {
+        const ragResults =
+          await semanticSearch(
+            previousUserMessage.content,
+            3
+          )
+
+        if (ragResults.length > 0) {
+          ragContext =
+            buildContext(ragResults)
+        }
+      }
+    } catch (ragError) {
+      console.warn(
+        'REGENERATE: RAG retrieval failed, continuing without RAG:',
+        ragError
+      )
+    }
+
     const prompt =
       buildChatPrompt(
         previousUserMessage.content,
         context,
-        ''
+        '',
+        ragContext
       )
 
     if (prompt.length > MAX_AI_CONTEXT_CHARS) {

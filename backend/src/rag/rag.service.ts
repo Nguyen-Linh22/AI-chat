@@ -34,6 +34,7 @@ export async function semanticSearch(
       id: string
       content: string
       chunkIndex: number
+      imageUrl: string | null
       distance: number
     }>
   >`
@@ -41,6 +42,7 @@ export async function semanticSearch(
       "id",
       "content",
       "chunkIndex",
+      "imageUrl",
       "embedding" <=> ${JSON.stringify(queryEmbedding)}::vector AS distance
     FROM "DocumentChunk"
     WHERE "embedding" IS NOT NULL
@@ -55,13 +57,19 @@ export function buildContext(
   results: Array<{
     content: string
     chunkIndex: number
+    imageUrl?: string | null
   }>,
 ): string {
   return results
-    .map(
-      (result) =>
-        `[Chunk ${result.chunkIndex}]\n${result.content}`,
-    )
+    .map((result) => {
+      const chunkText = `[Chunk ${result.chunkIndex}]\n${result.content}`
+
+      if (result.imageUrl && result.imageUrl.trim()) {
+        return `${chunkText}\n\n[Image URL]\n${result.imageUrl.trim()}`
+      }
+
+      return chunkText
+    })
     .join('\n\n')
 }
 

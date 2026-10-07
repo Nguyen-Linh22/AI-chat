@@ -74,6 +74,7 @@ model DocumentChunk {
   documentId String                 @db.Uuid
   content    String                 @db.Text
   chunkIndex Int
+  imageUrl   String?                @db.VarChar(2048)
   embedding  Unsupported("vector")?
   createdAt  DateTime               @default(now())
 

@@ -6,6 +6,7 @@ import {
 import { getChatHistory } from '../ai/context/chat-history.service.js'
 import { buildChatContext } from '../ai/context/chat.context.js'
 import { buildChatPrompt, MAX_AI_CONTEXT_CHARS } from '../ai/prompts/chat.prompt.js'
+import { semanticSearch, buildContext } from '../rag/rag.service.js'
 import { getModelById } from '../ai/model.registry.js'
 import { createAIProvider } from '../ai/ai.router.js'
 import { getAttachmentContext } from '../services/attachment-context.service.js'
@@ -150,14 +151,30 @@ export const streamChatResponse = async (
     }
 
     const context = buildChatContext(history)
+    const attachmentContext = await getAttachmentContext(userMessage.id, userId)
 
-    const attachmentContext =
-      await getAttachmentContext(userMessage.id, userId)
+    let ragContext = ''
+
+    try {
+      if (content && content.trim().length >= 3) {
+        const ragResults = await semanticSearch(content, 3)
+
+        if (ragResults.length > 0) {
+          ragContext = buildContext(ragResults)
+        }
+      }
+    } catch (ragError) {
+      console.warn(
+        'STREAM: RAG retrieval failed, continuing without RAG:',
+        ragError
+      )
+    }
 
     const prompt = buildChatPrompt(
       content,
       context,
-      attachmentContext
+      attachmentContext,
+      ragContext
     )
 
     if (prompt.length > MAX_AI_CONTEXT_CHARS) {
@@ -258,7 +275,7 @@ export const streamChatResponse = async (
           `data: ${JSON.stringify({
             type: 'error',
             message: 'AI phản hồi quá lâu. Vui lòng thử lại.'
-          })}\n\n`
+          })}` + '\n\n'
         )
 
         res.end()
@@ -313,7 +330,7 @@ export const streamChatResponse = async (
         `data: ${JSON.stringify({
           type: 'error',
           message: 'Đã xảy ra lỗi khi streaming'
-        })}\n\n`
+        })}` + '\n\n'
       )
 
       res.end()

@@ -234,4 +234,118 @@ describe('MessageBubble', () => {
     expect(document.querySelector('.ai-typewriter-container')).toBeInTheDocument()
     expect(document.querySelector('.ai-cursor')).toBeInTheDocument()
   })
+
+  it('should render a valid Markdown image with exact src and alt', () => {
+    render(
+      <MessageBubble
+        role="ai"
+        content="![Sơ đồ kiến trúc](https://example.com/arch.png)"
+      />
+    )
+
+    const img = screen.getByRole('img', { name: 'Sơ đồ kiến trúc' })
+    expect(img).toBeInTheDocument()
+    expect(img).toHaveAttribute('src', 'https://example.com/arch.png')
+    expect(img).toHaveAttribute('alt', 'Sơ đồ kiến trúc')
+  })
+
+  it('should set security and performance attributes on valid image', () => {
+    render(
+      <MessageBubble
+        role="ai"
+        content="![Sơ đồ kiến trúc](https://example.com/arch.png)"
+      />
+    )
+
+    const img = screen.getByRole('img', { name: 'Sơ đồ kiến trúc' })
+    expect(img).toHaveAttribute('loading', 'lazy')
+    expect(img).toHaveAttribute('decoding', 'async')
+    expect(img).toHaveAttribute('referrerPolicy', 'no-referrer')
+  })
+
+  it('should apply layout and responsive classes to prevent chat overflow', () => {
+    render(
+      <MessageBubble
+        role="ai"
+        content="![Sơ đồ kiến trúc](https://example.com/arch.png)"
+      />
+    )
+
+    const img = screen.getByRole('img', { name: 'Sơ đồ kiến trúc' })
+    expect(img).toHaveClass('max-w-full')
+    expect(img).toHaveClass('rounded-xl')
+    expect(img).toHaveClass('border')
+    expect(img).toHaveClass('max-h-96')
+  })
+
+  it('should not render image with unsafe scheme like javascript:', () => {
+    render(
+      <MessageBubble
+        role="ai"
+        content="![unsafe](javascript:alert(1))"
+      />
+    )
+
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+  })
+
+  it('should not render image with unsupported scheme like data: URI', () => {
+    render(
+      <MessageBubble
+        role="ai"
+        content="![test](data:image/png;base64,abc)"
+      />
+    )
+
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+  })
+
+  it('should fallback to default alt text when alt is empty', () => {
+    render(
+      <MessageBubble
+        role="ai"
+        content="![](https://example.com/arch.png)"
+      />
+    )
+
+    const img = screen.getByRole('img', { name: 'Hình ảnh tài liệu' })
+    expect(img).toBeInTheDocument()
+    expect(img).toHaveAttribute('src', 'https://example.com/arch.png')
+    expect(img).toHaveAttribute('alt', 'Hình ảnh tài liệu')
+  })
+
+  it('should render image and preserve cursor behavior during streaming', () => {
+    render(
+      <MessageBubble
+        role="ai"
+        content="Tài liệu tham khảo:\n\n![Sơ đồ kiến trúc](https://example.com/arch.png)"
+        isStreaming
+      />
+    )
+
+    const img = screen.getByRole('img', { name: 'Sơ đồ kiến trúc' })
+    expect(img).toBeInTheDocument()
+    expect(img).toHaveAttribute('src', 'https://example.com/arch.png')
+
+    expect(document.querySelector('.ai-typewriter-container')).toBeInTheDocument()
+    expect(document.querySelector('.ai-cursor')).toBeInTheDocument()
+  })
+
+  it('should render Image RAG response with exact URL and security attributes in conversational Markdown', () => {
+    const aiContent =
+      'Đây là sơ đồ:\n\n![Sơ đồ kiến trúc](https://example.com/architecture.png)'
+
+    render(<MessageBubble role="ai" content={aiContent} />)
+
+    const img = screen.getByRole('img', { name: 'Sơ đồ kiến trúc' })
+    expect(img).toBeInTheDocument()
+    expect(img).toHaveAttribute(
+      'src',
+      'https://example.com/architecture.png'
+    )
+    expect(img).toHaveAttribute('alt', 'Sơ đồ kiến trúc')
+    expect(img).toHaveAttribute('loading', 'lazy')
+    expect(img).toHaveAttribute('decoding', 'async')
+    expect(img).toHaveAttribute('referrerPolicy', 'no-referrer')
+  })
 })
