@@ -23,6 +23,17 @@ async function embedText(text: string): Promise<number[]> {
   return values
 }
 
+export const RAG_DISTANCE_THRESHOLD = 0.38
+
+export function filterRelevantChunks<T extends { distance: number }>(
+  results: T[],
+  threshold = RAG_DISTANCE_THRESHOLD
+): T[] {
+  return results.filter(
+    (item) => typeof item.distance === 'number' && item.distance <= threshold
+  )
+}
+
 export async function semanticSearch(
   query: string,
   limit = 3,

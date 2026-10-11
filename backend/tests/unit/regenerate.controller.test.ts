@@ -10,6 +10,7 @@ const {
   buildChatPromptMock,
   semanticSearchMock,
   buildContextMock,
+  filterRelevantChunksMock,
   getModelByIdMock,
   createAIProviderMock,
   logAiRequestStartMock,
@@ -31,6 +32,11 @@ const {
   buildChatPromptMock: vi.fn(),
   semanticSearchMock: vi.fn(),
   buildContextMock: vi.fn(),
+  filterRelevantChunksMock: vi.fn((results: Array<{ distance?: number }>, threshold = 0.38) =>
+    results.filter(
+      (r) => typeof r.distance === 'number' && r.distance <= threshold
+    )
+  ),
   getModelByIdMock: vi.fn(),
   createAIProviderMock: vi.fn(),
   logAiRequestStartMock: vi.fn(),
@@ -65,7 +71,9 @@ vi.mock('../../src/ai/prompts/chat.prompt.js', () => ({
 
 vi.mock('../../src/rag/rag.service.js', () => ({
   semanticSearch: semanticSearchMock,
-  buildContext: buildContextMock
+  buildContext: buildContextMock,
+  filterRelevantChunks: filterRelevantChunksMock,
+  RAG_DISTANCE_THRESHOLD: 0.38
 }))
 
 vi.mock('../../src/ai/model.registry.js', () => ({
@@ -166,6 +174,12 @@ describe('Regenerate Controller', () => {
 
     semanticSearchMock.mockResolvedValue([])
     buildContextMock.mockReturnValue('')
+    filterRelevantChunksMock.mockImplementation(
+      (results: Array<{ distance?: number }>, threshold = 0.38) =>
+        results.filter(
+          (r) => typeof r.distance === 'number' && r.distance <= threshold
+        )
+    )
 
     buildChatPromptMock.mockReturnValue('Generated prompt')
 
@@ -292,6 +306,65 @@ describe('Regenerate Controller', () => {
 
     expect(resFlushHeadersMock).toHaveBeenCalled()
     expect(resEndMock).toHaveBeenCalled()
+  })
+
+  it('should exclude far chunks in regenerate when distance > 0.38 and keep ragContext empty', async () => {
+    const farResults = [
+      {
+        id: 'chunk-far',
+        content: 'Chính sách bảo mật không liên quan.',
+        chunkIndex: 0,
+        distance: 0.44
+      }
+    ]
+
+    semanticSearchMock.mockResolvedValue(farResults)
+
+    const req = createMockReq()
+    const res = createMockRes()
+
+    await regenerateMessage(req, res)
+
+    expect(buildContextMock).not.toHaveBeenCalled()
+    expect(buildChatPromptMock).toHaveBeenCalledWith(
+      'AI Chat có hỗ trợ nhiều cuộc trò chuyện không?',
+      'Previous context',
+      '',
+      ''
+    )
+  })
+
+  it('should keep only chunks with distance <= 0.38 when regenerating with mixed distance chunks', async () => {
+    const mixedResults = [
+      {
+        id: 'chunk-near',
+        content: 'AI Chat hỗ trợ nhiều cuộc trò chuyện.',
+        chunkIndex: 0,
+        distance: 0.28
+      },
+      {
+        id: 'chunk-far',
+        content: 'Không liên quan.',
+        chunkIndex: 1,
+        distance: 0.51
+      }
+    ]
+
+    semanticSearchMock.mockResolvedValue(mixedResults)
+    buildContextMock.mockReturnValue('[Chunk 0]\nAI Chat hỗ trợ nhiều cuộc trò chuyện.')
+
+    const req = createMockReq()
+    const res = createMockRes()
+
+    await regenerateMessage(req, res)
+
+    expect(buildContextMock).toHaveBeenCalledWith([mixedResults[0]])
+    expect(buildChatPromptMock).toHaveBeenCalledWith(
+      'AI Chat có hỗ trợ nhiều cuộc trò chuyện không?',
+      'Previous context',
+      '',
+      '[Chunk 0]\nAI Chat hỗ trợ nhiều cuộc trò chuyện.'
+    )
   })
 
   // TEST 3 — RAG bị lỗi

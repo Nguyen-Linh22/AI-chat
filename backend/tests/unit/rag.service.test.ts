@@ -19,7 +19,12 @@ vi.mock('../../src/lib/prisma.js', () => ({
   }
 }))
 
-import { semanticSearch, buildContext } from '../../src/rag/rag.service.js'
+import {
+  semanticSearch,
+  buildContext,
+  filterRelevantChunks,
+  RAG_DISTANCE_THRESHOLD
+} from '../../src/rag/rag.service.js'
 
 describe('RAG Service - semanticSearch with imageUrl', () => {
   beforeEach(() => {
@@ -246,5 +251,91 @@ describe('RAG Service - buildContext with imageUrl', () => {
 
     expect(context).toBe('[Chunk 0]\nText only')
     expect(context).not.toContain('[Image URL]')
+  })
+})
+
+describe('RAG Service - RAG_DISTANCE_THRESHOLD and filterRelevantChunks', () => {
+  it('should export RAG_DISTANCE_THRESHOLD with value 0.38', () => {
+    expect(RAG_DISTANCE_THRESHOLD).toBe(0.38)
+  })
+
+  // TEST 9 & 10 — Near vs Far semantic results
+  it('should keep results with distance <= threshold and exclude results with distance > threshold', () => {
+    const candidates = [
+      {
+        id: 'chunk-near-1',
+        content: 'Gói Pro có 2.000.000 token.',
+        chunkIndex: 0,
+        imageUrl: null,
+        distance: 0.22
+      },
+      {
+        id: 'chunk-near-2',
+        content: 'Hoàn tiền 100% trong 7 ngày.',
+        chunkIndex: 1,
+        imageUrl: 'https://example.com/refund.png',
+        distance: 0.35
+      },
+      {
+        id: 'chunk-far-1',
+        content: 'Sơ đồ kiến trúc không liên quan.',
+        chunkIndex: 2,
+        imageUrl: null,
+        distance: 0.45
+      },
+      {
+        id: 'chunk-far-2',
+        content: 'Chính sách bảo mật xa vời.',
+        chunkIndex: 3,
+        imageUrl: null,
+        distance: 0.52
+      }
+    ]
+
+    const filtered = filterRelevantChunks(candidates)
+
+    expect(filtered).toHaveLength(2)
+    expect(filtered.map((item) => item.id)).toEqual(['chunk-near-1', 'chunk-near-2'])
+    expect(filtered[0].content).toBe('Gói Pro có 2.000.000 token.')
+    expect(filtered[1].imageUrl).toBe('https://example.com/refund.png')
+  })
+
+  // TEST 11 — Boundary test
+  it('should accurately handle boundary values just below, equal to, and above threshold', () => {
+    const candidates = [
+      { id: 'below', content: 'Just below', chunkIndex: 0, distance: 0.3799 },
+      { id: 'equal', content: 'Exactly on threshold', chunkIndex: 1, distance: 0.38 },
+      { id: 'above', content: 'Just above', chunkIndex: 2, distance: 0.3801 }
+    ]
+
+    const filtered = filterRelevantChunks(candidates)
+
+    expect(filtered.map((item) => item.id)).toEqual(['below', 'equal'])
+  })
+
+  // Immutability & non-mutation
+  it('should not mutate the input array or chunk objects', () => {
+    const candidates = [
+      { id: 'c1', content: 'Item 1', chunkIndex: 0, imageUrl: 'https://img.png', distance: 0.3 },
+      { id: 'c2', content: 'Item 2', chunkIndex: 1, imageUrl: null, distance: 0.5 }
+    ]
+
+    const snapshot = JSON.parse(JSON.stringify(candidates))
+    const filtered = filterRelevantChunks(candidates)
+
+    expect(candidates).toEqual(snapshot)
+    expect(filtered).toHaveLength(1)
+    expect(filtered[0].imageUrl).toBe('https://img.png')
+    expect(filtered[0].distance).toBe(0.3)
+  })
+
+  it('should return an empty array when all candidate chunks exceed threshold', () => {
+    const candidates = [
+      { id: 'c1', content: 'Irrelevant 1', chunkIndex: 0, distance: 0.42 },
+      { id: 'c2', content: 'Irrelevant 2', chunkIndex: 1, distance: 0.49 }
+    ]
+
+    const filtered = filterRelevantChunks(candidates)
+    expect(filtered).toEqual([])
   })
 })

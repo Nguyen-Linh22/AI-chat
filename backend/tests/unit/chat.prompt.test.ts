@@ -111,4 +111,22 @@ https://example.com/image.png`
     expect(prompt).toContain('(Không có tài liệu tri thức liên quan)')
     expect(prompt).toContain('</system_knowledge>')
   })
+
+  // TEST 7 — General knowledge and conditional RAG rules
+  it('should include conditional rules allowing general knowledge and stating realtime limits', () => {
+    const prompt = buildChatPrompt('Python là gì?', '', '')
+
+    expect(prompt).toContain(
+      '- Nếu người dùng hỏi về tài liệu tri thức nội bộ hoặc nội dung file đính kèm, và thông tin cần thiết không có trong tài liệu/file đó, hãy nói rõ rằng thông tin đó không được cung cấp.'
+    )
+    expect(prompt).toContain(
+      '- Đối với câu hỏi kiến thức chung hoặc đàm thoại thông thường, hãy sử dụng kiến thức chung của bạn để trả lời chính xác và hữu ích.'
+    )
+    expect(prompt).toContain(
+      '- Nếu câu hỏi yêu cầu thông tin thời gian thực mà hệ thống không có dữ liệu thời gian thực, hãy nói rõ giới hạn thay vì bịa thông tin.'
+    )
+    expect(prompt).toContain(
+      'Hãy trả lời tin nhắn mới dựa trên lịch sử cuộc trò chuyện, tài liệu tri thức nội bộ khi liên quan, nội dung file đính kèm khi liên quan, hoặc kiến thức chung của bạn khi câu hỏi không phụ thuộc vào các nguồn đó.'
+    )
+  })
 })

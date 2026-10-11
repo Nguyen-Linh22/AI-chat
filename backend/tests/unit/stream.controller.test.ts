@@ -10,6 +10,7 @@ const {
   buildChatPromptMock,
   semanticSearchMock,
   buildContextMock,
+  filterRelevantChunksMock,
   getModelByIdMock,
   createAIProviderMock,
   getAttachmentContextMock,
@@ -31,6 +32,11 @@ const {
   buildChatPromptMock: vi.fn(),
   semanticSearchMock: vi.fn(),
   buildContextMock: vi.fn(),
+  filterRelevantChunksMock: vi.fn((results: Array<{ distance?: number }>, threshold = 0.38) =>
+    results.filter(
+      (r) => typeof r.distance === 'number' && r.distance <= threshold
+    )
+  ),
   getModelByIdMock: vi.fn(),
   createAIProviderMock: vi.fn(),
   getAttachmentContextMock: vi.fn(),
@@ -66,7 +72,9 @@ vi.mock('../../src/ai/prompts/chat.prompt.js', () => ({
 
 vi.mock('../../src/rag/rag.service.js', () => ({
   semanticSearch: semanticSearchMock,
-  buildContext: buildContextMock
+  buildContext: buildContextMock,
+  filterRelevantChunks: filterRelevantChunksMock,
+  RAG_DISTANCE_THRESHOLD: 0.38
 }))
 
 vi.mock('../../src/ai/model.registry.js', () => ({
@@ -130,6 +138,12 @@ describe('Stream Controller', () => {
 
     semanticSearchMock.mockResolvedValue([])
     buildContextMock.mockReturnValue('')
+    filterRelevantChunksMock.mockImplementation(
+      (results: Array<{ distance?: number }>, threshold = 0.38) =>
+        results.filter(
+          (r) => typeof r.distance === 'number' && r.distance <= threshold
+        )
+    )
 
     buildChatPromptMock.mockReturnValue('Generated prompt')
 
@@ -258,6 +272,98 @@ describe('Stream Controller', () => {
 
     expect(resFlushHeadersMock).toHaveBeenCalled()
     expect(resEndMock).toHaveBeenCalled()
+  })
+
+  it('should exclude far chunks when semantic search returns distance > 0.38 and keep ragContext empty', async () => {
+    const farResults = [
+      {
+        id: 'chunk-far',
+        content: 'Chính sách hoàn tiền không liên quan đến lập trình Python.',
+        chunkIndex: 0,
+        distance: 0.46
+      }
+    ]
+
+    semanticSearchMock.mockResolvedValue(farResults)
+
+    const req = {
+      params: { id: 'chat-id' },
+      body: { content: 'Python là gì?', modelId: 'ollama-qwen3-1.7b' },
+      userId: 'user-id',
+      file: undefined
+    } as unknown as Request
+
+    const res = {
+      on: resOnMock,
+      setHeader: resSetHeaderMock,
+      flushHeaders: resFlushHeadersMock,
+      write: resWriteMock,
+      end: resEndMock,
+      status: resStatusMock,
+      json: resJsonMock,
+      writableEnded: false,
+      headersSent: false
+    } as unknown as Response
+
+    await streamChatResponse(req, res)
+
+    expect(semanticSearchMock).toHaveBeenCalledWith('Python là gì?', 3)
+    expect(buildContextMock).not.toHaveBeenCalled()
+    expect(buildChatPromptMock).toHaveBeenCalledWith(
+      'Python là gì?',
+      'Previous context',
+      '',
+      ''
+    )
+  })
+
+  it('should keep only chunks with distance <= 0.38 when candidates contain both near and far chunks', async () => {
+    const mixedResults = [
+      {
+        id: 'chunk-near',
+        content: 'Gói Pro có 2.000.000 token.',
+        chunkIndex: 0,
+        distance: 0.25
+      },
+      {
+        id: 'chunk-far',
+        content: 'Sơ đồ kiến trúc không liên quan.',
+        chunkIndex: 1,
+        distance: 0.49
+      }
+    ]
+
+    semanticSearchMock.mockResolvedValue(mixedResults)
+    buildContextMock.mockReturnValue('[Chunk 0]\nGói Pro có 2.000.000 token.')
+
+    const req = {
+      params: { id: 'chat-id' },
+      body: { content: 'Gói Pro có bao nhiêu token mỗi tháng?', modelId: 'ollama-qwen3-1.7b' },
+      userId: 'user-id',
+      file: undefined
+    } as unknown as Request
+
+    const res = {
+      on: resOnMock,
+      setHeader: resSetHeaderMock,
+      flushHeaders: resFlushHeadersMock,
+      write: resWriteMock,
+      end: resEndMock,
+      status: resStatusMock,
+      json: resJsonMock,
+      writableEnded: false,
+      headersSent: false
+    } as unknown as Response
+
+    await streamChatResponse(req, res)
+
+    expect(buildContextMock).toHaveBeenCalledWith([mixedResults[0]])
+    expect(buildChatPromptMock).toHaveBeenCalledWith(
+      'Gói Pro có bao nhiêu token mỗi tháng?',
+      'Previous context',
+      '',
+      '[Chunk 0]\nGói Pro có 2.000.000 token.'
+    )
   })
 
   it('should continue without RAG when semantic search fails', async () => {
