@@ -5,7 +5,11 @@ import {
 import { getChatHistory } from '../ai/context/chat-history.service.js'
 import { buildChatContext } from '../ai/context/chat.context.js'
 import { buildChatPrompt, MAX_AI_CONTEXT_CHARS } from '../ai/prompts/chat.prompt.js'
-import { semanticSearch, buildContext } from '../rag/rag.service.js'
+import {
+  semanticSearch,
+  buildContext,
+  filterRelevantChunks
+} from '../rag/rag.service.js'
 import { getModelById } from '../ai/model.registry.js'
 import { createAIProvider } from '../ai/ai.router.js'
 import { prisma } from '../lib/prisma.js'
@@ -126,10 +130,11 @@ export const regenerateMessage = async (
             previousUserMessage.content,
             3
           )
+        const relevantResults = filterRelevantChunks(ragResults)
 
-        if (ragResults.length > 0) {
+        if (relevantResults.length > 0) {
           ragContext =
-            buildContext(ragResults)
+            buildContext(relevantResults)
         }
       }
     } catch (ragError) {

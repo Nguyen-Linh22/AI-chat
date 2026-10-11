@@ -6,7 +6,11 @@ import {
 import { getChatHistory } from '../ai/context/chat-history.service.js'
 import { buildChatContext } from '../ai/context/chat.context.js'
 import { buildChatPrompt, MAX_AI_CONTEXT_CHARS } from '../ai/prompts/chat.prompt.js'
-import { semanticSearch, buildContext } from '../rag/rag.service.js'
+import {
+  semanticSearch,
+  buildContext,
+  filterRelevantChunks
+} from '../rag/rag.service.js'
 import { getModelById } from '../ai/model.registry.js'
 import { createAIProvider } from '../ai/ai.router.js'
 import { getAttachmentContext } from '../services/attachment-context.service.js'
@@ -158,9 +162,10 @@ export const streamChatResponse = async (
     try {
       if (content && content.trim().length >= 3) {
         const ragResults = await semanticSearch(content, 3)
+        const relevantResults = filterRelevantChunks(ragResults)
 
-        if (ragResults.length > 0) {
-          ragContext = buildContext(ragResults)
+        if (relevantResults.length > 0) {
+          ragContext = buildContext(relevantResults)
         }
       }
     } catch (ragError) {
