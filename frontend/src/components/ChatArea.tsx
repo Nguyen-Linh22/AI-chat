@@ -83,8 +83,8 @@ const SUGGESTED_PROMPTS = [
 
 function ChatArea({
   onOpenMobileSidebar,
-  isSidebarCollapsed = false,
-  onToggleSidebar,
+  isSidebarCollapsed: _isSidebarCollapsed = false,
+  onToggleSidebar: _onToggleSidebar,
 }: ChatAreaProps = {}) {
   const { chatId: urlChatId } = useParams<{ chatId?: string }>()
 
@@ -473,20 +473,6 @@ function ChatArea({
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          )}
-
-          {isSidebarCollapsed && (
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              className="hidden md:flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-[#161d28]/90 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition active:scale-95 cursor-pointer"
-              aria-label="Mở thanh bên"
-              title="Mở thanh bên"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
           )}
