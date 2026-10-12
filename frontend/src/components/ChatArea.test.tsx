@@ -555,22 +555,22 @@ describe('ChatArea', () => {
     expect(bg).toHaveClass('pointer-events-none')
   })
 
-  it('should render open sidebar button when isSidebarCollapsed is true and trigger onToggleSidebar', () => {
-    const onToggleSidebar = vi.fn()
+  it('should not render duplicate desktop open sidebar button in ChatArea', () => {
     configureStores()
-    render(<ChatArea isSidebarCollapsed={true} onToggleSidebar={onToggleSidebar} />)
-
-    const openBtn = screen.getByRole('button', { name: 'Mở thanh bên' })
-    expect(openBtn).toBeInTheDocument()
-    fireEvent.click(openBtn)
-    expect(onToggleSidebar).toHaveBeenCalledTimes(1)
-  })
-
-  it('should not render open sidebar button when isSidebarCollapsed is false', () => {
-    configureStores()
-    render(<ChatArea isSidebarCollapsed={false} />)
+    render(<ChatArea isSidebarCollapsed={true} />)
 
     expect(screen.queryByRole('button', { name: 'Mở thanh bên' })).not.toBeInTheDocument()
+  })
+
+  it('should render mobile menu button and trigger onOpenMobileSidebar', () => {
+    const onOpenMobileSidebar = vi.fn()
+    configureStores()
+    render(<ChatArea onOpenMobileSidebar={onOpenMobileSidebar} />)
+
+    const menuBtn = screen.getByRole('button', { name: 'Mở menu danh sách đoạn chat' })
+    expect(menuBtn).toBeInTheDocument()
+    fireEvent.click(menuBtn)
+    expect(onOpenMobileSidebar).toHaveBeenCalledTimes(1)
   })
 })
 

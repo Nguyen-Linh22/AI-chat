@@ -10,9 +10,7 @@ function ChatPage() {
   return (
     <ChatLayout>
       <div
-        className={`flex h-full w-full overflow-hidden p-2 sm:p-3 relative transition-all duration-200 bg-[#F8FAFC] dark:bg-[#0B0F17] ${
-          isSidebarCollapsed ? 'gap-0' : 'gap-2 sm:gap-3'
-        }`}
+        className="flex h-full w-full overflow-hidden p-2 sm:p-3 relative transition-all duration-200 bg-[#F8FAFC] dark:bg-[#0B0F17] gap-2 sm:gap-3"
       >
         <Sidebar
           isOpen={isMobileSidebarOpen}
