@@ -751,8 +751,8 @@ describe('Sidebar', () => {
   it('should be expanded by default and render collapse button', () => {
     const { container } = render(<Sidebar />)
     const aside = container.querySelector('aside')
-    expect(aside?.className).toContain('w-[228px]')
-    expect(aside?.className).toContain('md:w-[228px]')
+    expect(aside?.className).toContain('w-[240px]')
+    expect(aside?.className).toContain('md:w-[240px]')
     expect(screen.getByRole('button', { name: 'Thu gọn thanh bên' })).toBeInTheDocument()
   })
 
@@ -767,9 +767,9 @@ describe('Sidebar', () => {
   it('should apply collapsed classes when isCollapsed is true', () => {
     const { container } = render(<Sidebar isCollapsed={true} />)
     const aside = container.querySelector('aside')
-    expect(aside?.className).toContain('md:w-0')
-    expect(aside?.className).toContain('md:opacity-0')
-    expect(aside?.className).toContain('md:pointer-events-none')
+    expect(aside?.className).toContain('md:w-[64px]')
+    expect(screen.getByRole('button', { name: 'Mở rộng thanh bên' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Chat mới' })).toBeInTheDocument()
   })
 
   it('should maintain mobile sidebar behavior with isOpen', () => {
