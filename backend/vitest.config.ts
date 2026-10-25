@@ -6,5 +6,6 @@ export default defineConfig({
     environment: 'node',
     pool: 'forks',
     maxWorkers: 1,
+    setupFiles: ['./tests/integration/safety-guard.ts'],
   },
 })
