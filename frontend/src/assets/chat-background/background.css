@@ -1,3 +1,5 @@
+/* ===== Chat Background Canvas (Original Starfield Integration) ===== */
+
 .chat-stars-bg {
   position: absolute;
   inset: 0;
@@ -6,18 +8,37 @@
   overflow: hidden;
   pointer-events: none;
   background: transparent;
-  opacity: 0.35;
-  filter: invert(0.8);
-  transition: opacity 0.3s ease;
+  z-index: 0;
 }
 
-:where(.dark) .chat-stars-bg {
-  background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
-  opacity: 1;
-  filter: none;
+/* Light Mode: Keep star layers completely hidden to preserve pristine light canvas */
+.chat-stars-bg .chat-stars-layer-1,
+.chat-stars-bg .chat-stars-layer-2,
+.chat-stars-bg .chat-stars-layer-3 {
+  display: none;
 }
 
-.chat-stars-bg .chat-stars-layer-1 {
+/* ==========================================================================
+   Dark Mode: Original Starfield Sky with 3-Layer Parallax
+   ========================================================================== */
+.dark .chat-stars-bg {
+  background: radial-gradient(ellipse at bottom, #1b2735 0%, #0B0F17 100%);
+}
+
+.dark .chat-stars-bg .chat-stars-layer-1,
+.dark .chat-stars-bg .chat-stars-layer-2,
+.dark .chat-stars-bg .chat-stars-layer-3 {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Layer 1: 700 small stars (1px), 50s animation cycle
+   -------------------------------------------------------------------------- */
+.dark .chat-stars-bg .chat-stars-layer-1 {
   width: 1px;
   height: 1px;
   background: transparent;
@@ -724,10 +745,12 @@
     1954px 838px #fff;
   animation: animStar 50s linear infinite;
 }
-.chat-stars-bg .chat-stars-layer-1:after {
+
+.dark .chat-stars-bg .chat-stars-layer-1:after {
   content: " ";
   position: absolute;
   top: 2000px;
+  left: 0;
   width: 1px;
   height: 1px;
   background: transparent;
@@ -1434,7 +1457,10 @@
     1954px 838px #fff;
 }
 
-.chat-stars-bg .chat-stars-layer-2 {
+/* --------------------------------------------------------------------------
+   Layer 2: 200 medium stars (2px), 100s animation cycle
+   -------------------------------------------------------------------------- */
+.dark .chat-stars-bg .chat-stars-layer-2 {
   width: 2px;
   height: 2px;
   background: transparent;
@@ -1641,10 +1667,12 @@
     314px 739px #fff;
   animation: animStar 100s linear infinite;
 }
-.chat-stars-bg .chat-stars-layer-2:after {
+
+.dark .chat-stars-bg .chat-stars-layer-2:after {
   content: " ";
   position: absolute;
   top: 2000px;
+  left: 0;
   width: 2px;
   height: 2px;
   background: transparent;
@@ -1851,7 +1879,10 @@
     314px 739px #fff;
 }
 
-.chat-stars-bg .chat-stars-layer-3 {
+/* --------------------------------------------------------------------------
+   Layer 3: 100 large stars (3px), 150s animation cycle
+   -------------------------------------------------------------------------- */
+.dark .chat-stars-bg .chat-stars-layer-3 {
   width: 3px;
   height: 3px;
   background: transparent;
@@ -1958,10 +1989,12 @@
     287px 1272px #fff;
   animation: animStar 150s linear infinite;
 }
-.chat-stars-bg .chat-stars-layer-3:after {
+
+.dark .chat-stars-bg .chat-stars-layer-3:after {
   content: " ";
   position: absolute;
   top: 2000px;
+  left: 0;
   width: 3px;
   height: 3px;
   background: transparent;
@@ -2068,6 +2101,9 @@
     287px 1272px #fff;
 }
 
+/* --------------------------------------------------------------------------
+   Original Animation Keyframes: Continuous Vertical Parallax
+   -------------------------------------------------------------------------- */
 @keyframes animStar {
   from {
     transform: translateY(0px);
@@ -2077,3 +2113,14 @@
   }
 }
 
+/* --------------------------------------------------------------------------
+   Accessibility: Prefers-reduced-motion Overrides
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .dark .chat-stars-bg .chat-stars-layer-1,
+  .dark .chat-stars-bg .chat-stars-layer-2,
+  .dark .chat-stars-bg .chat-stars-layer-3 {
+    animation: none !important;
+    transform: none !important;
+  }
+}
