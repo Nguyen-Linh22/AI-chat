@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, act } from '@testing-library/react'
+import { render, screen, fireEvent, act, createEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ExpandedEditorModal } from './ExpandedEditorModal'
 import { useThemeStore } from '../../stores/themeStore'
@@ -325,5 +326,81 @@ const greeting = "Xin chào";
 
     expect(clearTimeoutSpy).toHaveBeenCalled()
     clearTimeoutSpy.mockRestore()
+  })
+
+  it('17. Tab key inserts 4 spaces at caret and allows immediate subsequent typing without caret jump', async () => {
+    const user = userEvent.setup()
+    function ControlledModal() {
+      const [val, setVal] = useState('Hello')
+      return <ExpandedEditorModal {...defaultProps} content={val} onChange={setVal} />
+    }
+    render(<ControlledModal />)
+
+    const textarea = screen.getByPlaceholderText('Nhập nội dung tin nhắn chi tiết, đoạn mã, hoặc tài liệu...') as HTMLTextAreaElement
+    expect(textarea.value).toBe('Hello')
+
+    // Press Tab
+    await user.type(textarea, '{Tab}')
+    expect(textarea.value).toBe('Hello    ')
+    expect(textarea.selectionStart).toBe(9)
+    expect(textarea.selectionEnd).toBe(9)
+
+    // Immediate subsequent typing
+    await user.type(textarea, 'world')
+    expect(textarea.value).toBe('Hello    world')
+    expect(textarea.selectionStart).toBe(14)
+  })
+
+  it('18. Tab key inserts 4 spaces in the middle of text and preserves surrounding content', () => {
+    function ControlledModal() {
+      const [val, setVal] = useState('Helloworld')
+      return <ExpandedEditorModal {...defaultProps} content={val} onChange={setVal} />
+    }
+    render(<ControlledModal />)
+
+    const textarea = screen.getByPlaceholderText('Nhập nội dung tin nhắn chi tiết, đoạn mã, hoặc tài liệu...') as HTMLTextAreaElement
+    // Set caret between "Hello" and "world"
+    textarea.selectionStart = textarea.selectionEnd = 5
+
+    fireEvent.keyDown(textarea, { key: 'Tab' })
+
+    expect(textarea.value).toBe('Hello    world')
+    expect(textarea.selectionStart).toBe(9)
+    expect(textarea.selectionEnd).toBe(9)
+  })
+
+  it('19. Tab key replaces selected text range with 4 spaces and updates caret', () => {
+    function ControlledModal() {
+      const [val, setVal] = useState('Hello [REPLACE_ME] world')
+      return <ExpandedEditorModal {...defaultProps} content={val} onChange={setVal} />
+    }
+    render(<ControlledModal />)
+
+    const textarea = screen.getByPlaceholderText('Nhập nội dung tin nhắn chi tiết, đoạn mã, hoặc tài liệu...') as HTMLTextAreaElement
+    // Select "[REPLACE_ME]" (from index 6 to 18)
+    textarea.selectionStart = 6
+    textarea.selectionEnd = 18
+
+    fireEvent.keyDown(textarea, { key: 'Tab' })
+
+    expect(textarea.value).toBe('Hello      world')
+    expect(textarea.selectionStart).toBe(10)
+    expect(textarea.selectionEnd).toBe(10)
+  })
+
+  it('20. Shift+Tab does not insert spaces and does not prevent default', () => {
+    const onChange = vi.fn()
+    render(<ExpandedEditorModal {...defaultProps} content="Existing text" onChange={onChange} />)
+
+    const textarea = screen.getByPlaceholderText('Nhập nội dung tin nhắn chi tiết, đoạn mã, hoặc tài liệu...') as HTMLTextAreaElement
+    const shiftTabEvent = createEvent.keyDown(textarea, {
+      key: 'Tab',
+      shiftKey: true,
+    })
+    fireEvent(textarea, shiftTabEvent)
+
+    expect(shiftTabEvent.defaultPrevented).toBe(false)
+    expect(onChange).not.toHaveBeenCalled()
+    expect(textarea.value).toBe('Existing text')
   })
 })

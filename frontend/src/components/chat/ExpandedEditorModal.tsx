@@ -211,13 +211,16 @@ export function ExpandedEditorModal({
       const target = event.currentTarget
       const start = target.selectionStart
       const end = target.selectionEnd
-      const newContent = content.substring(0, start) + '    ' + content.substring(end)
-      onChange(newContent)
-      requestAnimationFrame(() => {
-        if (textareaRef.current) {
-          textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 4
-        }
-      })
+
+      if (typeof target.setRangeText === 'function') {
+        target.setRangeText('    ', start, end, 'end')
+        onChange(target.value)
+      } else {
+        const newContent = content.substring(0, start) + '    ' + content.substring(end)
+        target.value = newContent
+        target.selectionStart = target.selectionEnd = start + 4
+        onChange(newContent)
+      }
     }
   }
 
