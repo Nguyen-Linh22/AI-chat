@@ -316,4 +316,75 @@ describe('messageService', () => {
     expect(onChunk).toHaveBeenCalledTimes(1)
     expect(onChunk).toHaveBeenCalledWith('Hello')
   })
+
+  describe('Patch 2.3 — Regenerate Reader Cleanup Hardening', () => {
+    it('calls reader.cancel() when regenerateMessage completes with done event', async () => {
+      const encoder = new TextEncoder()
+      let cancelCalled = false
+
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode('data: {"type":"chunk","content":"A"}\n\ndata: {"type":"done"}\n\n')
+          )
+        },
+        cancel() {
+          cancelCalled = true
+        },
+      })
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        body: stream,
+      } as unknown as Response)
+
+      await regenerateMessage('chat-1', 'msg-1', 'model-1', vi.fn())
+      expect(cancelCalled).toBe(true)
+    })
+
+    it('calls reader.cancel() and does not mask original error when error event is received', async () => {
+      const encoder = new TextEncoder()
+      let cancelCalled = false
+
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode('data: {"type":"error","message":"Regenerate failed on server"}\n\n')
+          )
+        },
+        cancel() {
+          cancelCalled = true
+        },
+      })
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        body: stream,
+      } as unknown as Response)
+
+      await expect(
+        regenerateMessage('chat-1', 'msg-1', 'model-1', vi.fn())
+      ).rejects.toThrow('Regenerate failed on server')
+
+      expect(cancelCalled).toBe(true)
+    })
+
+    it('does not mask original read error if reader.cancel() throws or rejects', async () => {
+      const mockReader = {
+        read: vi.fn().mockRejectedValueOnce(new Error('Regenerate stream read drop')),
+        cancel: vi.fn().mockRejectedValueOnce(new Error('Cancel failed')),
+      }
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        body: {
+          getReader: () => mockReader,
+        },
+      } as unknown as Response)
+
+      await expect(
+        regenerateMessage('chat-1', 'msg-1', 'model-1', vi.fn())
+      ).rejects.toThrow('Regenerate stream read drop')
+    })
+  })
 })

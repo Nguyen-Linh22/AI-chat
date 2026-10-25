@@ -49,54 +49,62 @@ export const streamMessage = async (
   const decoder = new TextDecoder()
   let buffer = ''
 
-  while (true) {
-    const { value, done } = await reader.read()
+  try {
+    while (true) {
+      const { value, done } = await reader.read()
 
-    if (done) {
-      break
-    }
-
-    buffer += decoder.decode(value, {
-      stream: true
-    })
-
-    const events = buffer.split('\n\n')
-    buffer = events.pop() ?? ''
-
-    for (const event of events) {
-      const line = event
-        .split('\n')
-        .find((line) => line.startsWith('data:'))
-
-      if (!line) {
-        continue
+      if (done) {
+        break
       }
 
-      const data = line.replace(/^data:\s*/, '')
-      const parsed = JSON.parse(data)
+      buffer += decoder.decode(value, {
+        stream: true
+      })
 
-      if (parsed.type === 'chunk') {
-        onChunk(parsed.content)
-      }
+      const events = buffer.split('\n\n')
+      buffer = events.pop() ?? ''
 
-      if (parsed.type === 'error') {
-        throw new Error(parsed.message)
-      }
+      for (const event of events) {
+        const line = event
+          .split('\n')
+          .find((line) => line.startsWith('data:'))
 
-      if (parsed.type === 'done') {
-        const assistantMsg = parsed.message
-        return {
-          userMessage: parsed.userMessage,
-          assistantMessage: {
-            ...assistantMsg,
-            role: assistantMsg.role === 'ai' ? 'assistant' : assistantMsg.role
+        if (!line) {
+          continue
+        }
+
+        const data = line.replace(/^data:\s*/, '')
+        const parsed = JSON.parse(data)
+
+        if (parsed.type === 'chunk') {
+          onChunk(parsed.content)
+        }
+
+        if (parsed.type === 'error') {
+          throw new Error(parsed.message)
+        }
+
+        if (parsed.type === 'done') {
+          const assistantMsg = parsed.message
+          return {
+            userMessage: parsed.userMessage,
+            assistantMessage: {
+              ...assistantMsg,
+              role: assistantMsg.role === 'ai' ? 'assistant' : assistantMsg.role
+            }
           }
         }
       }
     }
-  }
 
-  throw new Error(
-    'Stream kết thúc mà không nhận được message hoàn tất'
-  )
+    throw new Error(
+      'Stream kết thúc mà không nhận được message hoàn tất'
+    )
+  } finally {
+    try {
+      reader.cancel().catch(() => {})
+    } catch {
+      // Ignore synchronous cancellation errors
+    }
+  }
 }

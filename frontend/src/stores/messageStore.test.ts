@@ -4,6 +4,7 @@ import { useMessageStore } from './messageStore'
 describe('messageStore', () => {
   beforeEach(() => {
     useMessageStore.setState({
+      activeChatId: null,
       messages: [],
       loadingMessages: false,
       messageError: null,
@@ -22,6 +23,7 @@ describe('messageStore', () => {
   it('should have the correct initial state', () => {
     const state = useMessageStore.getState()
 
+    expect(state.activeChatId).toBeNull()
     expect(state.messages).toEqual([])
     expect(state.loadingMessages).toBe(false)
     expect(state.messageError).toBeNull()
@@ -704,6 +706,13 @@ describe('messageStore', () => {
   })
 
   it('should set pagination and cache pagination per chat', () => {
+    useMessageStore.setState({
+      activeChatId: 'chat-1',
+      messagesCache: {
+        'chat-1': [],
+      },
+    })
+
     useMessageStore.getState().setPagination('chat-1', 'cursor-abc', true)
 
     const state = useMessageStore.getState()
@@ -762,5 +771,311 @@ describe('messageStore', () => {
     useMessageStore.getState().setOlderError(null)
     expect(useMessageStore.getState().loadingOlder).toBe(false)
     expect(useMessageStore.getState().olderError).toBeNull()
+  })
+
+  // === Fix1-A Regression Tests: History Pagination Race Condition ===
+  it('Fix1-A: prependMessages of chat A does not pollute active chat B when user switched chats', () => {
+    const msgChatB = {
+      id: 'msg-b1',
+      chatSessionId: 'chat-b',
+      role: 'user' as const,
+      content: 'Chat B current message',
+      createdAt: '2026-09-27T00:00:10.000Z',
+      attachments: [],
+    }
+
+    const msgChatA = {
+      id: 'msg-a2',
+      chatSessionId: 'chat-a',
+      role: 'user' as const,
+      content: 'Chat A recent message',
+      createdAt: '2026-09-27T00:00:02.000Z',
+      attachments: [],
+    }
+
+    // Set up chat A and chat B in cache, and activeChat is chat-b
+    useMessageStore.setState({
+      activeChatId: 'chat-b',
+      messages: [msgChatB],
+      messagesCache: {
+        'chat-a': [msgChatA],
+        'chat-b': [msgChatB],
+      },
+    })
+
+    const olderMsgChatA = {
+      id: 'msg-a1',
+      chatSessionId: 'chat-a',
+      role: 'user' as const,
+      content: 'Chat A older message',
+      createdAt: '2026-09-27T00:00:01.000Z',
+      attachments: [],
+    }
+
+    // Chat A pagination request completes late while user is looking at chat B
+    useMessageStore.getState().prependMessages('chat-a', [olderMsgChatA])
+
+    const state = useMessageStore.getState()
+    // Active chat B must NOT be polluted
+    expect(state.messages).toEqual([msgChatB])
+    // Chat A cache must be updated properly
+    expect(state.messagesCache['chat-a']).toEqual([olderMsgChatA, msgChatA])
+  })
+
+  it('Fix1-A: setPagination for chat A does not corrupt active chat B pagination state', () => {
+    useMessageStore.setState({
+      activeChatId: 'chat-b',
+      messagesCache: {
+        'chat-a': [{
+          id: 'msg-a',
+          chatSessionId: 'chat-a',
+          role: 'user',
+          content: 'Hello A',
+          createdAt: '2026-09-27T00:00:00.000Z',
+          attachments: [],
+        }],
+        'chat-b': [],
+      },
+      nextCursor: 'cursor-b',
+      hasMoreOlder: true,
+      paginationCache: {
+        'chat-a': { nextCursor: 'old-cursor-a', hasMore: true },
+        'chat-b': { nextCursor: 'cursor-b', hasMore: true },
+      },
+    })
+
+    // Chat A pagination completes
+    useMessageStore.getState().setPagination('chat-a', 'new-cursor-a', false)
+
+    const state = useMessageStore.getState()
+    // Active chat B pagination must remain intact
+    expect(state.nextCursor).toBe('cursor-b')
+    expect(state.hasMoreOlder).toBe(true)
+    // Chat A pagination cache is updated
+    expect(state.paginationCache['chat-a']).toEqual({
+      nextCursor: 'new-cursor-a',
+      hasMore: false,
+    })
+  })
+
+  it('Fix1-Hardening-A: setPagination does NOT create paginationCache entry if chat is deleted or not in messagesCache', () => {
+    useMessageStore.setState({
+      activeChatId: 'chat-b',
+      messagesCache: {
+        'chat-b': [],
+      },
+      nextCursor: 'cursor-b',
+      hasMoreOlder: true,
+      paginationCache: {},
+    })
+
+    // Request arrives for chat-deleted (which is not active and not in messagesCache)
+    useMessageStore.getState().setPagination('chat-deleted', 'new-cursor', true)
+
+    const state = useMessageStore.getState()
+    // Must NOT create orphan entry in paginationCache
+    expect(state.paginationCache['chat-deleted']).toBeUndefined()
+    // Active chat B pagination is not affected
+    expect(state.nextCursor).toBe('cursor-b')
+    expect(state.hasMoreOlder).toBe(true)
+  })
+
+  it('Fix1-Hardening-A: setPagination correctly updates pagination state for active chat', () => {
+    useMessageStore.setState({
+      activeChatId: 'chat-active',
+      messagesCache: {
+        'chat-active': [],
+      },
+      nextCursor: null,
+      hasMoreOlder: false,
+      paginationCache: {},
+    })
+
+    useMessageStore.getState().setPagination('chat-active', 'cursor-active-1', true)
+
+    const state = useMessageStore.getState()
+    expect(state.nextCursor).toBe('cursor-active-1')
+    expect(state.hasMoreOlder).toBe(true)
+    expect(state.paginationCache['chat-active']).toEqual({
+      nextCursor: 'cursor-active-1',
+      hasMore: true,
+    })
+  })
+
+  it('Fix1-Final-Patch: setPagination does NOT create paginationCache when activeChatId is null and messages is empty', () => {
+    useMessageStore.setState({
+      activeChatId: null,
+      messages: [],
+      messagesCache: {},
+      nextCursor: null,
+      hasMoreOlder: false,
+      paginationCache: {},
+    })
+
+    // Late pagination request arrives for a non-cached chat while on empty/welcome screen
+    useMessageStore.getState().setPagination('chat-orphaned', 'cursor-orphan', true)
+
+    const state = useMessageStore.getState()
+    expect(state.paginationCache['chat-orphaned']).toBeUndefined()
+    expect(state.nextCursor).toBeNull()
+    expect(state.hasMoreOlder).toBe(false)
+  })
+
+  it('Fix1-Final-Patch: late pagination request does NOT resurrect cache after deleteChatCache on empty chat', () => {
+    const msg = {
+      id: 'm1',
+      chatSessionId: 'chat-deleted',
+      role: 'user' as const,
+      content: 'Hello',
+      createdAt: '2026-09-27T00:00:00.000Z',
+    }
+
+    useMessageStore.setState({
+      activeChatId: 'chat-deleted',
+      messages: [msg],
+      messagesCache: {
+        'chat-deleted': [msg],
+      },
+      paginationCache: {
+        'chat-deleted': { nextCursor: 'c1', hasMore: true },
+      },
+    })
+
+    // Chat is deleted, activeChatId becomes null and messages becomes []
+    useMessageStore.getState().deleteChatCache('chat-deleted')
+    expect(useMessageStore.getState().activeChatId).toBeNull()
+    expect(useMessageStore.getState().messages).toEqual([])
+
+    // Late pagination request finishes after deletion
+    useMessageStore.getState().setPagination('chat-deleted', 'c2-late', true)
+
+    const state = useMessageStore.getState()
+    expect(state.paginationCache['chat-deleted']).toBeUndefined()
+    expect(state.nextCursor).toBeNull()
+    expect(state.hasMoreOlder).toBe(false)
+  })
+
+  // === Fix1-B Regression Tests: Abort Stream on Switch / Clear ===
+  it('Fix1-B: switchChat aborts running stream', () => {
+    let aborted = false
+    const mockAbort = () => {
+      aborted = true
+    }
+
+    useMessageStore.setState({
+      activeChatId: 'chat-1',
+      streamingMessageId: 'stream-1',
+      abortCurrentStream: mockAbort,
+    })
+
+    useMessageStore.getState().switchChat('chat-2')
+
+    expect(aborted).toBe(true)
+    expect(useMessageStore.getState().abortCurrentStream).toBeNull()
+    expect(useMessageStore.getState().streamingMessageId).toBeNull()
+  })
+
+  it('Fix1-B: clearMessages and clearAll abort running stream', () => {
+    let aborted1 = false
+    useMessageStore.setState({
+      abortCurrentStream: () => {
+        aborted1 = true
+      },
+    })
+    useMessageStore.getState().clearMessages()
+    expect(aborted1).toBe(true)
+
+    let aborted2 = false
+    useMessageStore.setState({
+      abortCurrentStream: () => {
+        aborted2 = true
+      },
+    })
+    useMessageStore.getState().clearAll()
+    expect(aborted2).toBe(true)
+  })
+
+  // === Fix1-D Regression Tests: Remove Message ===
+  it('Fix1-D: removeMessage deletes target message from messages and all messagesCache', () => {
+    const userMsg = {
+      id: 'user-msg',
+      chatSessionId: 'chat-1',
+      role: 'user' as const,
+      content: 'Hello',
+      createdAt: '2026-09-27T00:00:01.000Z',
+      attachments: [],
+    }
+    const emptyAssistantMsg = {
+      id: 'assistant-empty',
+      chatSessionId: 'chat-1',
+      role: 'assistant' as const,
+      content: '',
+      createdAt: '2026-09-27T00:00:02.000Z',
+      attachments: [],
+    }
+
+    useMessageStore.setState({
+      activeChatId: 'chat-1',
+      messages: [userMsg, emptyAssistantMsg],
+      messagesCache: {
+        'chat-1': [userMsg, emptyAssistantMsg],
+      },
+    })
+
+    useMessageStore.getState().removeMessage('assistant-empty')
+
+    const state = useMessageStore.getState()
+    expect(state.messages).toEqual([userMsg])
+    expect(state.messagesCache['chat-1']).toEqual([userMsg])
+  })
+
+  // === Fix1-E Regression Tests: Delete Chat While Streaming ===
+  it('Fix1-E: deleteChatCache aborts active stream and purges cache/pagination/scroll', () => {
+    let aborted = false
+    const msg = {
+      id: 'msg-1',
+      chatSessionId: 'chat-to-delete',
+      role: 'user' as const,
+      content: 'Deleting this',
+      createdAt: '2026-09-27T00:00:01.000Z',
+      attachments: [],
+    }
+
+    useMessageStore.setState({
+      activeChatId: 'chat-to-delete',
+      messages: [msg],
+      streamingMessageId: 'msg-1',
+      abortCurrentStream: () => {
+        aborted = true
+      },
+      messagesCache: {
+        'chat-to-delete': [msg],
+        'chat-keep': [],
+      },
+      paginationCache: {
+        'chat-to-delete': { nextCursor: 'c1', hasMore: true },
+        'chat-keep': { nextCursor: null, hasMore: false },
+      },
+      scrollPositions: {
+        'chat-to-delete': 500,
+        'chat-keep': 100,
+      },
+    })
+
+    useMessageStore.getState().deleteChatCache('chat-to-delete')
+
+    const state = useMessageStore.getState()
+    expect(aborted).toBe(true)
+    expect(state.activeChatId).toBeNull()
+    expect(state.messages).toEqual([])
+    expect(state.streamingMessageId).toBeNull()
+    expect(state.abortCurrentStream).toBeNull()
+    expect(state.messagesCache['chat-to-delete']).toBeUndefined()
+    expect(state.paginationCache['chat-to-delete']).toBeUndefined()
+    expect(state.scrollPositions['chat-to-delete']).toBeUndefined()
+    // Other chats remain untouched
+    expect(state.messagesCache['chat-keep']).toEqual([])
+    expect(state.paginationCache['chat-keep']).toEqual({ nextCursor: null, hasMore: false })
+    expect(state.scrollPositions['chat-keep']).toBe(100)
   })
 })

@@ -2,6 +2,77 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ===== Design Tokens (Premium AI Workspace) ===== */
+:root {
+  --workspace-canvas: #F8FAFC;
+  --workspace-sidebar: #FFFFFF;
+  --workspace-surface: #FFFFFF;
+  --workspace-surface-hover: #F1F5F9;
+  --workspace-surface-active: #E2E8F0;
+  --workspace-border: #E2E8F0;
+  --workspace-border-strong: #CBD5E1;
+  --workspace-border-subtle: #F1F5F9;
+
+  --workspace-text-primary: #0F172A;
+  --workspace-text-secondary: #64748B;
+  --workspace-text-muted: #94A3B8;
+
+  --brand-primary: #1B8F3D;
+  --brand-primary-hover: #167632;
+  --brand-primary-light: rgba(27, 143, 61, 0.08);
+  --brand-primary-ring: rgba(27, 143, 61, 0.25);
+
+  --brand-danger: #B91E2B;
+  --brand-danger-hover: #9E1924;
+  --brand-danger-light: rgba(185, 30, 43, 0.08);
+  --brand-danger-ring: rgba(185, 30, 43, 0.25);
+
+  --shadow-workspace-elevated: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+  --shadow-workspace-dropdown: 0 10px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+.dark {
+  --workspace-canvas: #0B0F17;
+  --workspace-sidebar: #131923;
+  --workspace-surface: #1A2230;
+  --workspace-surface-hover: #222C3D;
+  --workspace-surface-active: #2A374C;
+  --workspace-border: rgba(255, 255, 255, 0.08);
+  --workspace-border-strong: rgba(255, 255, 255, 0.14);
+  --workspace-border-subtle: rgba(255, 255, 255, 0.04);
+
+  --workspace-text-primary: #F1F5F9;
+  --workspace-text-secondary: #94A3B8;
+  --workspace-text-muted: #64748B;
+
+  --brand-primary: #1B8F3D;
+  --brand-primary-hover: #22A347;
+  --brand-primary-light: rgba(27, 143, 61, 0.15);
+  --brand-primary-ring: rgba(27, 143, 61, 0.35);
+
+  --brand-danger: #B91E2B;
+  --brand-danger-hover: #D32535;
+  --brand-danger-light: rgba(185, 30, 43, 0.15);
+  --brand-danger-ring: rgba(185, 30, 43, 0.35);
+
+  --shadow-workspace-elevated: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+  --shadow-workspace-dropdown: 0 12px 30px -4px rgba(0, 0, 0, 0.6);
+}
+
+@theme {
+  --color-workspace-canvas: var(--workspace-canvas);
+  --color-workspace-sidebar: var(--workspace-sidebar);
+  --color-workspace-surface: var(--workspace-surface);
+  --color-workspace-surface-hover: var(--workspace-surface-hover);
+  --color-workspace-surface-active: var(--workspace-surface-active);
+  --color-workspace-border: var(--workspace-border);
+  --color-workspace-border-strong: var(--workspace-border-strong);
+  --color-workspace-border-subtle: var(--workspace-border-subtle);
+  --color-workspace-text-primary: var(--workspace-text-primary);
+  --color-workspace-text-secondary: var(--workspace-text-secondary);
+  --color-workspace-text-muted: var(--workspace-text-muted);
+}
+
 html,
 body,
 #root {
@@ -10,6 +81,11 @@ body,
   margin: 0;
   padding: 0;
   overflow: hidden;
+}
+
+body {
+  background-color: var(--workspace-canvas);
+  color: var(--workspace-text-primary);
 }
 
 /* ===== Universal Button Cursor Pointer Rules ===== */
@@ -250,17 +326,47 @@ input:disabled:hover {
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
-/* ===== Auth Design System Tokens & Animations ===== */
+/* ===== Unified AI Chat Design System Tokens (Backwards Compatibility & Aliases) ===== */
 
 :root {
-  --brand-red: #B91E2B;
-  --brand-red-hover: #9E1924;
-  --brand-red-soft: rgba(185, 30, 43, 0.12);
-  --brand-red-glow: rgba(185, 30, 43, 0.25);
-  --brand-green: #1B8F3D;
-  --brand-green-hover: #167632;
-  --brand-green-soft: rgba(27, 143, 61, 0.12);
-  --brand-green-glow: rgba(27, 143, 61, 0.25);
+  /* Brand Identity Tokens */
+  --brand-red: var(--brand-danger);
+  --brand-red-hover: var(--brand-danger-hover);
+  --brand-red-soft: var(--brand-danger-light);
+  --brand-red-border: rgba(185, 30, 43, 0.28);
+  --brand-red-glow: var(--brand-danger-ring);
+
+  --brand-green: var(--brand-primary);
+  --brand-green-hover: var(--brand-primary-hover);
+  --brand-green-soft: var(--brand-primary-light);
+  --brand-green-border: rgba(27, 143, 61, 0.28);
+  --brand-green-glow: var(--brand-primary-ring);
+
+  /* Light Theme Surface & Neutral Tokens mapped to single source of truth */
+  --bg-app: var(--workspace-canvas);
+  --bg-surface: var(--workspace-sidebar);
+  --bg-surface-elevated: var(--workspace-surface);
+  --bg-surface-hover: var(--workspace-surface-hover);
+  --border-subtle: var(--workspace-border-subtle);
+  --border-default: var(--workspace-border);
+  --border-strong: var(--workspace-border-strong);
+  --text-primary: var(--workspace-text-primary);
+  --text-secondary: var(--workspace-text-secondary);
+  --text-muted: var(--workspace-text-muted);
+}
+
+.dark {
+  /* Dark Theme Surface & Neutral Tokens mapped to single source of truth */
+  --bg-app: var(--workspace-canvas);
+  --bg-surface: var(--workspace-sidebar);
+  --bg-surface-elevated: var(--workspace-surface);
+  --bg-surface-hover: var(--workspace-surface-hover);
+  --border-subtle: var(--workspace-border-subtle);
+  --border-default: var(--workspace-border);
+  --border-strong: var(--workspace-border-strong);
+  --text-primary: var(--workspace-text-primary);
+  --text-secondary: var(--workspace-text-secondary);
+  --text-muted: var(--workspace-text-muted);
 }
 
 /* Subtle Shake Animation on Validation Error (250ms - 300ms) */
@@ -458,6 +564,8 @@ input:-webkit-autofill:focus {
   .animate-slide-form-right,
   .animate-auth-fade,
   .animate-dropdown-fade,
+  .animate-modal-fade,
+  .animate-modal-enter,
   .chat-message-enter,
   .animate-prompt-card,
   .chat-cross-fade,
@@ -465,5 +573,78 @@ input:-webkit-autofill:focus {
     animation: none !important;
     transition: none !important;
     transform: none !important;
+  }
+}
+
+/* ===== Theme Transition Experiment (Phase C: Token-based surface color transitions) ===== */
+
+/* Scoped surface color transitions for verified workspace surfaces */
+body,
+header,
+aside,
+#model-selector-btn,
+#theme-toggle-btn {
+  transition-property: background-color, border-color, color;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Accessibility: Prefers-reduced-motion overrides for Phase C surface transitions */
+@media (prefers-reduced-motion: reduce) {
+  body,
+  header,
+  aside,
+  #model-selector-btn,
+  #theme-toggle-btn {
+    transition: none !important;
+  }
+}
+
+/* ===== Experiment B: View Transitions Circular Reveal ===== */
+
+/* Base View Transition pseudo-element setup: disable default cross-fade */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+/* Fallback circular reveal keyframes via CSS variables if WAAPI is not used */
+html.vt-css-fallback::view-transition-new(root) {
+  animation: vt-circular-reveal 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes vt-circular-reveal {
+  from {
+    clip-path: circle(0px at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--vt-r, 150vw) at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+}
+
+/* Suppress Experiment C surface color transitions during View Transitions to avoid double-interpolation */
+html.view-transition-active body,
+html.view-transition-active header,
+html.view-transition-active aside,
+html.view-transition-active #model-selector-btn,
+html.view-transition-active #theme-toggle-btn {
+  transition: none !important;
+}
+
+/* Accessibility: Disable all view transition animations when reduced motion is requested */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

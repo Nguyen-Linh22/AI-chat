@@ -17,14 +17,75 @@ export function DeleteChatModal({
   onConfirm,
   onCancel,
 }: DeleteChatModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null)
   const cancelBtnRef = useRef<HTMLButtonElement>(null)
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null)
+
+  const isDeletingRef = useRef(isDeleting)
+  const onCancelRef = useRef(onCancel)
+
+  useEffect(() => {
+    isDeletingRef.current = isDeleting
+  }, [isDeleting])
+
+  useEffect(() => {
+    onCancelRef.current = onCancel
+  }, [onCancel])
 
   useEffect(() => {
     if (!isOpen) return
 
+    // Capture element that had focus before opening modal
+    if (document.activeElement instanceof HTMLElement) {
+      previouslyFocusedElementRef.current = document.activeElement
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isDeleting) {
-        onCancel()
+      if (event.key === 'Escape') {
+        event.stopPropagation()
+        if (!isDeletingRef.current) {
+          onCancelRef.current()
+        }
+        return
+      }
+
+      if (event.key === 'Tab') {
+        const dialog = dialogRef.current
+        if (!dialog) return
+
+        const focusableElements = Array.from(
+          dialog.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        )
+
+        // If modal has no focusable elements, prevent keyboard focus from escaping
+        if (focusableElements.length === 0) {
+          event.preventDefault()
+          dialog.focus?.()
+          return
+        }
+
+        const firstElement = focusableElements[0]
+        const lastElement = focusableElements[focusableElements.length - 1]
+
+        if (event.shiftKey) {
+          if (
+            document.activeElement === firstElement ||
+            !dialog.contains(document.activeElement)
+          ) {
+            event.preventDefault()
+            lastElement.focus()
+          }
+        } else {
+          if (
+            document.activeElement === lastElement ||
+            !dialog.contains(document.activeElement)
+          ) {
+            event.preventDefault()
+            firstElement.focus()
+          }
+        }
       }
     }
 
@@ -38,8 +99,18 @@ export function DeleteChatModal({
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
       clearTimeout(timeout)
+
+      // Restore focus to opener element when modal closes or unmounts
+      const prevElement = previouslyFocusedElementRef.current
+      if (
+        prevElement &&
+        typeof prevElement.focus === 'function' &&
+        document.contains(prevElement)
+      ) {
+        prevElement.focus()
+      }
     }
-  }, [isOpen, isDeleting, onCancel])
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -51,17 +122,19 @@ export function DeleteChatModal({
         aria-hidden="true"
       />
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-chat-title"
         aria-describedby="delete-chat-desc"
         onClick={(e) => e.stopPropagation()}
-        className={`relative z-10 w-full max-w-sm rounded-2xl border border-white/10 bg-[#131924]/95 p-5 sm:p-6 shadow-2xl backdrop-blur-2xl animate-modal-enter ${
+        className={`relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 dark:border-white/[0.12] bg-white dark:bg-[#1A2230] p-5 sm:p-6 shadow-2xl backdrop-blur-2xl animate-modal-enter outline-none ${
           error ? 'animate-ui-shake' : ''
         }`}
       >
         {/* Trash Icon in circular container */}
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#B91E2B]/15 text-[#B91E2B] border border-[#B91E2B]/30 mb-4 shadow-[0_0_15px_rgba(185,30,43,0.2)]">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#B91E2B]/15 text-[#B91E2B] border border-[#B91E2B]/30 mb-4 shadow-sm">
           <svg
             className="h-6 w-6"
             fill="none"
@@ -81,23 +154,23 @@ export function DeleteChatModal({
         {/* Modal Title */}
         <h2
           id="delete-chat-title"
-          className="text-base sm:text-lg font-bold text-white tracking-wide"
+          className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight"
         >
           Xóa đoạn chat này?
         </h2>
 
         {/* Body Text & Highlighted Chat Title */}
-        <p className="mt-1 text-xs text-gray-300">
+        <p className="mt-1 text-xs text-slate-600 dark:text-gray-300">
           Bạn sắp xóa đoạn chat:
         </p>
-        <div className="my-2.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-gray-100 truncate shadow-inner">
+        <div className="my-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#131923] px-3 py-2 text-xs font-semibold text-slate-800 dark:text-[#F1F5F9] truncate shadow-2xs">
           {chatTitle}
         </div>
 
         {/* Permanent Warning */}
         <p
           id="delete-chat-desc"
-          className="text-xs text-gray-400 leading-relaxed"
+          className="text-xs text-slate-500 dark:text-[#94A3B8] leading-relaxed"
         >
           Hành động này không thể hoàn tác. Toàn bộ lịch sử tin nhắn sẽ bị xóa vĩnh viễn.
         </p>
@@ -106,7 +179,7 @@ export function DeleteChatModal({
         {error && (
           <div
             role="alert"
-            className="mt-3 rounded-xl border border-[#B91E2B]/40 bg-[#B91E2B]/15 px-3 py-2 text-xs text-[#ff5c6a]"
+            className="mt-3 rounded-xl border border-[#B91E2B]/30 bg-[#B91E2B]/10 px-3 py-2 text-xs font-medium text-[#B91E2B] dark:text-[#ff5c6a]"
           >
             {error}
           </div>
@@ -119,7 +192,7 @@ export function DeleteChatModal({
             type="button"
             disabled={isDeleting}
             onClick={onCancel}
-            className="rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2 text-xs font-medium text-gray-300 transition hover:bg-white/10 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+            className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#222C3D] px-4 py-2 text-xs font-medium text-slate-700 dark:text-[#F1F5F9] transition hover:bg-slate-200 dark:hover:bg-[#2A374C] hover:text-slate-900 dark:hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           >
             Hủy bỏ
           </button>
@@ -128,7 +201,7 @@ export function DeleteChatModal({
             type="button"
             disabled={isDeleting}
             onClick={onConfirm}
-            className="flex items-center gap-1.5 rounded-xl bg-[#B91E2B] px-4 py-2 text-xs font-semibold text-white shadow-[0_4px_16px_rgba(185,30,43,0.35)] transition hover:bg-[#a11a25] hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl bg-[#B91E2B] px-4 py-2 text-xs font-semibold text-white shadow-md shadow-[#B91E2B]/20 transition hover:bg-[#9E1924] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           >
             {isDeleting ? (
               <>

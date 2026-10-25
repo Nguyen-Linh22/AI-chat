@@ -14,8 +14,8 @@ export const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
         <aside
           ref={ref}
           data-collapsed={isCollapsed ? 'true' : 'false'}
-          className={`fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-white/95 dark:bg-[#121824]/90 shadow-xl dark:shadow-2xl backdrop-blur-xl transition-all duration-200 ease-in-out md:static md:translate-x-0 ${
-            isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          className={`fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col border-r border-slate-200 dark:border-white/[0.08] bg-workspace-sidebar transition-all duration-200 ease-in-out md:static md:translate-x-0 ${
+            isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 md:shadow-none'
           } ${
             isCollapsed
               ? 'w-[240px] p-2.5 md:w-[64px] md:min-w-[64px] md:p-2'
@@ -105,7 +105,7 @@ export const SidebarGroupLabel = React.forwardRef<HTMLDivElement, SidebarGroupLa
     return (
       <div
         ref={ref}
-        className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 select-none ${className}`}
+        className={`px-2.5 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94A3B8] select-none ${className}`}
         {...props}
       >
         {children}
@@ -180,7 +180,7 @@ export const SidebarMenuAction = React.forwardRef<HTMLButtonElement, SidebarMenu
       <button
         ref={ref}
         type="button"
-        className={`flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-[#161d28]/90 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-white/20 transition-all duration-150 active:scale-95 cursor-pointer text-xs ${
+        className={`flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white/95 dark:bg-[#1A2230]/95 text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F1F5F9] hover:bg-slate-100 dark:hover:bg-[#222C3D] hover:border-slate-300 dark:hover:border-white/[0.14] transition-all duration-150 active:scale-95 cursor-pointer text-xs focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none ${
           show ? 'opacity-100 ring-1 ring-slate-300 dark:ring-white/20' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
         } ${className}`}
         {...props}
@@ -201,7 +201,7 @@ export const SidebarFooter = React.forwardRef<HTMLDivElement, SidebarFooterProps
     return (
       <div
         ref={ref}
-        className={`shrink-0 border-t border-slate-200/80 dark:border-white/[0.08] pt-2.5 mt-2 ${className}`}
+        className={`shrink-0 border-t border-slate-200 dark:border-white/[0.08] pt-2.5 mt-2 ${className}`}
         {...props}
       >
         {children}

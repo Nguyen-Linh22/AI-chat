@@ -15,71 +15,13 @@ import ChatInput from './ChatInput'
 import ModelSelector from './ModelSelector'
 import ThemeToggle from './ThemeToggle'
 import ChatBackground from './chat/ChatBackground'
+import WelcomeScreen from './chat/WelcomeScreen'
 
 interface ChatAreaProps {
   onOpenMobileSidebar?: () => void
   isSidebarCollapsed?: boolean
   onToggleSidebar?: () => void
 }
-
-const SUGGESTED_PROMPTS = [
-  {
-    icon: '🧭',
-    iconBg: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
-    title: 'Giải thích cơ học lượng tử đơn giản',
-    subtitle: 'Giải thích cơ học lượng tử đơn giản',
-    prompt: 'Hãy giải thích cơ học lượng tử một cách đơn giản, dễ hiểu cho người mới bắt đầu.',
-  },
-  {
-    icon: '🪶',
-    iconBg: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
-    title: 'Sáng tạo câu chuyện ngắn về robot',
-    subtitle: 'Sáng tạo câu chuyện ngắn về robot',
-    prompt: 'Hãy sáng tạo một câu chuyện ngắn thú vị và giàu cảm xúc về một chú robot.',
-  },
-  {
-    icon: '>_',
-    iconBg: 'bg-purple-500/20 text-purple-400 border border-purple-500/30 font-mono',
-    title: 'Viết mã Python so sánh hai chuỗi',
-    subtitle: 'Viết mã Python so sánh và tìm ra điểm khác biệt của hai chuỗi',
-    prompt: 'Viết mã Python so sánh hai chuỗi và tìm sự khác biệt chi tiết.',
-  },
-  {
-    icon: '💬',
-    iconBg: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30',
-    title: 'Tối ưu hóa thuật toán tìm kiếm',
-    subtitle: 'Phân tích độ phức tạp thời gian O(n)',
-    prompt: 'Hướng dẫn các kỹ thuật tối ưu hóa thuật toán tìm kiếm và cấu trúc dữ liệu.',
-  },
-  {
-    icon: '🤖',
-    iconBg: 'bg-rose-500/20 text-rose-400 border border-rose-500/30',
-    title: 'Viết mã Python so sánh hai chuỗi',
-    subtitle: 'Giải thích cơ học lượng tử từ đem đơn giản',
-    prompt: 'Viết hàm Python nâng cao để so sánh độ tương đồng giữa hai chuỗi văn bản.',
-  },
-  {
-    icon: '⚙',
-    iconBg: 'bg-orange-500/20 text-orange-400 border border-orange-500/30',
-    title: 'Sáng tạo câu chuyện về robot',
-    subtitle: 'Sáng tạo : câu chuyện ngắn về robot',
-    prompt: 'Viết kịch bản ngắn về một chú robot tìm kiếm ước mơ của mình trong thế giới tương lai.',
-  },
-  {
-    icon: '🤖',
-    iconBg: 'bg-red-500/20 text-red-400 border border-red-500/30',
-    title: 'Viết mã Python so sánh RAM và CPU',
-    subtitle: 'Viết mã Python so sánh RAM và CPU',
-    prompt: 'Hãy hướng dẫn tôi cách tối ưu hóa bộ nhớ RAM và CPU khi chạy thuật toán trong Python.',
-  },
-  {
-    icon: '🪐',
-    iconBg: 'bg-teal-500/20 text-teal-400 border border-teal-500/30',
-    title: 'Viết mã Python so sánh hai chuỗi',
-    subtitle: 'Viết mã Python kiểm tra chuỗi đối xứng (Palindrome)',
-    prompt: 'Viết mã Python kiểm tra chuỗi đối xứng (Palindrome) và chuỗi con chung dài nhất.',
-  },
-]
 
 function ChatArea({
   onOpenMobileSidebar,
@@ -110,6 +52,7 @@ function ChatArea({
   const selectedModelId = useAIStore((state) => state.selectedModelId)
   const messages = useMessageStore((state) => state.messages)
   const streamingMessageId = useMessageStore((state) => state.streamingMessageId)
+  const abortCurrentStream = useMessageStore((state) => state.abortCurrentStream)
   const updateMessage = useMessageStore((state) => state.updateMessage)
   const setStreamingMessageId = useMessageStore((state) => state.setStreamingMessageId)
   const setAbortCurrentStream = useMessageStore((state) => state.setAbortCurrentStream)
@@ -132,7 +75,12 @@ function ChatArea({
   const setOlderError = useMessageStore((state) => state.setOlderError)
 
   const abortControllerRef = useRef<AbortController | null>(null)
+  const regenerateRunIdRef = useRef<string | null>(null)
   const isStoppingRef = useRef(false)
+  const abortCurrentStreamRef = useRef(abortCurrentStream)
+  useEffect(() => {
+    abortCurrentStreamRef.current = abortCurrentStream
+  }, [abortCurrentStream])
   const { enqueue, waitDrained, flushAll, reset: resetQueue } = useTypewriterQueue()
 
   // Client-Side Routing sync
@@ -142,14 +90,43 @@ function ChatArea({
     }
   }, [urlChatId, currentChatId, setCurrentChatId])
 
+  // Cleanup stream on component unmount
+  useEffect(() => {
+    return () => {
+      abortCurrentStreamRef.current?.()
+      if (typeof useMessageStore.getState === 'function') {
+        useMessageStore.getState().abortCurrentStream?.()
+      }
+    }
+  }, [])
+
   const handleRegenerate = async (messageId: string) => {
     if (!currentChatId || !selectedModelId || streamingMessageId) {
       return
     }
 
+    const storeState = typeof useMessageStore.getState === 'function'
+      ? useMessageStore.getState()
+      : null
+    const currentMessages = storeState?.messages ?? messages
+    const targetMessage = currentMessages.find((m) => m.id === messageId)
+    if (!targetMessage) {
+      return
+    }
+
+    // 5.A: Snapshot full state of target assistant message before any mutation
+    const snapshot = {
+      ...targetMessage,
+      attachments: targetMessage.attachments ? [...targetMessage.attachments] : []
+    }
+
+    const runId = crypto.randomUUID()
+    regenerateRunIdRef.current = runId
+
     const controller = new AbortController()
     abortControllerRef.current = controller
     isStoppingRef.current = false
+    let receivedChunk = false
 
     const handleStopRegenerate = () => {
       isStoppingRef.current = true
@@ -166,26 +143,54 @@ function ChatArea({
         messageId,
         selectedModelId,
         (chunk) => {
-          enqueue(chunk, (content) => updateMessage(messageId, content))
+          if (regenerateRunIdRef.current !== runId) return
+          receivedChunk = true
+          enqueue(chunk, (content) => {
+            if (regenerateRunIdRef.current === runId) {
+              updateMessage(messageId, content)
+            }
+          })
         },
         controller.signal
       )
 
       await waitDrained()
     } catch (error) {
-      if (isStoppingRef.current) {
-        // user stopped
-      } else if (error instanceof DOMException && error.name === 'AbortError') {
-        // abort
+      // 5.C: Run identity guard - ignore obsolete runs
+      if (regenerateRunIdRef.current !== runId) {
+        return
+      }
+
+      const isManualStop =
+        isStoppingRef.current ||
+        (error instanceof DOMException && error.name === 'AbortError')
+
+      if (isManualStop) {
+        // Tình huống 3: Người dùng chủ động dừng
+        if (!receivedChunk) {
+          // Dừng trước khi có chunk mới: giữ nguyên câu trả lời cũ
+          updateMessage(messageId, snapshot.content)
+        }
+        // Nếu đã có chunk mới: giữ nguyên phần nội dung mới đã sinh ra
       } else {
+        // Tình huống 2: Lỗi thực sự ngoài ý muốn (trước hoặc sau khi có chunk)
         resetQueue()
+        updateMessage(messageId, snapshot.content)
         console.error('Không thể regenerate message:', error)
+        setMessageError('Không thể tạo lại tin nhắn. Vui lòng thử lại.')
       }
     } finally {
-      isStoppingRef.current = false
-      setAbortCurrentStream(null)
-      setStreamingMessageId(null)
-      abortControllerRef.current = null
+      if (regenerateRunIdRef.current === runId) {
+        isStoppingRef.current = false
+        const activeStreamingId = typeof useMessageStore.getState === 'function'
+          ? useMessageStore.getState().streamingMessageId
+          : null
+        if (!activeStreamingId || activeStreamingId === messageId) {
+          setAbortCurrentStream(null)
+          setStreamingMessageId(null)
+        }
+        abortControllerRef.current = null
+      }
     }
   }
 
@@ -200,6 +205,7 @@ function ChatArea({
       return
     }
 
+    const targetChatId = currentChatId
     const container = scrollContainerRef.current
     if (!container) return
 
@@ -211,21 +217,23 @@ function ChatArea({
     const prevScrollTop = container.scrollTop
 
     try {
-      const res = await getMessages(currentChatId, 30, nextCursor)
+      const res = await getMessages(targetChatId, 30, nextCursor)
       const fetched = Array.isArray(res) ? res : res.messages
       const newNextCursor = Array.isArray(res) ? null : res.nextCursor
       const newHasMore = Array.isArray(res) ? false : res.hasMore
 
       // Synchronously commit prepended messages to DOM
       flushSync(() => {
-        prependMessages(currentChatId, fetched)
-        setPagination(currentChatId, newNextCursor, newHasMore)
+        prependMessages(targetChatId, fetched)
+        setPagination(targetChatId, newNextCursor, newHasMore)
       })
 
-      // Preserve scroll position so user sees the exact same content without jumping
-      const newScrollHeight = container.scrollHeight
-      const heightDelta = newScrollHeight - prevScrollHeight
-      container.scrollTop = prevScrollTop + heightDelta
+      // Preserve scroll position only if user hasn't switched away
+      if (container && currentChatId === targetChatId) {
+        const newScrollHeight = container.scrollHeight
+        const heightDelta = newScrollHeight - prevScrollHeight
+        container.scrollTop = prevScrollTop + heightDelta
+      }
     } catch (error) {
       console.error('Không thể tải tin nhắn cũ:', error)
       setOlderError('Không thể tải tin nhắn cũ. Thử lại')
@@ -450,24 +458,15 @@ function ChatArea({
       {/* Background Star Effect Layer */}
       <ChatBackground />
 
-      {/* Soft Ambient Glows matching screenshot */}
-      <div
-        className="pointer-events-none absolute -top-24 right-1/4 h-[450px] w-[450px] rounded-full bg-[#1B8F3D]/10 dark:bg-[#1B8F3D]/20 blur-[130px] opacity-40 dark:opacity-100"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute -bottom-24 left-1/4 h-[450px] w-[450px] rounded-full bg-[#B91E2B]/10 dark:bg-[#B91E2B]/20 blur-[130px] opacity-40 dark:opacity-100"
-        aria-hidden="true"
-      />
-
-      {/* Floating Header matching screenshot */}
-      <header className="relative z-40 flex h-11 shrink-0 items-center justify-between rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-white/80 dark:bg-[#121824]/80 px-4 backdrop-blur-xl shadow-xs dark:shadow-lg mb-2 transition-colors duration-200">
-        <div className="flex items-center gap-2 min-w-0">
+      {/* Docked Top Header: 56px (h-14) Premium AI Workspace Header */}
+      <header className="relative z-40 flex h-14 shrink-0 items-center justify-between border-b border-slate-200/90 dark:border-white/[0.08] bg-white/95 dark:bg-[#131923]/95 backdrop-blur-md px-3.5 sm:px-6 transition-colors duration-200 shadow-xs">
+        {/* Left: Mobile Navigation, Workspace Status & Breadcrumb Title */}
+        <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-3 sm:mr-4">
           {onOpenMobileSidebar && (
             <button
               type="button"
               onClick={onOpenMobileSidebar}
-              className="md:hidden flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-white/90 dark:bg-[#161d28]/90 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition active:scale-95 cursor-pointer"
+              className="md:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#1A2230] text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F1F5F9] hover:bg-slate-100 dark:hover:bg-[#222C3D] transition active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#15803D] dark:focus-visible:ring-emerald-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#131923] focus-visible:outline-none"
               aria-label="Mở menu danh sách đoạn chat"
               title="Mở menu"
             >
@@ -481,23 +480,42 @@ function ChatArea({
           <span className="sr-only">
             {currentChatId ? (currentChat?.title || `Chat ID: ${currentChatId}`) : 'Chưa chọn chat'}
           </span>
-        </div>
 
-        {/* Center Title / Conversation Breadcrumb Hierarchy */}
-        <div
-          className="absolute left-1/2 -translate-x-1/2 max-w-[38%] sm:max-w-[50%] md:max-w-[58%] min-w-0 flex items-center justify-center pointer-events-auto"
-          title={currentChat ? `AI Chat / ${currentChat.title}` : 'AI Chat'}
-        >
-          <div className="flex items-center gap-1.5 min-w-0 text-xs sm:text-sm">
-            <span className="shrink-0 font-bold text-slate-700 dark:text-gray-300 tracking-tight">AI Chat</span>
+          {/* M7-F07: Stable screen reader live region announcement during streaming */}
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="sr-only"
+            data-testid="streaming-status-announcer"
+          >
+            {streamingMessageId ? 'AI đang trả lời' : ''}
+          </div>
+
+          {/* Workspace Status Badge */}
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100/90 dark:bg-[#1A2230] border border-slate-200/80 dark:border-white/[0.08] text-[11px] font-semibold text-slate-700 dark:text-[#94A3B8] shrink-0 select-none">
+            <span className="h-2 w-2 rounded-full bg-[#1B8F3D]" aria-hidden="true" />
+            <span>AI Workspace</span>
+          </div>
+
+          <span className="hidden sm:inline shrink-0 text-slate-300 dark:text-[#64748B] font-light select-none text-sm" aria-hidden="true">›</span>
+
+          {/* Workspace Breadcrumbs Hierarchy */}
+          <div
+            className="flex items-center gap-1.5 min-w-0 text-xs sm:text-sm"
+            title={currentChat ? `AI Chat / ${currentChat.title}` : 'AI Chat'}
+          >
+            <span className="sm:hidden shrink-0 font-bold text-slate-700 dark:text-[#94A3B8] tracking-tight">AI Chat</span>
             {currentChat ? (
               <>
-                <span className="shrink-0 text-slate-400 dark:text-gray-500 font-normal select-none" aria-hidden="true">/</span>
-                <h1 className="truncate font-semibold text-slate-900 dark:text-white">
+                <span className="sm:hidden shrink-0 text-slate-400 dark:text-[#64748B] font-normal select-none" aria-hidden="true">/</span>
+                <h1 className="truncate font-semibold text-slate-900 dark:text-[#F1F5F9]">
                   {currentChat.title}
                 </h1>
               </>
-            ) : null}
+            ) : (
+              <span className="text-slate-500 dark:text-[#94A3B8] text-xs font-normal">Đoạn chat mới</span>
+            )}
           </div>
         </div>
 
@@ -513,7 +531,7 @@ function ChatArea({
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="relative z-10 flex-1 min-h-0 overflow-y-auto px-3 sm:px-6 py-2 scrollbar-thin"
+        className="relative z-10 flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 scrollbar-thin"
       >
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 pb-8">
           {loadingMessages ? (
@@ -542,48 +560,10 @@ function ChatArea({
               </p>
             </div>
           ) : messages.length === 0 ? (
-            /* Empty State Matching Screenshot */
-            <div className="flex flex-col items-start w-full pt-4 px-2 sm:px-4 animate-dropdown">
-              <p className="text-xs text-slate-500 dark:text-gray-400 font-normal">
-                Màn hình chào mừng
-              </p>
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-1">
-                Chào mừng, {userName}!
-              </h2>
-
-              <p className="text-xs text-slate-500 dark:text-gray-400 font-medium mt-6 mb-3">
-                Suggested Prompt
-              </p>
-
-              {/* Accessible text for test suites */}
-              <span className="sr-only">
-                Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!
-              </span>
-
-              {/* Suggested Prompts 4-column Grid matching screenshot */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
-                {SUGGESTED_PROMPTS.map((prompt, index) => (
-                  <button
-                    key={`${prompt.title}-${index}`}
-                    type="button"
-                    onClick={() => handleSelectPrompt(prompt.prompt)}
-                    className={`animate-prompt-card stagger-${index % 4} group flex flex-col text-left rounded-2xl border border-slate-200/80 dark:border-white/5 bg-white/80 dark:bg-[#161e2c]/70 p-3.5 transition-all duration-150 hover:-translate-y-0.5 hover:border-slate-300 dark:hover:border-white/20 hover:bg-white dark:hover:bg-[#1a2436]/90 active:scale-[0.98] shadow-xs dark:shadow-sm backdrop-blur-md cursor-pointer`}
-                  >
-                    <div className="flex items-center gap-2.5 mb-2">
-                      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${prompt.iconBg}`}>
-                        {prompt.icon}
-                      </div>
-                      <span className="text-xs font-semibold text-slate-800 dark:text-gray-100 group-hover:text-slate-900 dark:group-hover:text-white leading-tight line-clamp-2">
-                        {prompt.title}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-gray-400 group-hover:text-slate-700 dark:group-hover:text-gray-300 line-clamp-2 leading-relaxed">
-                      {prompt.subtitle}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <WelcomeScreen
+              userName={userName}
+              onSelectPrompt={handleSelectPrompt}
+            />
           ) : (
             /* Message List */
             <div
@@ -654,14 +634,16 @@ function ChatArea({
               scrollToBottom(true)
               setHasNewMessagesWhileScrolled(false)
             }}
-            className={`pointer-events-auto scroll-to-bottom-btn flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold shadow-xl backdrop-blur-md transition-all active:scale-95 cursor-pointer ${hasNewMessagesWhileScrolled
+            className={`pointer-events-auto scroll-to-bottom-btn flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold shadow-xl backdrop-blur-md transition-all active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 ${hasNewMessagesWhileScrolled
                 ? 'border-[#1B8F3D]/60 bg-white/95 dark:bg-[#161d28]/95 text-slate-900 dark:text-white shadow-[0_0_15px_rgba(27,143,61,0.25)]'
                 : 'border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-[#161d28]/90 text-slate-700 dark:text-gray-200 hover:border-[#1B8F3D]/50 hover:text-slate-900 dark:hover:text-white'
               }`}
             title={hasNewMessagesWhileScrolled ? 'Tin nhắn mới' : 'Cuộn xuống tin nhắn mới nhất'}
             aria-label={hasNewMessagesWhileScrolled ? 'Tin nhắn mới' : 'Cuộn xuống tin nhắn mới nhất'}
           >
-            <span className="text-sm font-bold text-[#1B8F3D]">↓</span>
+            <svg className="h-3.5 w-3.5 text-[#1B8F3D] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
             <span>{hasNewMessagesWhileScrolled ? 'Tin nhắn mới' : 'Cuộn xuống tin nhắn mới nhất'}</span>
             {(streamingMessageId || hasNewMessagesWhileScrolled) && (
               <span className="relative ml-0.5 flex h-2 w-2">

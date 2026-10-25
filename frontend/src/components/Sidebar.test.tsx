@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import Sidebar from './Sidebar'
+import { useMessageStore } from '../stores/messageStore'
 
 const {
   mockUseNavigate,
@@ -784,5 +785,293 @@ describe('Sidebar', () => {
     const closeBtn = screen.getByRole('button', { name: 'Đóng thanh bên' })
     fireEvent.click(closeBtn)
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  // === Fix1-Hardening-B Regression Tests ===
+  it('Fix1-Hardening-B: preserves messagesCache when deleteChat API fails', async () => {
+    const user = userEvent.setup()
+    const cachedMsg = {
+      id: 'msg-preserved',
+      chatSessionId: 'chat-fail',
+      role: 'user' as const,
+      content: 'Important unsaved query',
+      createdAt: '2026-09-27T00:00:00Z',
+      attachments: [],
+    }
+
+    useMessageStore.setState({
+      activeChatId: 'chat-fail',
+      messages: [cachedMsg],
+      messagesCache: {
+        'chat-fail': [cachedMsg],
+      },
+    })
+
+    mockUseChatStore.mockImplementation((selector: (state: unknown) => unknown) =>
+      selector({
+        chats: [{ id: 'chat-fail', title: 'Chat fail delete' }],
+        addChat: vi.fn(),
+        removeChat: vi.fn(),
+        updateChat: vi.fn(),
+        setCurrentChatId: vi.fn(),
+        currentChatId: 'chat-fail',
+      })
+    )
+
+    mockDeleteChat.mockRejectedValueOnce(new Error('500 Internal Server Error'))
+
+    render(<Sidebar />)
+
+    await user.click(screen.getByRole('button', { name: 'Thao tác với đoạn chat' }))
+    await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
+    await user.click(screen.getByRole('button', { name: 'Xóa vĩnh viễn' }))
+
+    // Error is shown
+    expect(await screen.findByText('Không thể xóa đoạn chat. Vui lòng thử lại.')).toBeInTheDocument()
+
+    // Cache must NOT be wiped
+    const store = useMessageStore.getState()
+    expect(store.messagesCache['chat-fail']).toEqual([cachedMsg])
+    expect(store.messages).toEqual([cachedMsg])
+  })
+
+  it('Fix1-Hardening-B: aborts active stream early when active chat is deleted', async () => {
+    const user = userEvent.setup()
+    let aborted = false
+
+    useMessageStore.setState({
+      activeChatId: 'chat-streaming',
+      streamingMessageId: 'stream-active',
+      abortCurrentStream: () => {
+        aborted = true
+      },
+      messages: [],
+      messagesCache: {
+        'chat-streaming': [],
+      },
+    })
+
+    mockUseChatStore.mockImplementation((selector: (state: unknown) => unknown) =>
+      selector({
+        chats: [{ id: 'chat-streaming', title: 'Streaming Chat' }],
+        addChat: vi.fn(),
+        removeChat: vi.fn(),
+        updateChat: vi.fn(),
+        setCurrentChatId: vi.fn(),
+        currentChatId: 'chat-streaming',
+      })
+    )
+
+    mockDeleteChat.mockResolvedValueOnce(undefined)
+
+    render(<Sidebar />)
+
+    await user.click(screen.getByRole('button', { name: 'Thao tác với đoạn chat' }))
+    await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
+    await user.click(screen.getByRole('button', { name: 'Xóa vĩnh viễn' }))
+
+    expect(aborted).toBe(true)
+    expect(useMessageStore.getState().messagesCache['chat-streaming']).toBeUndefined()
+  })
+
+  it('Fix1-Hardening-B: deleting chat A does not affect chat B cache or stream', async () => {
+    const user = userEvent.setup()
+    let chatBStreamAborted = false
+
+    const chatBMsg = {
+      id: 'msg-b',
+      chatSessionId: 'chat-b',
+      role: 'user' as const,
+      content: 'Chat B preserved message',
+      createdAt: '2026-09-27T00:00:00Z',
+      attachments: [],
+    }
+
+    useMessageStore.setState({
+      activeChatId: 'chat-b',
+      messages: [chatBMsg],
+      streamingMessageId: 'stream-b',
+      abortCurrentStream: () => {
+        chatBStreamAborted = true
+      },
+      messagesCache: {
+        'chat-a': [],
+        'chat-b': [chatBMsg],
+      },
+    })
+
+    mockUseChatStore.mockImplementation((selector: (state: unknown) => unknown) =>
+      selector({
+        chats: [
+          { id: 'chat-a', title: 'Chat A' },
+          { id: 'chat-b', title: 'Chat B' },
+        ],
+        addChat: vi.fn(),
+        removeChat: vi.fn(),
+        updateChat: vi.fn(),
+        setCurrentChatId: vi.fn(),
+        currentChatId: 'chat-b',
+      })
+    )
+
+    mockDeleteChat.mockResolvedValueOnce(undefined)
+
+    render(<Sidebar />)
+
+    // Open chat-a menu
+    const actionButtons = screen.getAllByRole('button', { name: 'Thao tác với đoạn chat' })
+    await user.click(actionButtons[0])
+    await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
+    await user.click(screen.getByRole('button', { name: 'Xóa vĩnh viễn' }))
+
+    // Chat B stream must NOT have been aborted
+    expect(chatBStreamAborted).toBe(false)
+    // Chat B cache must be preserved
+    expect(useMessageStore.getState().messagesCache['chat-b']).toEqual([chatBMsg])
+    expect(useMessageStore.getState().messages).toEqual([chatBMsg])
+    // Chat A cache must be purged
+    expect(useMessageStore.getState().messagesCache['chat-a']).toBeUndefined()
+  })
+
+  describe('M7-F04: Mobile Sidebar Escape Key Interaction', () => {
+    it('should close mobile sidebar drawer on Escape when open in mobile viewport', () => {
+      const onClose = vi.fn()
+      // Simulate mobile viewport
+      window.innerWidth = 500
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+
+      render(<Sidebar isOpen={true} onClose={onClose} />)
+
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(onClose).toHaveBeenCalledTimes(1)
+    })
+
+    it('should restore focus to opener button when mobile sidebar closes via Escape', () => {
+      const onClose = vi.fn()
+      window.innerWidth = 500
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+
+      // Create an opener button in document
+      const openerButton = document.createElement('button')
+      openerButton.setAttribute('aria-label', 'Mở menu danh sách đoạn chat')
+      document.body.appendChild(openerButton)
+
+      render(<Sidebar isOpen={true} onClose={onClose} />)
+
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(onClose).toHaveBeenCalledTimes(1)
+      expect(document.activeElement).toBe(openerButton)
+
+      document.body.removeChild(openerButton)
+    })
+
+    it('should NOT close sidebar on Escape in desktop viewport', () => {
+      const onClose = vi.fn()
+      window.innerWidth = 1024
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: true,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+
+      render(<Sidebar isOpen={true} onClose={onClose} />)
+
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(onClose).not.toHaveBeenCalled()
+    })
+
+    it('should NOT call onClose on Escape when sidebar is closed', () => {
+      const onClose = vi.fn()
+      window.innerWidth = 500
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+
+      render(<Sidebar isOpen={false} onClose={onClose} />)
+
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(onClose).not.toHaveBeenCalled()
+    })
+
+    it('should NOT close mobile sidebar on Escape if DeleteChatModal is open', async () => {
+      const user = userEvent.setup()
+      const onClose = vi.fn()
+      window.innerWidth = 500
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+
+      mockUseChatStore.mockImplementation((selector: (state: unknown) => unknown) =>
+        selector({
+          chats: [{ id: 'chat-1', title: 'Test Chat' }],
+          addChat: vi.fn(),
+          removeChat: vi.fn(),
+          updateChat: vi.fn(),
+          setCurrentChatId: vi.fn(),
+          currentChatId: 'chat-1',
+        })
+      )
+
+      render(<Sidebar isOpen={true} onClose={onClose} />)
+
+      // Open action menu then open delete modal
+      const actionBtn = screen.getByRole('button', { name: 'Thao tác với đoạn chat' })
+      await user.click(actionBtn)
+      await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
+
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+      // Press Escape - should close modal, not the mobile sidebar
+      fireEvent.keyDown(document, { key: 'Escape' })
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(onClose).not.toHaveBeenCalled()
+    })
+
+    it('cleans up keydown event listener on unmount', () => {
+      const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener')
+      const { unmount } = render(<Sidebar isOpen={true} onClose={vi.fn()} />)
+
+      unmount()
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
+      removeEventListenerSpy.mockRestore()
+    })
   })
 })

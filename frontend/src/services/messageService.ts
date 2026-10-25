@@ -126,48 +126,56 @@ export const regenerateMessage = async (
 
   let buffer = ''
 
-  while (true) {
-    const { value, done } =
-      await reader.read()
+  try {
+    while (true) {
+      const { value, done } =
+        await reader.read()
 
-    if (done) {
-      break
-    }
-
-    buffer += decoder.decode(
-      value,
-      { stream: true }
-    )
-
-    const events =
-      buffer.split('\n\n')
-
-    buffer =
-      events.pop() ?? ''
-
-    for (const event of events) {
-      if (!event.startsWith('data: ')) {
-        continue
+      if (done) {
+        break
       }
 
-      const data = JSON.parse(
-        event.slice(6)
+      buffer += decoder.decode(
+        value,
+        { stream: true }
       )
 
-      if (data.type === 'chunk') {
-        onChunk(data.content)
-      }
+      const events =
+        buffer.split('\n\n')
 
-      if (data.type === 'error') {
-        throw new Error(
-          data.message ||
-            'Regenerate thất bại'
+      buffer =
+        events.pop() ?? ''
+
+      for (const event of events) {
+        if (!event.startsWith('data: ')) {
+          continue
+        }
+
+        const data = JSON.parse(
+          event.slice(6)
         )
-      }
 
-      if (data.type === 'done') {
-        return
+        if (data.type === 'chunk') {
+          onChunk(data.content)
+        }
+
+        if (data.type === 'error') {
+          throw new Error(
+            data.message ||
+              'Regenerate thất bại'
+          )
+        }
+
+        if (data.type === 'done') {
+          return
+        }
       }
+    }
+  } finally {
+    try {
+      reader.cancel().catch(() => {})
+    } catch {
+      // Ignore synchronous cancellation errors
     }
   }
 }
