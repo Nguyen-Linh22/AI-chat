@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import MessageBubble from './MessageBubble'
+import { useThemeStore } from '../stores/themeStore'
 
 describe('MessageBubble', () => {
   it('should render a user message', () => {
@@ -347,5 +348,299 @@ describe('MessageBubble', () => {
     expect(img).toHaveAttribute('loading', 'lazy')
     expect(img).toHaveAttribute('decoding', 'async')
     expect(img).toHaveAttribute('referrerPolicy', 'no-referrer')
+  })
+
+  describe('M5.1 — Layout, Avatar & Accessibility', () => {
+    it('should render AI avatar and sender label for assistant messages', () => {
+      render(<MessageBubble role="ai" content="AI message" />)
+
+      const avatar = screen.getByTestId('ai-avatar')
+      expect(avatar).toBeInTheDocument()
+      expect(avatar).toHaveAttribute('aria-label', 'AI Avatar')
+      expect(screen.getByText('AI')).toBeInTheDocument()
+      expect(screen.queryByTestId('user-avatar')).not.toBeInTheDocument()
+    })
+
+    it('should render User avatar and sender label for user messages', () => {
+      render(<MessageBubble role="user" content="User message" />)
+
+      const avatar = screen.getByTestId('user-avatar')
+      expect(avatar).toBeInTheDocument()
+      expect(avatar).toHaveAttribute('aria-label', 'User Avatar')
+      expect(screen.getByText('Bạn')).toBeInTheDocument()
+      expect(screen.queryByTestId('ai-avatar')).not.toBeInTheDocument()
+    })
+
+    it('should render markdown typography elements (headings, lists, blockquotes) with proper hierarchy', () => {
+      const markdown = `# Title 1\n\n## Title 2\n\n### Title 3\n\n#### Title 4\n\n> Trích dẫn mẫu\n\n- Danh sách không thứ tự\n\n1. Danh sách có thứ tự`
+
+      render(<MessageBubble role="ai" content={markdown} />)
+
+      expect(screen.getByRole('heading', { level: 1, name: 'Title 1' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 2, name: 'Title 2' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 3, name: 'Title 3' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 4, name: 'Title 4' })).toBeInTheDocument()
+      expect(screen.getByText('Trích dẫn mẫu')).toBeInTheDocument()
+      expect(screen.getByText('Danh sách không thứ tự')).toBeInTheDocument()
+      expect(screen.getByText('Danh sách có thứ tự')).toBeInTheDocument()
+    })
+
+    it('should provide accessible live announcement when copy action succeeds', async () => {
+      const user = userEvent.setup()
+      const writeTextMock = vi
+        .spyOn(navigator.clipboard, 'writeText')
+        .mockResolvedValue(undefined)
+
+      render(<MessageBubble role="ai" content="Nội dung kiểm tra a11y" />)
+
+      const copyBtn = screen.getByRole('button', { name: /Copy/i })
+      await user.click(copyBtn)
+
+      const announcement = screen.getByText('Đã sao chép nội dung vào khay nhớ tạm')
+      expect(announcement).toBeInTheDocument()
+      expect(announcement).toHaveAttribute('aria-live', 'polite')
+      expect(screen.getByText('Đã copy')).toBeInTheDocument()
+
+      writeTextMock.mockRestore()
+    })
+
+    it('should strip streaming cursor symbol from copied clipboard text', async () => {
+      const user = userEvent.setup()
+      const writeTextMock = vi
+        .spyOn(navigator.clipboard, 'writeText')
+        .mockResolvedValue(undefined)
+
+      render(<MessageBubble role="ai" content="Nội dung đang sinh ▌" />)
+
+      const copyBtn = screen.getByRole('button', { name: /Copy/i })
+      await user.click(copyBtn)
+
+      expect(writeTextMock).toHaveBeenCalledWith('Nội dung đang sinh')
+
+      writeTextMock.mockRestore()
+    })
+  })
+
+  describe('M5.2 — Markdown Rendering, Code Blocks & Tables', () => {
+    describe('Markdown Tables', () => {
+      const sampleTable = `| Ngôn ngữ | Loại hình | Năm ra đời |\n| :--- | :--- | :--- |\n| TypeScript | Typed JS | 2012 |\n| Python | Dynamic | 1991 |`
+
+      it('should render GFM table with thead, tbody, rows, and columns correctly', () => {
+        render(<MessageBubble role="ai" content={sampleTable} />)
+
+        expect(screen.getByRole('table')).toBeInTheDocument()
+        expect(screen.getByText('Ngôn ngữ')).toBeInTheDocument()
+        expect(screen.getByText('Loại hình')).toBeInTheDocument()
+        expect(screen.getByText('Năm ra đời')).toBeInTheDocument()
+        expect(screen.getByText('TypeScript')).toBeInTheDocument()
+        expect(screen.getByText('Python')).toBeInTheDocument()
+      })
+
+      it('should wrap table in container with overflow-x-auto and max-w-full', () => {
+        render(<MessageBubble role="ai" content={sampleTable} />)
+
+        const container = screen.getByTestId('table-container')
+        expect(container).toBeInTheDocument()
+        expect(container).toHaveClass('overflow-x-auto')
+        expect(container).toHaveClass('max-w-full')
+      })
+
+      it('should apply appropriate styling classes to header and cells', () => {
+        render(<MessageBubble role="ai" content={sampleTable} />)
+
+        const headerCell = screen.getByText('Ngôn ngữ')
+        expect(headerCell.tagName).toBe('TH')
+        expect(headerCell).toHaveClass('font-semibold')
+
+        const bodyCell = screen.getByText('TypeScript')
+        expect(bodyCell.tagName).toBe('TD')
+        expect(bodyCell).toHaveClass('align-middle')
+      })
+
+      it('should preserve all content and formatting in wide tables with many columns', () => {
+        const wideTable = `| C1 | C2 | C3 | C4 | C5 | C6 |\n| --- | --- | --- | --- | --- | --- |\n| V1 [Link](https://example.com) | V2 **Bold** | V3 *Italic* | V4 \`code\` | V5 | V6 Long Content |`
+
+        render(<MessageBubble role="ai" content={wideTable} />)
+
+        expect(screen.getByText('V1')).toBeInTheDocument()
+        expect(screen.getByRole('link', { name: 'Link' })).toHaveAttribute('href', 'https://example.com')
+        expect(screen.getByText('Bold')).toBeInTheDocument()
+        expect(screen.getByText('Italic')).toBeInTheDocument()
+        expect(screen.getByText('code')).toBeInTheDocument()
+        expect(screen.getByText('V6 Long Content')).toBeInTheDocument()
+      })
+    })
+
+    describe('Code Blocks', () => {
+      it('should display language badge with python', () => {
+        render(
+          <MessageBubble
+            role="ai"
+            content={'```python\nprint("Hello Python")\n```'}
+          />
+        )
+
+        const badge = screen.getByTestId('code-language-badge')
+        expect(badge).toBeInTheDocument()
+        expect(badge).toHaveTextContent('python')
+      })
+
+      it('should display language badge with typescript', () => {
+        render(
+          <MessageBubble
+            role="ai"
+            content={'```typescript\nconst message: string = "Hello TS"\n```'}
+          />
+        )
+
+        const badge = screen.getByTestId('code-language-badge')
+        expect(badge).toBeInTheDocument()
+        expect(badge).toHaveTextContent('typescript')
+      })
+
+      it('should display neutral "Code" badge when no language metadata is provided', () => {
+        render(
+          <MessageBubble
+            role="ai"
+            content={'```\nplain text code block\n```'}
+          />
+        )
+
+        const badge = screen.getByTestId('code-language-badge')
+        expect(badge).toBeInTheDocument()
+        expect(badge).toHaveTextContent('Code')
+      })
+
+      it('should copy source code correctly without header or buttons', async () => {
+        const user = userEvent.setup()
+        const writeTextMock = vi
+          .spyOn(navigator.clipboard, 'writeText')
+          .mockResolvedValue(undefined)
+
+        render(
+          <MessageBubble
+            role="ai"
+            content={'```python\ndef greet():\n    return "hi"\n```'}
+          />
+        )
+
+        const copyButtons = screen.getAllByRole('button', { name: /Copy/i })
+        // First copy button is on the code block header
+        await user.click(copyButtons[0])
+
+        expect(writeTextMock).toHaveBeenCalledWith('def greet():\n    return "hi"')
+        expect(screen.getByText('Copied')).toBeInTheDocument()
+
+        writeTextMock.mockRestore()
+      })
+
+      it('should not include streaming cursor ▌ in copied code block text', async () => {
+        const user = userEvent.setup()
+        const writeTextMock = vi
+          .spyOn(navigator.clipboard, 'writeText')
+          .mockResolvedValue(undefined)
+
+        render(
+          <MessageBubble
+            role="ai"
+            content={'```javascript\nconst streamed = true ▌\n```'}
+          />
+        )
+
+        const copyButtons = screen.getAllByRole('button', { name: /Copy/i })
+        await user.click(copyButtons[0])
+
+        expect(writeTextMock).toHaveBeenCalledWith('const streamed = true')
+
+        writeTextMock.mockRestore()
+      })
+    })
+
+    describe('Dark/Light Mode Syntax Highlighting', () => {
+      it('should render code block with dark theme when dark mode is active', () => {
+        useThemeStore.getState().setTheme('dark')
+
+        render(
+          <MessageBubble
+            role="ai"
+            content={'```python\nprint("dark mode")\n```'}
+          />
+        )
+
+        const codeBlock = screen.getByTestId('code-block')
+        expect(codeBlock).toHaveAttribute('data-theme', 'dark')
+      })
+
+      it('should render code block with light theme when light mode is active', () => {
+        useThemeStore.getState().setTheme('light')
+
+        render(
+          <MessageBubble
+            role="ai"
+            content={'```python\nprint("light mode")\n```'}
+          />
+        )
+
+        const codeBlock = screen.getByTestId('code-block')
+        expect(codeBlock).toHaveAttribute('data-theme', 'light')
+      })
+
+      it('should switch theme without losing code content', () => {
+        useThemeStore.getState().setTheme('dark')
+
+        const { rerender } = render(
+          <MessageBubble
+            role="ai"
+            content={'```typescript\nconst status = "preserved"\n```'}
+          />
+        )
+
+        expect(screen.getByTestId('code-block')).toHaveAttribute('data-theme', 'dark')
+        expect(screen.getByTestId('code-block')).toHaveTextContent('const status = "preserved"')
+
+        act(() => {
+          useThemeStore.getState().setTheme('light')
+        })
+
+        rerender(
+          <MessageBubble
+            role="ai"
+            content={'```typescript\nconst status = "preserved"\n```'}
+          />
+        )
+
+        expect(screen.getByTestId('code-block')).toHaveAttribute('data-theme', 'light')
+        expect(screen.getByTestId('code-block')).toHaveTextContent('const status = "preserved"')
+      })
+    })
+
+    describe('Inline Code & Differentiation', () => {
+      it('should render inline code with distinct monospace styling', () => {
+        render(
+          <MessageBubble
+            role="ai"
+            content="Sử dụng lệnh `npm run dev` để khởi chạy."
+          />
+        )
+
+        const inlineCode = screen.getByText('npm run dev')
+        expect(inlineCode.tagName).toBe('CODE')
+        expect(inlineCode).toHaveClass('font-mono')
+        expect(inlineCode).toHaveClass('rounded-md')
+      })
+
+      it('should not confuse inline code with code block or render code header for inline code', () => {
+        render(
+          <MessageBubble
+            role="ai"
+            content="Biến `apiKey` là cần thiết."
+          />
+        )
+
+        expect(screen.queryByTestId('code-block')).not.toBeInTheDocument()
+        expect(screen.queryByTestId('code-language-badge')).not.toBeInTheDocument()
+        expect(screen.getByText('apiKey').tagName).toBe('CODE')
+      })
+    })
   })
 })
