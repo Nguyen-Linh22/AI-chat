@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { Message } from '../services/messageService'
 
 interface MessageState {
+  activeChatId: string | null
   messages: Message[]
   loadingMessages: boolean
   messageError: string | null
@@ -20,12 +21,14 @@ interface MessageState {
   // Vị trí cuộn đã lưu cho mỗi chat (Scroll Restoration)
   scrollPositions: Record<string, number>
 
+  setActiveChatId: (chatId: string | null) => void
   setMessages: (messages: Message[]) => void
   setCachedMessages: (chatId: string, messages: Message[], nextCursor?: string | null, hasMore?: boolean) => void
   getCachedMessages: (chatId: string) => Message[] | undefined
   saveScrollPosition: (chatId: string, scrollTop: number) => void
   getScrollPosition: (chatId: string) => number | undefined
   switchChat: (chatId: string) => boolean
+  deleteChatCache: (chatId: string) => void
 
   setPagination: (chatId: string, nextCursor: string | null, hasMore: boolean) => void
   prependMessages: (chatId: string, olderMessages: Message[]) => void
@@ -33,6 +36,7 @@ interface MessageState {
   setOlderError: (error: string | null) => void
 
   addMessage: (message: Message) => void
+  removeMessage: (messageId: string) => void
 
   updateMessage: (
     messageId: string,
@@ -71,6 +75,7 @@ interface MessageState {
 
 export const useMessageStore =
   create<MessageState>((set, get) => ({
+    activeChatId: null,
     messages: [],
     loadingMessages: false,
     messageError: null,
@@ -84,6 +89,11 @@ export const useMessageStore =
     loadingOlder: false,
     olderError: null,
 
+    setActiveChatId: (chatId) =>
+      set({
+        activeChatId: chatId
+      }),
+
     setMessages: (messages) =>
       set({
         messages
@@ -91,9 +101,10 @@ export const useMessageStore =
 
     setCachedMessages: (chatId, messages, nextCursor = null, hasMore = false) =>
       set((state) => ({
-        messages,
-        nextCursor,
-        hasMoreOlder: hasMore,
+        messages: (state.activeChatId === chatId || state.activeChatId === null) ? messages : state.messages,
+        activeChatId: (state.activeChatId === chatId || state.activeChatId === null) ? chatId : state.activeChatId,
+        nextCursor: (state.activeChatId === chatId || state.activeChatId === null) ? nextCursor : state.nextCursor,
+        hasMoreOlder: (state.activeChatId === chatId || state.activeChatId === null) ? hasMore : state.hasMoreOlder,
         messagesCache: {
           ...state.messagesCache,
           [chatId]: messages
@@ -117,10 +128,14 @@ export const useMessageStore =
     getScrollPosition: (chatId) => get().scrollPositions[chatId],
 
     switchChat: (chatId) => {
+      // Fix1-B: Abort any running stream when leaving chat
+      get().abortCurrentStream?.()
+
       const cached = get().messagesCache[chatId]
       const cachedPagination = get().paginationCache[chatId]
       if (cached) {
         set({
+          activeChatId: chatId,
           messages: cached,
           nextCursor: cachedPagination?.nextCursor ?? null,
           hasMoreOlder: cachedPagination?.hasMore ?? false,
@@ -128,11 +143,13 @@ export const useMessageStore =
           loadingOlder: false,
           messageError: null,
           olderError: null,
-          streamingMessageId: null
+          streamingMessageId: null,
+          abortCurrentStream: null
         })
         return true // Cache hit: Instant Render (0ms latency)
       }
       set({
+        activeChatId: chatId,
         messages: [],
         nextCursor: null,
         hasMoreOlder: false,
@@ -140,31 +157,88 @@ export const useMessageStore =
         loadingOlder: false,
         messageError: null,
         olderError: null,
-        streamingMessageId: null
+        streamingMessageId: null,
+        abortCurrentStream: null
       })
       return false // Cache miss: Cần tải từ server
     },
 
-    setPagination: (chatId, nextCursor, hasMore) =>
-      set((state) => ({
-        nextCursor,
-        hasMoreOlder: hasMore,
-        paginationCache: {
-          ...state.paginationCache,
-          [chatId]: { nextCursor, hasMore }
+    deleteChatCache: (chatId) =>
+      set((state) => {
+        const isActive = state.activeChatId === chatId
+        if (isActive) {
+          state.abortCurrentStream?.()
         }
-      })),
+        const updatedCache = { ...state.messagesCache }
+        delete updatedCache[chatId]
+        const updatedPagination = { ...state.paginationCache }
+        delete updatedPagination[chatId]
+        const updatedScroll = { ...state.scrollPositions }
+        delete updatedScroll[chatId]
+
+        return {
+          messages: isActive ? [] : state.messages,
+          activeChatId: isActive ? null : state.activeChatId,
+          nextCursor: isActive ? null : state.nextCursor,
+          hasMoreOlder: isActive ? false : state.hasMoreOlder,
+          loadingOlder: isActive ? false : state.loadingOlder,
+          olderError: isActive ? null : state.olderError,
+          streamingMessageId: isActive ? null : state.streamingMessageId,
+          abortCurrentStream: isActive ? null : state.abortCurrentStream,
+          messagesCache: updatedCache,
+          paginationCache: updatedPagination,
+          scrollPositions: updatedScroll
+        }
+      }),
+
+    setPagination: (chatId, nextCursor, hasMore) =>
+      set((state) => {
+        const isTargetActive =
+          state.activeChatId === chatId ||
+          (state.activeChatId === null &&
+            state.messages.length > 0 &&
+            state.messages.some((m) => m.chatSessionId === chatId))
+
+        const cacheExists = Object.prototype.hasOwnProperty.call(state.messagesCache, chatId)
+        // Hardening A: If chat is neither active nor in messagesCache (deleted or never loaded), do not create orphan paginationCache entry
+        if (!isTargetActive && !cacheExists) {
+          return state
+        }
+
+        return {
+          nextCursor: isTargetActive ? nextCursor : state.nextCursor,
+          hasMoreOlder: isTargetActive ? hasMore : state.hasMoreOlder,
+          paginationCache: {
+            ...state.paginationCache,
+            [chatId]: { nextCursor, hasMore }
+          }
+        }
+      }),
 
     prependMessages: (chatId, olderMessages) =>
       set((state) => {
-        const existingIds = new Set(state.messages.map((m) => m.id))
+        const isActive =
+          state.activeChatId === chatId ||
+          (state.activeChatId === null &&
+            state.messages.length > 0 &&
+            state.messages.some((m) => m.chatSessionId === chatId))
+
+        const cacheExists = Object.prototype.hasOwnProperty.call(state.messagesCache, chatId)
+        // If not active and not cached, chat may have been deleted or not loaded; avoid resurrecting
+        if (!isActive && !cacheExists) {
+          return state
+        }
+        const targetMessages = isActive
+          ? state.messages
+          : (state.messagesCache[chatId] ?? [])
+        const existingIds = new Set(targetMessages.map((m) => m.id))
         const uniqueOlder = olderMessages.filter((m) => !existingIds.has(m.id))
-        const newMessages = [...uniqueOlder, ...state.messages]
+        const newChatMessages = [...uniqueOlder, ...targetMessages]
         return {
-          messages: newMessages,
+          messages: isActive ? newChatMessages : state.messages,
           messagesCache: {
             ...state.messagesCache,
-            [chatId]: newMessages
+            [chatId]: newChatMessages
           }
         }
       }),
@@ -174,16 +248,39 @@ export const useMessageStore =
 
     addMessage: (message) =>
       set((state) => {
-        const nextMessages = [...state.messages, message]
         const chatId = message.chatSessionId
+        const isForActiveChat = !chatId || !state.activeChatId || state.activeChatId === chatId
+        const nextMessages = isForActiveChat
+          ? [...state.messages, message]
+          : state.messages
+
+        const shouldUpdateCache = Boolean(
+          chatId && (isForActiveChat || Object.prototype.hasOwnProperty.call(state.messagesCache, chatId))
+        )
+
         return {
           messages: nextMessages,
-          messagesCache: chatId
+          messagesCache: shouldUpdateCache && chatId
             ? {
                 ...state.messagesCache,
                 [chatId]: [...(state.messagesCache[chatId] ?? []), message]
               }
             : state.messagesCache
+        }
+      }),
+
+    removeMessage: (messageId) =>
+      set((state) => {
+        const nextMessages = state.messages.filter((m) => m.id !== messageId)
+        const updatedCache = { ...state.messagesCache }
+        for (const [cId, msgs] of Object.entries(updatedCache)) {
+          if (msgs.some((m) => m.id === messageId)) {
+            updatedCache[cId] = msgs.filter((m) => m.id !== messageId)
+          }
+        }
+        return {
+          messages: nextMessages,
+          messagesCache: updatedCache
         }
       }),
 
@@ -258,8 +355,11 @@ export const useMessageStore =
         abortCurrentStream: abort
       }),
 
-    clearMessages: () =>
+    clearMessages: () => {
+      // Fix1-B: Abort any running stream when clearing messages
+      get().abortCurrentStream?.()
       set({
+        activeChatId: null,
         messages: [],
         nextCursor: null,
         hasMoreOlder: false,
@@ -267,10 +367,14 @@ export const useMessageStore =
         olderError: null,
         streamingMessageId: null,
         abortCurrentStream: null
-      }),
+      })
+    },
 
-    clearAll: () =>
+    clearAll: () => {
+      // Fix1-B: Abort any running stream when clearing all state
+      get().abortCurrentStream?.()
       set({
+        activeChatId: null,
         messages: [],
         messagesCache: {},
         paginationCache: {},
@@ -283,7 +387,8 @@ export const useMessageStore =
         abortCurrentStream: null,
         loadingMessages: false,
         messageError: null
-      }),
+      })
+    },
 
     setLoadingMessages: (loading) =>
       set({

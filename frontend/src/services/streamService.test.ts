@@ -288,4 +288,100 @@ describe('streamService', () => {
     expect(result.assistantMessage.id).toBe('ai-1')
     expect(result.assistantMessage.content).toBe('Hi')
   })
+
+  describe('Patch 2.3 — Stream Reader Cleanup Hardening', () => {
+    it('calls reader.cancel() when stream completes successfully with done event', async () => {
+      const encoder = new TextEncoder()
+      let cancelCalled = false
+
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(
+              'data: {"type":"done","userMessage":{"id":"u1","role":"user","content":"Hi"},"message":{"id":"a1","role":"assistant","content":"Bye"}}\n\n'
+            )
+          )
+        },
+        cancel() {
+          cancelCalled = true
+        },
+      })
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        body: stream,
+      } as unknown as Response)
+
+      await streamMessage('chat-1', 'Hi', 'model-1', vi.fn())
+      expect(cancelCalled).toBe(true)
+    })
+
+    it('calls reader.cancel() when an error event is received', async () => {
+      const encoder = new TextEncoder()
+      let cancelCalled = false
+
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode('data: {"type":"error","message":"Model exploded"}\n\n')
+          )
+        },
+        cancel() {
+          cancelCalled = true
+        },
+      })
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        body: stream,
+      } as unknown as Response)
+
+      await expect(
+        streamMessage('chat-1', 'Hi', 'model-1', vi.fn())
+      ).rejects.toThrow('Model exploded')
+
+      expect(cancelCalled).toBe(true)
+    })
+
+    it('calls reader.cancel() and does not mask original error when reader.read() throws', async () => {
+      let cancelCalled = false
+      const mockReader = {
+        read: vi.fn().mockRejectedValueOnce(new Error('Network drop mid-stream')),
+        cancel: vi.fn().mockImplementation(async () => {
+          cancelCalled = true
+        }),
+      }
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        body: {
+          getReader: () => mockReader,
+        },
+      } as unknown as Response)
+
+      await expect(
+        streamMessage('chat-1', 'Hi', 'model-1', vi.fn())
+      ).rejects.toThrow('Network drop mid-stream')
+
+      expect(cancelCalled).toBe(true)
+    })
+
+    it('does not mask original read error if reader.cancel() throws or rejects', async () => {
+      const mockReader = {
+        read: vi.fn().mockRejectedValueOnce(new Error('Original read error')),
+        cancel: vi.fn().mockRejectedValueOnce(new Error('Cancel failed')),
+      }
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        body: {
+          getReader: () => mockReader,
+        },
+      } as unknown as Response)
+
+      await expect(
+        streamMessage('chat-1', 'Hi', 'model-1', vi.fn())
+      ).rejects.toThrow('Original read error')
+    })
+  })
 })
