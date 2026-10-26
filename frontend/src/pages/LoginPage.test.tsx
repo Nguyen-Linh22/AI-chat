@@ -69,6 +69,15 @@ function renderLoginPage() {
   )
 }
 
+async function fillCredentials(
+  user: ReturnType<typeof userEvent.setup>,
+  email = 'test@example.com',
+  password = 'password123'
+) {
+  await user.type(screen.getByLabelText('Email'), email)
+  await user.type(screen.getByLabelText(/M.*t kh.*u/), password)
+}
+
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -128,15 +137,7 @@ describe('LoginPage', () => {
 
     renderLoginPage()
 
-    await user.type(
-      screen.getByLabelText('Email'),
-      'test@example.com'
-    )
-
-    await user.type(
-      screen.getByLabelText(/M.*t kh.*u/),
-      'password123'
-    )
+    await fillCredentials(user)
 
     await user.click(
       screen.getByRole('button', { name: /ng nh.*p/ })
@@ -171,15 +172,7 @@ describe('LoginPage', () => {
 
     renderLoginPage()
 
-    await user.type(
-      screen.getByLabelText('Email'),
-      'wrong@example.com'
-    )
-
-    await user.type(
-      screen.getByLabelText(/M.*t kh.*u/),
-      'wrong-password'
-    )
+    await fillCredentials(user, 'wrong@example.com', 'wrong-password')
 
     await user.click(
       screen.getByRole('button', { name: /ng nh.*p/ })
@@ -204,6 +197,8 @@ describe('LoginPage', () => {
 
     renderLoginPage()
 
+    await fillCredentials(user)
+
     await user.click(
       screen.getByRole('button', { name: /ng nh.*p/ })
     )
@@ -221,6 +216,8 @@ describe('LoginPage', () => {
     postMock.mockRejectedValue(new Error('Network error'))
 
     renderLoginPage()
+
+    await fillCredentials(user)
 
     await user.click(
       screen.getByRole('button', { name: /ng nh.*p/ })
@@ -246,6 +243,8 @@ describe('LoginPage', () => {
 
     renderLoginPage()
 
+    await fillCredentials(user)
+
     const loginButton = screen.getByRole('button', {
       name: /ng nh.*p/,
     })
@@ -253,6 +252,7 @@ describe('LoginPage', () => {
     await user.click(loginButton)
 
     expect(loginButton).toBeDisabled()
+    expect(loginButton).toHaveAttribute('aria-busy', 'true')
     expect(loginButton).toHaveTextContent(/ang.*ng nh.*p/)
 
     resolveLogin({
@@ -277,5 +277,81 @@ describe('LoginPage', () => {
     )
 
     expect(navigateMock).toHaveBeenCalledWith('/register')
+  })
+
+  it('shows inline errors, a summary, and skips the API for an empty submit', async () => {
+    const user = userEvent.setup()
+
+    renderLoginPage()
+
+    await user.click(screen.getByRole('button', { name: /ng nh.*p/ }))
+
+    expect(await screen.findByText('Vui lòng nhập email.')).toBeInTheDocument()
+    expect(screen.getByText('Vui lòng nhập mật khẩu.')).toBeInTheDocument()
+    expect(
+      screen.getByText('Vui lòng kiểm tra lại thông tin')
+    ).toBeInTheDocument()
+
+    expect(postMock).not.toHaveBeenCalled()
+    expect(navigateMock).not.toHaveBeenCalled()
+  })
+
+  it('marks fields invalid with aria-invalid and aria-describedby', async () => {
+    const user = userEvent.setup()
+
+    renderLoginPage()
+
+    await user.click(screen.getByRole('button', { name: /ng nh.*p/ }))
+
+    const emailInput = screen.getByLabelText('Email')
+    expect(emailInput).toHaveAttribute('aria-invalid', 'true')
+    expect(emailInput.getAttribute('aria-describedby')).toContain('email-error')
+  })
+
+  it('validates the email format on blur', async () => {
+    const user = userEvent.setup()
+
+    renderLoginPage()
+
+    const emailInput = screen.getByLabelText('Email')
+    await user.type(emailInput, 'not-an-email')
+    await user.tab()
+
+    expect(await screen.findByText('Email không hợp lệ.')).toBeInTheDocument()
+    expect(postMock).not.toHaveBeenCalled()
+  })
+
+  it('focuses the error summary, and its links focus the invalid field', async () => {
+    const user = userEvent.setup()
+
+    renderLoginPage()
+
+    await user.click(screen.getByRole('button', { name: /ng nh.*p/ }))
+
+    const summary = await screen.findByRole('alert')
+    await waitFor(() => expect(summary).toHaveFocus())
+
+    await user.click(screen.getByRole('button', { name: 'Email' }))
+
+    expect(screen.getByLabelText('Email')).toHaveFocus()
+  })
+
+  it('toggles password visibility with an accessible pressed state', async () => {
+    const user = userEvent.setup()
+
+    renderLoginPage()
+
+    const toggle = screen.getByRole('button', { name: 'Hiện mật khẩu' })
+    const passwordInput = screen.getByLabelText(/M.*t kh.*u/)
+
+    expect(passwordInput).toHaveAttribute('type', 'password')
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(toggle)
+
+    expect(passwordInput).toHaveAttribute('type', 'text')
+    expect(
+      screen.getByRole('button', { name: 'Ẩn mật khẩu' })
+    ).toHaveAttribute('aria-pressed', 'true')
   })
 })

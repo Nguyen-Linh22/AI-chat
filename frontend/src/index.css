@@ -427,61 +427,99 @@ input:disabled:hover {
   animation: network-drift 24s ease-in-out infinite;
 }
 
-/* Sliding Overlay panel transitions (300ms - 500ms smooth physical cubic-bezier) */
-@keyframes slide-panel-to-left {
+/* ===== Auth panel reveal (tokenized motion) =====
+   The visual banner and the form panel slide in from opposite edges, then
+   settle. Only transform/opacity are animated, so the reveal never triggers
+   layout work, and the card's overflow keeps it from creating horizontal scroll. */
+:root {
+  --auth-motion-panel: 560ms;
+  --auth-motion-form: 460ms;
+  --auth-motion-form-delay: 70ms;
+  --auth-motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --auth-slide-offset: 100%;
+}
+
+@keyframes auth-form-fade-up {
   from {
-    transform: translateX(100%);
+    opacity: 0;
+    transform: translateY(10px);
   }
   to {
-    transform: translateX(0%);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes slide-panel-to-right {
+@keyframes auth-panel-in-right {
   from {
-    transform: translateX(-100%);
+    transform: translateX(var(--auth-slide-offset));
   }
   to {
-    transform: translateX(0%);
+    transform: translateX(0);
   }
 }
 
-@keyframes slide-form-to-left {
+@keyframes auth-panel-in-left {
   from {
-    transform: translateX(100%);
-    opacity: 0.7;
+    transform: translateX(calc(-1 * var(--auth-slide-offset)));
   }
   to {
-    transform: translateX(0%);
+    transform: translateX(0);
+  }
+}
+
+@keyframes auth-form-in-right {
+  from {
+    transform: translateX(var(--auth-slide-offset));
+    opacity: 0.6;
+  }
+  to {
+    transform: translateX(0);
     opacity: 1;
   }
 }
 
-@keyframes slide-form-to-right {
+@keyframes auth-form-in-left {
   from {
-    transform: translateX(-100%);
-    opacity: 0.7;
+    transform: translateX(calc(-1 * var(--auth-slide-offset)));
+    opacity: 0.6;
   }
   to {
-    transform: translateX(0%);
+    transform: translateX(0);
     opacity: 1;
   }
 }
 
-.animate-slide-left {
-  animation: slide-panel-to-left 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.auth-reveal-banner-right {
+  animation: auth-panel-in-right var(--auth-motion-panel) var(--auth-motion-ease) both;
 }
 
-.animate-slide-right {
-  animation: slide-panel-to-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.auth-reveal-banner-left {
+  animation: auth-panel-in-left var(--auth-motion-panel) var(--auth-motion-ease) both;
 }
 
-.animate-slide-form-left {
-  animation: slide-form-to-left 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.auth-reveal-form-right {
+  animation: auth-form-in-right var(--auth-motion-form) var(--auth-motion-ease)
+    var(--auth-motion-form-delay) both;
 }
 
-.animate-slide-form-right {
-  animation: slide-form-to-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.auth-reveal-form-left {
+  animation: auth-form-in-left var(--auth-motion-form) var(--auth-motion-ease)
+    var(--auth-motion-form-delay) both;
+}
+
+/* Narrow screens: the banner still slides in, while the form settles upward so
+   its inputs are never clipped by the card edge mid-animation. Declared after
+   the base rules so the override wins on equal specificity. */
+@media (max-width: 767px) {
+  :root {
+    --auth-slide-offset: 24px;
+  }
+
+  .auth-reveal-form-right,
+  .auth-reveal-form-left {
+    animation-name: auth-form-fade-up;
+  }
 }
 
 /* Smooth Form Fade & Slide */
@@ -505,7 +543,7 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
   -webkit-text-fill-color: #ffffff !important;
-  -webkit-box-shadow: 0 0 0px 1000px #0b0f19 inset !important;
+  -webkit-box-shadow: 0 0 0px 1000px #080b12 inset !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -563,10 +601,10 @@ input:-webkit-autofill:focus {
   .animate-aurora-1,
   .animate-aurora-2,
   .animate-network-drift,
-  .animate-slide-left,
-  .animate-slide-right,
-  .animate-slide-form-left,
-  .animate-slide-form-right,
+  .auth-reveal-banner-right,
+  .auth-reveal-banner-left,
+  .auth-reveal-form-right,
+  .auth-reveal-form-left,
   .animate-auth-fade,
   .animate-dropdown-fade,
   .animate-modal-fade,
@@ -657,6 +695,40 @@ html.view-transition-active #theme-toggle-btn {
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* ===== Auth screens: page-owned scroll container =====
+   The document body stays `overflow: hidden`, so the auth page itself scrolls
+   on short viewports and when the on-screen keyboard is open. */
+.auth-scroll {
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.auth-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.auth-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.auth-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.16);
+  background-clip: content-box;
+  border: 3px solid transparent;
+  border-radius: 9999px;
+}
+
+.auth-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse {
     animation: none !important;
   }
 }

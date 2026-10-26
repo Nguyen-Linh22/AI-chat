@@ -34,6 +34,22 @@ function renderRegisterPage() {
   )
 }
 
+async function fillRegisterForm(
+  user: ReturnType<typeof userEvent.setup>,
+  {
+    email = 'test@example.com',
+    password = 'password123',
+    confirmPassword = password,
+  }: { email?: string; password?: string; confirmPassword?: string } = {}
+) {
+  await user.type(screen.getByLabelText('Email'), email)
+  await user.type(screen.getByLabelText(/M.*t kh.*u/), password)
+  await user.type(
+    screen.getByLabelText(/X.*c nh.*n m.*t kh.*u/),
+    confirmPassword
+  )
+}
+
 describe('RegisterPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -62,19 +78,13 @@ describe('RegisterPage', () => {
 
     renderRegisterPage()
 
-    const emailInput = screen.getByLabelText('Email')
-    const passwordInput = screen.getByLabelText(/M.*t kh.*u/)
-    const confirmPasswordInput = screen.getByLabelText(
-      /X.*c nh.*n m.*t kh.*u/
-    )
+    await fillRegisterForm(user)
 
-    await user.type(emailInput, 'test@example.com')
-    await user.type(passwordInput, 'password123')
-    await user.type(confirmPasswordInput, 'password123')
-
-    expect(emailInput).toHaveValue('test@example.com')
-    expect(passwordInput).toHaveValue('password123')
-    expect(confirmPasswordInput).toHaveValue('password123')
+    expect(screen.getByLabelText('Email')).toHaveValue('test@example.com')
+    expect(screen.getByLabelText(/M.*t kh.*u/)).toHaveValue('password123')
+    expect(
+      screen.getByLabelText(/X.*c nh.*n m.*t kh.*u/)
+    ).toHaveValue('password123')
   })
 
   it('shows error and does not call API when passwords do not match', async () => {
@@ -82,20 +92,10 @@ describe('RegisterPage', () => {
 
     renderRegisterPage()
 
-    await user.type(
-      screen.getByLabelText('Email'),
-      'test@example.com'
-    )
-
-    await user.type(
-      screen.getByLabelText(/M.*t kh.*u/),
-      'password123'
-    )
-
-    await user.type(
-      screen.getByLabelText(/X.*c nh.*n m.*t kh.*u/),
-      'different-password'
-    )
+    await fillRegisterForm(user, {
+      password: 'password123',
+      confirmPassword: 'different-password',
+    })
 
     await user.click(
       screen.getByRole('button', { name: /ng k/ })
@@ -107,6 +107,56 @@ describe('RegisterPage', () => {
 
     expect(postMock).not.toHaveBeenCalled()
     expect(navigateMock).not.toHaveBeenCalled()
+  })
+
+  it('requires at least 8 characters before calling the API', async () => {
+    const user = userEvent.setup()
+
+    renderRegisterPage()
+
+    await fillRegisterForm(user, {
+      password: 'short',
+      confirmPassword: 'short',
+    })
+
+    await user.click(screen.getByRole('button', { name: /ng k/ }))
+
+    expect(
+      await screen.findByText('Mật khẩu phải có ít nhất 8 ký tự.')
+    ).toBeInTheDocument()
+
+    expect(postMock).not.toHaveBeenCalled()
+    expect(navigateMock).not.toHaveBeenCalled()
+  })
+
+  it('shows the password strength label and criteria checklist', async () => {
+    const user = userEvent.setup()
+
+    renderRegisterPage()
+
+    await user.type(screen.getByLabelText(/M.*t kh.*u/), 'Abc!123456')
+
+    expect(screen.getByText('Mạnh')).toBeInTheDocument()
+    expect(screen.getByText('Ít nhất 8 ký tự')).toBeInTheDocument()
+    expect(screen.getByText('Có ít nhất 1 ký tự đặc biệt')).toBeInTheDocument()
+    expect(screen.getAllByText(/đã đạt/)).toHaveLength(4)
+  })
+
+  it('validates the confirmation field on blur', async () => {
+    const user = userEvent.setup()
+
+    renderRegisterPage()
+
+    await user.type(screen.getByLabelText(/M.*t kh.*u/), 'password123')
+    await user.type(
+      screen.getByLabelText(/X.*c nh.*n m.*t kh.*u/),
+      'password124'
+    )
+    await user.tab()
+
+    expect(
+      await screen.findByText('Mật khẩu xác nhận không khớp.')
+    ).toBeInTheDocument()
   })
 
   it('registers successfully and navigates to login', async () => {
@@ -124,20 +174,7 @@ describe('RegisterPage', () => {
 
     renderRegisterPage()
 
-    await user.type(
-      screen.getByLabelText('Email'),
-      'test@example.com'
-    )
-
-    await user.type(
-      screen.getByLabelText(/M.*t kh.*u/),
-      'password123'
-    )
-
-    await user.type(
-      screen.getByLabelText(/X.*c nh.*n m.*t kh.*u/),
-      'password123'
-    )
+    await fillRegisterForm(user)
 
     await user.click(
       screen.getByRole('button', { name: /ng k/ })
@@ -168,20 +205,7 @@ describe('RegisterPage', () => {
 
     renderRegisterPage()
 
-    await user.type(
-      screen.getByLabelText('Email'),
-      'existing@example.com'
-    )
-
-    await user.type(
-      screen.getByLabelText(/M.*t kh.*u/),
-      'password123'
-    )
-
-    await user.type(
-      screen.getByLabelText(/X.*c nh.*n m.*t kh.*u/),
-      'password123'
-    )
+    await fillRegisterForm(user, { email: 'existing@example.com' })
 
     await user.click(
       screen.getByRole('button', { name: /ng k/ })
@@ -204,6 +228,8 @@ describe('RegisterPage', () => {
 
     renderRegisterPage()
 
+    await fillRegisterForm(user)
+
     await user.click(
       screen.getByRole('button', { name: /ng k/ })
     )
@@ -221,6 +247,8 @@ describe('RegisterPage', () => {
     postMock.mockRejectedValue(new Error('Network error'))
 
     renderRegisterPage()
+
+    await fillRegisterForm(user)
 
     await user.click(
       screen.getByRole('button', { name: /ng k/ })
@@ -246,6 +274,8 @@ describe('RegisterPage', () => {
 
     renderRegisterPage()
 
+    await fillRegisterForm(user)
+
     const registerButton = screen.getByRole('button', {
       name: /ng k/,
     })
@@ -253,6 +283,7 @@ describe('RegisterPage', () => {
     await user.click(registerButton)
 
     expect(registerButton).toBeDisabled()
+    expect(registerButton).toHaveAttribute('aria-busy', 'true')
     expect(registerButton).toHaveTextContent(/ang.*ng k/)
 
     resolveRegister({
@@ -265,6 +296,22 @@ describe('RegisterPage', () => {
     await waitFor(() => {
       expect(registerButton).not.toBeDisabled()
     })
+  })
+
+  it('focuses the summary when several fields are invalid', async () => {
+    const user = userEvent.setup()
+
+    renderRegisterPage()
+
+    await user.click(screen.getByRole('button', { name: /ng k/ }))
+
+    const summary = await screen.findByRole('alert')
+
+    expect(
+      screen.getByText('Vui lòng kiểm tra lại thông tin')
+    ).toBeInTheDocument()
+    await waitFor(() => expect(summary).toHaveFocus())
+    expect(postMock).not.toHaveBeenCalled()
   })
 
   it('navigates to login page when login button is clicked', async () => {
