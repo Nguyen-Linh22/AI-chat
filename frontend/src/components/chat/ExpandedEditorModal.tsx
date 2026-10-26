@@ -398,7 +398,7 @@ export function ExpandedEditorModal({
               onKeyDown={handleKeyDown}
               placeholder="Nhập nội dung tin nhắn chi tiết, đoạn mã, hoặc tài liệu..."
               aria-label="Nội dung tin nhắn mở rộng"
-              className="h-full w-full resize-none bg-transparent text-xs sm:text-sm text-slate-800 dark:text-gray-100 placeholder:text-slate-400 dark:placeholder:text-gray-500 outline-none scrollbar-thin font-sans leading-relaxed"
+              className="h-full w-full resize-none bg-transparent text-xs sm:text-sm text-slate-800 dark:text-gray-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 outline-none scrollbar-thin font-sans leading-relaxed"
             />
           </div>
         )}

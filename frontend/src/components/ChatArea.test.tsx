@@ -1132,6 +1132,39 @@ describe('ChatArea', () => {
       expect(screen.queryByRole('button', { name: /Tin nhắn mới/i })).not.toBeInTheDocument()
       expect(screen.queryByRole('button', { name: /Cuộn xuống/i })).not.toBeInTheDocument()
     })
+
+    it('M7: should use auto scroll behavior when prefers-reduced-motion is requested', () => {
+      const originalMatchMedia = window.matchMedia
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: query.includes('prefers-reduced-motion'),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+
+      const scrollToMock = vi.fn()
+      HTMLDivElement.prototype.scrollTo = scrollToMock
+
+      try {
+        configureStores({
+          currentChatId: 'chat-rm',
+          messages: [createMessage('m1', 'user', 'Hello'), createMessage('m2', 'assistant', 'World')],
+        })
+
+        render(<ChatArea />)
+
+        expect(scrollToMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            behavior: 'auto',
+          })
+        )
+      } finally {
+        window.matchMedia = originalMatchMedia
+      }
+    })
   })
 })
-

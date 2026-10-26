@@ -586,7 +586,7 @@ function ChatInput() {
               >
                 <div className="flex items-center gap-2 text-[#1B8F3D] dark:text-emerald-400 font-semibold text-xs sm:text-sm">
                   <svg
-                    className="h-5 w-5 animate-bounce"
+                    className="h-5 w-5 animate-bounce motion-reduce:animate-none"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -751,7 +751,7 @@ function ChatInput() {
                 disabled={isActive}
                 placeholder="Nhập tin nhắn..."
                 aria-label="Nội dung tin nhắn"
-                className="min-w-0 flex-1 resize-none bg-transparent px-2.5 py-1.5 text-xs sm:text-sm text-slate-800 dark:text-gray-100 outline-none placeholder:text-slate-400 dark:placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50 scrollbar-thin font-sans leading-relaxed"
+                className="min-w-0 flex-1 resize-none bg-transparent px-2.5 py-1.5 text-xs sm:text-sm text-slate-800 dark:text-gray-100 outline-none placeholder:text-slate-500 dark:placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-50 scrollbar-thin font-sans leading-relaxed"
               />
 
               {/* Expand Button */}

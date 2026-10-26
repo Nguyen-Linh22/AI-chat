@@ -76,8 +76,13 @@ function Sidebar({
   useEffect(() => {
     if (currentChatId && activeChatRef.current) {
       if (typeof activeChatRef.current.scrollIntoView === 'function') {
+        const prefersReducedMotion =
+          typeof window !== 'undefined' &&
+          typeof window.matchMedia === 'function' &&
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
         activeChatRef.current.scrollIntoView({
-          behavior: 'smooth',
+          behavior: prefersReducedMotion ? 'auto' : 'smooth',
           block: 'nearest',
         })
       }
@@ -353,7 +358,7 @@ function Sidebar({
                   <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white select-none leading-none">
                     AI Chat
                   </h1>
-                  <span className="text-[10px] text-slate-400 dark:text-[#94A3B8] font-medium select-none mt-1">
+                  <span className="text-[10px] text-slate-500 dark:text-[#94A3B8] font-medium select-none mt-1">
                     Workspace
                   </span>
                 </div>
@@ -612,14 +617,14 @@ function Sidebar({
                                   className={`truncate text-[11px] ${
                                     isActive
                                       ? 'text-emerald-700/80 dark:text-emerald-300/80 font-medium'
-                                      : 'text-slate-400 dark:text-[#94A3B8]'
+                                      : 'text-slate-500 dark:text-[#94A3B8]'
                                   }`}
                                 >
                                   Cuộc trò chuyện
                                 </span>
                                 <span
                                   className={`text-[11px] shrink-0 ${
-                                    isActive ? 'text-slate-500 dark:text-gray-400' : 'text-slate-400 dark:text-[#64748B]'
+                                    isActive ? 'text-slate-600 dark:text-gray-300' : 'text-slate-500 dark:text-[#94A3B8]'
                                   }`}
                                 >
                                   {timeAgo}

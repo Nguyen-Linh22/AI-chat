@@ -246,7 +246,7 @@ function MessageBubble({
             {isStreaming && (
               <span className="flex items-center gap-1.5 text-[11px] font-medium text-[#1B8F3D] dark:text-emerald-400">
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#1B8F3D] opacity-75"></span>
+                  <span className="absolute inline-flex h-full w-full animate-ping motion-reduce:hidden rounded-full bg-[#1B8F3D] opacity-75"></span>
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-[#1B8F3D]"></span>
                 </span>
                 <span>AI đang trả lời...</span>
