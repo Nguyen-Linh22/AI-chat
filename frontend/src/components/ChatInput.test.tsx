@@ -1849,5 +1849,331 @@ describe('ChatInput', () => {
       expect(screen.queryByRole('button', { name: 'Xóa file report.pdf' })).not.toBeInTheDocument()
     })
   })
-})
 
+  describe('M6.2 — Drag-and-Drop File Attachment', () => {
+    const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024 // 10 MiB
+
+    const createMockFile = (name: string, size: number, type = '') => {
+      const file = new File(['mock content'], name, { type })
+      Object.defineProperty(file, 'size', { value: size })
+      return file
+    }
+
+    it('Test 1: should display drop zone overlay on dragEnter and dragOver when files are dragged', () => {
+      render(<ChatInput />)
+      const dropZone = screen.getByTestId('composer-drop-zone')
+
+      // Initial state: no overlay
+      expect(screen.queryByTestId('drop-zone-overlay')).not.toBeInTheDocument()
+
+      // dragEnter with Files
+      fireEvent.dragEnter(dropZone, {
+        dataTransfer: {
+          types: ['Files'],
+          dropEffect: 'none',
+        },
+      })
+
+      expect(screen.getByTestId('drop-zone-overlay')).toBeInTheDocument()
+      expect(screen.getByText('Thả file PDF hoặc TXT vào đây')).toBeInTheDocument()
+      expect(screen.getByText('Tối đa 10 MB • 1 file duy nhất')).toBeInTheDocument()
+
+      // dragOver should maintain overlay and set dropEffect
+      const dragOverEvent = new Event('dragover', { bubbles: true, cancelable: true })
+      Object.defineProperty(dragOverEvent, 'dataTransfer', {
+        value: { types: ['Files'], dropEffect: 'none' },
+      })
+      dropZone.dispatchEvent(dragOverEvent)
+
+      expect(screen.getByTestId('drop-zone-overlay')).toBeInTheDocument()
+    })
+
+    it('Test 2: should close overlay on dragLeave when leaving the drop zone', () => {
+      render(<ChatInput />)
+      const dropZone = screen.getByTestId('composer-drop-zone')
+
+      fireEvent.dragEnter(dropZone, {
+        dataTransfer: { types: ['Files'] },
+      })
+      expect(screen.getByTestId('drop-zone-overlay')).toBeInTheDocument()
+
+      fireEvent.dragLeave(dropZone, {
+        dataTransfer: { types: ['Files'] },
+      })
+      expect(screen.queryByTestId('drop-zone-overlay')).not.toBeInTheDocument()
+    })
+
+    it('Test 3: should NOT show overlay when dragging text or non-file content', () => {
+      render(<ChatInput />)
+      const dropZone = screen.getByTestId('composer-drop-zone')
+
+      fireEvent.dragEnter(dropZone, {
+        dataTransfer: { types: ['text/plain'] },
+      })
+      expect(screen.queryByTestId('drop-zone-overlay')).not.toBeInTheDocument()
+
+      fireEvent.dragOver(dropZone, {
+        dataTransfer: { types: ['text/plain'] },
+      })
+      expect(screen.queryByTestId('drop-zone-overlay')).not.toBeInTheDocument()
+    })
+
+    it('Test 4: should accept and attach valid PDF file on drop', () => {
+      render(<ChatInput />)
+      const dropZone = screen.getByTestId('composer-drop-zone')
+      const pdfFile = createMockFile('document.pdf', 2 * 1024 * 1024, 'application/pdf')
+
+      fireEvent.dragEnter(dropZone, {
+        dataTransfer: { types: ['Files'] },
+      })
+      expect(screen.getByTestId('drop-zone-overlay')).toBeInTheDocument()
+
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [pdfFile],
+          types: ['Files'],
+        },
+      })
+
+      // Overlay is closed
+      expect(screen.queryByTestId('drop-zone-overlay')).not.toBeInTheDocument()
+      // File pill is displayed
+      expect(screen.getByText('document.pdf')).toBeInTheDocument()
+      expect(screen.queryByText(/File không hợp lệ/)).not.toBeInTheDocument()
+    })
+
+    it('Test 5: should accept and attach valid TXT file on drop', () => {
+      render(<ChatInput />)
+      const dropZone = screen.getByTestId('composer-drop-zone')
+      const txtFile = createMockFile('notes.txt', 1024, 'text/plain')
+
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [txtFile],
+          types: ['Files'],
+        },
+      })
+
+      expect(screen.queryByTestId('drop-zone-overlay')).not.toBeInTheDocument()
+      expect(screen.getByText('notes.txt')).toBeInTheDocument()
+    })
+
+    it('Test 6: should reject file exceeding 10 MiB limit on drop', () => {
+      render(<ChatInput />)
+      const dropZone = screen.getByTestId('composer-drop-zone')
+      const oversizedFile = createMockFile('oversized.pdf', MAX_FILE_SIZE_BYTES + 1, 'application/pdf')
+
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [oversizedFile],
+          types: ['Files'],
+        },
+      })
+
+      expect(screen.queryByTestId('drop-zone-overlay')).not.toBeInTheDocument()
+      expect(screen.queryByText('oversized.pdf')).not.toBeInTheDocument()
+      expect(screen.getByText('File không được vượt quá 10 MB.')).toBeInTheDocument()
+    })
+
+    it('Test 7: should reject unsupported file formats (PNG, EXE, DOCX) on drop', () => {
+      render(<ChatInput />)
+      const dropZone = screen.getByTestId('composer-drop-zone')
+
+      const pngFile = createMockFile('image.png', 1024, 'image/png')
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [pngFile],
+          types: ['Files'],
+        },
+      })
+
+      expect(screen.queryByText('image.png')).not.toBeInTheDocument()
+      expect(screen.getByText('Chỉ hỗ trợ file tài liệu định dạng PDF hoặc TXT.')).toBeInTheDocument()
+
+      const exeFile = createMockFile('app.exe', 1024, 'application/x-msdownload')
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [exeFile],
+          types: ['Files'],
+        },
+      })
+      expect(screen.getByText('Chỉ hỗ trợ file tài liệu định dạng PDF hoặc TXT.')).toBeInTheDocument()
+    })
+
+    it('Test 8: should reject multiple files on drop and notify user clearly', () => {
+      render(<ChatInput />)
+      const dropZone = screen.getByTestId('composer-drop-zone')
+
+      const file1 = createMockFile('doc1.pdf', 1024, 'application/pdf')
+      const file2 = createMockFile('doc2.pdf', 1024, 'application/pdf')
+
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [file1, file2],
+          types: ['Files'],
+        },
+      })
+
+      expect(screen.queryByTestId('drop-zone-overlay')).not.toBeInTheDocument()
+      expect(screen.queryByText('doc1.pdf')).not.toBeInTheDocument()
+      expect(screen.queryByText('doc2.pdf')).not.toBeInTheDocument()
+      expect(
+        screen.getByText('Chỉ hỗ trợ đính kèm 1 file mỗi lần. Vui lòng chọn 1 file duy nhất.')
+      ).toBeInTheDocument()
+    })
+
+    it('Test 9: rejected drop should preserve previously selected valid file and draft text', async () => {
+      const user = userEvent.setup()
+      render(<ChatInput />)
+      const textarea = screen.getByPlaceholderText('Nhập tin nhắn...')
+      const dropZone = screen.getByTestId('composer-drop-zone')
+
+      // Type draft
+      await user.type(textarea, 'Important draft to keep')
+      expect(textarea).toHaveValue('Important draft to keep')
+
+      // Attach valid file first
+      const validFile = createMockFile('keep-me.pdf', 1024, 'application/pdf')
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [validFile],
+          types: ['Files'],
+        },
+      })
+      expect(screen.getByText('keep-me.pdf')).toBeInTheDocument()
+
+      // Drop an oversized file
+      const overSized = createMockFile('toolarge.pdf', 12 * 1024 * 1024, 'application/pdf')
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [overSized],
+          types: ['Files'],
+        },
+      })
+
+      // Error shown
+      expect(screen.getByText('File không được vượt quá 10 MB.')).toBeInTheDocument()
+      // Draft text is preserved intact
+      expect(textarea).toHaveValue('Important draft to keep')
+      // Valid file remains selected
+      expect(screen.getByText('keep-me.pdf')).toBeInTheDocument()
+      expect(screen.queryByText('toolarge.pdf')).not.toBeInTheDocument()
+    })
+
+    it('Test 10: drop while streaming or sending is disabled and does not disrupt stream', () => {
+      mockUseMessageStore.mockImplementation((selector: (state: unknown) => unknown) =>
+        selector({
+          addMessage: vi.fn(),
+          updateMessage: vi.fn(),
+          streamingMessageId: 'active-assistant-msg',
+          setStreamingMessageId: vi.fn(),
+          abortCurrentStream: null,
+          setAbortCurrentStream: vi.fn(),
+          replaceMessage: vi.fn(),
+          removeMessage: vi.fn(),
+        })
+      )
+      render(<ChatInput />)
+      const dropZone = screen.getByTestId('composer-drop-zone')
+
+      const file = createMockFile('try-drop.pdf', 1024, 'application/pdf')
+
+      // Attempt dragEnter and drop while streaming
+      fireEvent.dragEnter(dropZone, {
+        dataTransfer: { types: ['Files'] },
+      })
+      expect(screen.queryByTestId('drop-zone-overlay')).not.toBeInTheDocument()
+
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [file],
+          types: ['Files'],
+        },
+      })
+
+      expect(screen.queryByText('try-drop.pdf')).not.toBeInTheDocument()
+    })
+
+    it('Test 11: send message after drop sends the dropped file via streamMessage', async () => {
+      const user = userEvent.setup()
+      render(<ChatInput />)
+      const dropZone = screen.getByTestId('composer-drop-zone')
+      const textarea = screen.getByPlaceholderText('Nhập tin nhắn...')
+      const sendButton = screen.getByRole('button', { name: 'Gửi' })
+
+      const file = createMockFile('presentation.pdf', 2048, 'application/pdf')
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [file],
+          types: ['Files'],
+        },
+      })
+
+      expect(screen.getByText('presentation.pdf')).toBeInTheDocument()
+
+      await user.type(textarea, 'Summarize this presentation')
+      await user.click(sendButton)
+
+      expect(mockStreamMessage).toHaveBeenCalledTimes(1)
+      const [, content, , , , sentFile] = mockStreamMessage.mock.calls[0]
+      expect(content).toBe('Summarize this presentation')
+      expect(sentFile).toBe(file)
+    })
+
+    it('Test 12: window dragover and drop listeners prevent default browser file opening', () => {
+      render(<ChatInput />)
+
+      const fileDragOver = new Event('dragover', { bubbles: true, cancelable: true })
+      Object.defineProperty(fileDragOver, 'dataTransfer', {
+        value: { types: ['Files'] },
+      })
+      window.dispatchEvent(fileDragOver)
+      expect(fileDragOver.defaultPrevented).toBe(true)
+
+      const fileDrop = new Event('drop', { bubbles: true, cancelable: true })
+      Object.defineProperty(fileDrop, 'dataTransfer', {
+        value: { types: ['Files'] },
+      })
+      window.dispatchEvent(fileDrop)
+      expect(fileDrop.defaultPrevented).toBe(true)
+
+      // Text dragging does not get prevented by window file drop guard
+      const textDragOver = new Event('dragover', { bubbles: true, cancelable: true })
+      Object.defineProperty(textDragOver, 'dataTransfer', {
+        value: { types: ['text/plain'] },
+      })
+      window.dispatchEvent(textDragOver)
+      expect(textDragOver.defaultPrevented).toBe(false)
+    })
+
+    it('Test 13: dragCounter handles nested child elements without flicker', () => {
+      render(<ChatInput />)
+      const dropZone = screen.getByTestId('composer-drop-zone')
+      const textarea = screen.getByPlaceholderText('Nhập tin nhắn...')
+
+      // Enter dropZone (counter: 1) -> overlay shown
+      fireEvent.dragEnter(dropZone, {
+        dataTransfer: { types: ['Files'] },
+      })
+      expect(screen.getByTestId('drop-zone-overlay')).toBeInTheDocument()
+
+      // Enter child element (counter: 2) -> overlay remains shown
+      fireEvent.dragEnter(textarea, {
+        dataTransfer: { types: ['Files'] },
+      })
+      expect(screen.getByTestId('drop-zone-overlay')).toBeInTheDocument()
+
+      // Leave child element (counter: 1) -> overlay remains shown
+      fireEvent.dragLeave(textarea, {
+        dataTransfer: { types: ['Files'] },
+      })
+      expect(screen.getByTestId('drop-zone-overlay')).toBeInTheDocument()
+
+      // Leave dropZone (counter: 0) -> overlay closed
+      fireEvent.dragLeave(dropZone, {
+        dataTransfer: { types: ['Files'] },
+      })
+      expect(screen.queryByTestId('drop-zone-overlay')).not.toBeInTheDocument()
+    })
+  })
+})
