@@ -86,6 +86,7 @@ function ChatInput() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isAttachmentOpen, setIsAttachmentOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const isActive = isSending || isTyping || Boolean(streamingMessageId)
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -94,6 +95,7 @@ function ChatInput() {
   const attachmentPopoverRef = useRef<HTMLDivElement | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const currentRunIdRef = useRef<string | null>(null)
+  const dragCounterRef = useRef<number>(0)
   // true khi user chủ động bấm Dừng (phân biệt với lỗi thật sự)
   const isStoppingRef = useRef(false)
   const { enqueue, waitDrained, flushAll, reset: resetQueue } = useTypewriterQueue()
@@ -108,6 +110,7 @@ function ChatInput() {
     return () => {
       isMountedRef.current = false
       currentRunIdRef.current = null
+      dragCounterRef.current = 0
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
         abortControllerRef.current = null
@@ -115,6 +118,29 @@ function ChatInput() {
       resetQueue()
     }
   }, [resetQueue])
+
+  // M6.2: Ngăn trình duyệt mở file sang tab mới khi thả file ra ngoài composer
+  useEffect(() => {
+    const handleWindowDragOver = (event: DragEvent) => {
+      if (event.dataTransfer?.types && Array.from(event.dataTransfer.types).includes('Files')) {
+        event.preventDefault()
+      }
+    }
+
+    const handleWindowDrop = (event: DragEvent) => {
+      if (event.dataTransfer?.types && Array.from(event.dataTransfer.types).includes('Files')) {
+        event.preventDefault()
+      }
+    }
+
+    window.addEventListener('dragover', handleWindowDragOver)
+    window.addEventListener('drop', handleWindowDrop)
+
+    return () => {
+      window.removeEventListener('dragover', handleWindowDragOver)
+      window.removeEventListener('drop', handleWindowDrop)
+    }
+  }, [])
 
   // Auto-resize textarea theo nội dung
   useEffect(() => {
@@ -417,6 +443,76 @@ function ChatInput() {
 
   const isDisabled = isActive || isCooldown || !effectiveModelId
 
+  // M6.2: Drag-and-Drop File Helpers & Handlers
+  const isFileDrag = (event: React.DragEvent): boolean => {
+    const types = event.dataTransfer?.types
+    return Boolean(types && Array.from(types).includes('Files'))
+  }
+
+  const handleDragEnter = (event: React.DragEvent) => {
+    if (!isFileDrag(event) || isActive || isDisabled) {
+      return
+    }
+    event.preventDefault()
+    dragCounterRef.current += 1
+    if (dragCounterRef.current === 1) {
+      setIsDragging(true)
+    }
+  }
+
+  const handleDragOver = (event: React.DragEvent) => {
+    if (!isFileDrag(event) || isActive || isDisabled) {
+      return
+    }
+    event.preventDefault()
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'copy'
+    }
+  }
+
+  const handleDragLeave = (event: React.DragEvent) => {
+    if (!isFileDrag(event)) {
+      return
+    }
+    event.preventDefault()
+    dragCounterRef.current -= 1
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0
+      setIsDragging(false)
+    }
+  }
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    dragCounterRef.current = 0
+    setIsDragging(false)
+
+    if (isActive || isDisabled) {
+      return
+    }
+
+    const files = event.dataTransfer?.files
+    if (!files || files.length === 0) {
+      return
+    }
+
+    if (files.length > 1) {
+      setSendError('Chỉ hỗ trợ đính kèm 1 file mỗi lần. Vui lòng chọn 1 file duy nhất.')
+      return
+    }
+
+    const file = files[0]
+    const validation = validateFile(file)
+    if (!validation.isValid) {
+      setSendError(validation.error || 'File không hợp lệ.')
+      return
+    }
+
+    setSendError(null)
+    setSelectedFile(file)
+  }
+
   return (
     <div className="relative shrink-0 px-3 sm:px-6 pb-3 pt-1">
       <div className="relative mx-auto w-full max-w-4xl">
@@ -468,9 +564,48 @@ function ChatInput() {
           </div>
         )}
 
-        {/* Floating Capsule Composer */}
+        {/* Floating Capsule Composer with Drag-and-Drop */}
         <div className="relative group">
-          <div className="relative flex flex-col rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-[#131924]/90 p-1.5 sm:p-2 shadow-lg dark:shadow-xl backdrop-blur-xl transition-all duration-200 focus-within:border-[#1B8F3D]/50 focus-within:ring-2 focus-within:ring-[#1B8F3D]/20">
+          <div
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            data-testid="composer-drop-zone"
+            className={`relative flex flex-col rounded-2xl border ${
+              isDragging
+                ? 'border-dashed border-[#1B8F3D] dark:border-emerald-500 ring-2 ring-[#1B8F3D]/25'
+                : 'border-slate-200/90 dark:border-white/10'
+            } bg-white/95 dark:bg-[#131924]/90 p-1.5 sm:p-2 shadow-lg dark:shadow-xl backdrop-blur-xl transition-all duration-200 focus-within:border-[#1B8F3D]/50 focus-within:ring-2 focus-within:ring-[#1B8F3D]/20`}
+          >
+            {/* Drag-and-Drop Dropzone Overlay */}
+            {isDragging && (
+              <div
+                data-testid="drop-zone-overlay"
+                className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#1B8F3D] dark:border-emerald-500 bg-white/95 dark:bg-[#131924]/95 backdrop-blur-md pointer-events-none p-3 select-none"
+              >
+                <div className="flex items-center gap-2 text-[#1B8F3D] dark:text-emerald-400 font-semibold text-xs sm:text-sm">
+                  <svg
+                    className="h-5 w-5 animate-bounce"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                  <span>Thả file PDF hoặc TXT vào đây</span>
+                </div>
+                <span className="text-[11px] text-slate-500 dark:text-gray-400 mt-0.5">
+                  Tối đa 10 MB • 1 file duy nhất
+                </span>
+              </div>
+            )}
             {/* Attachment Area inside Composer */}
             {selectedFile && (
               <div className="flex flex-wrap items-center gap-2 px-1 pt-0.5 pb-1.5 max-h-28 overflow-y-auto scrollbar-thin">
