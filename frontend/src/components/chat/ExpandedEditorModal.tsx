@@ -619,7 +619,7 @@ export function ExpandedEditorModal({
             <button
               type="button"
               onClick={() => onClose(content)}
-              className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/10 rounded-xl transition cursor-pointer"
+              className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/10 rounded-xl transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
             >
               Hủy
             </button>
@@ -628,10 +628,10 @@ export function ExpandedEditorModal({
               type="button"
               onClick={isActive ? onStop : onSend}
               disabled={!isActive && (isDisabled || !trimmed)}
-              className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-md transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 active:scale-95 ${
+              className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-md transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 active:scale-95 focus-visible:ring-2 focus-visible:outline-none ${
                 isActive
-                  ? 'bg-[#B91E2B] hover:bg-[#9E1924] shadow-[#B91E2B]/30'
-                  : 'bg-[#1B8F3D] hover:bg-[#167632] hover:scale-105 shadow-[#1B8F3D]/30'
+                  ? 'bg-[#B91E2B] hover:bg-[#9E1924] shadow-[#B91E2B]/30 focus-visible:ring-[#B91E2B]/50'
+                  : 'bg-[#1B8F3D] hover:bg-[#167632] hover:scale-105 shadow-[#1B8F3D]/30 focus-visible:ring-[#1B8F3D]/50'
               }`}
             >
               {isActive ? (

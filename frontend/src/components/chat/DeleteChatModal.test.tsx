@@ -190,4 +190,25 @@ describe('DeleteChatModal Focus & Accessibility (M7-F03)', () => {
     expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
     removeEventListenerSpy.mockRestore()
   })
+
+  it('9. has accessible focus-visible indicator rings on cancel and confirm buttons', () => {
+    render(
+      <DeleteChatModal
+        isOpen={true}
+        chatTitle="Cuộc trò chuyện thử nghiệm"
+        isDeleting={false}
+        error={null}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    )
+
+    const cancelBtn = screen.getByRole('button', { name: 'Hủy bỏ' })
+    const confirmBtn = screen.getByRole('button', { name: 'Xóa vĩnh viễn' })
+
+    expect(cancelBtn.className).toContain('focus-visible:ring-2')
+    expect(cancelBtn.className).toContain('focus-visible:ring-[#1B8F3D]/50')
+    expect(confirmBtn.className).toContain('focus-visible:ring-2')
+    expect(confirmBtn.className).toContain('focus-visible:ring-[#B91E2B]/50')
+  })
 })

@@ -37,7 +37,7 @@ export const NewChatButton: React.FC<NewChatButtonProps> = ({
         <button
           type="button"
           onClick={onClick}
-          className="relative z-10 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#1A2230] text-[#1B8F3D] dark:text-emerald-400 shadow-xs transition-all duration-200 ease-out hover:border-emerald-500/60 hover:bg-[#1B8F3D] hover:text-white hover:shadow-md hover:shadow-[#1B8F3D]/25 active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1B8F3D]/50"
+          className="relative z-10 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#1A2230] text-[#1B8F3D] dark:text-emerald-400 shadow-xs transition-all duration-200 ease-out hover:border-emerald-500/60 hover:bg-[#1B8F3D] hover:text-white hover:shadow-md hover:shadow-[#1B8F3D]/25 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
           title="Chat mới"
           aria-label="Chat mới"
         >
@@ -83,7 +83,7 @@ export const NewChatButton: React.FC<NewChatButtonProps> = ({
       <button
         type="button"
         onClick={onClick}
-        className="relative z-10 flex h-9 w-full items-center overflow-hidden rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#1A2230] p-1 shadow-xs transition-all duration-200 hover:border-emerald-500/50 hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20 active:scale-[0.98] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1B8F3D]/50"
+        className="relative z-10 flex h-9 w-full items-center overflow-hidden rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#1A2230] p-1 shadow-xs transition-all duration-200 hover:border-emerald-500/50 hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20 active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
       >
         {/* Subtle hover gradient background */}
         <span

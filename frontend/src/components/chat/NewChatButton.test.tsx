@@ -33,4 +33,18 @@ describe('NewChatButton', () => {
     const decoratives = container.querySelectorAll('[aria-hidden="true"]')
     expect(decoratives.length).toBeGreaterThanOrEqual(4)
   })
+
+  it('should have focus-visible ring indicator on expanded and collapsed buttons', () => {
+    const { rerender } = render(<NewChatButton onClick={vi.fn()} isCollapsed={false} />)
+    const expandedBtn = screen.getByRole('button', { name: /Chat mới/i })
+    expect(expandedBtn.className).toContain('focus-visible:ring-2')
+    expect(expandedBtn.className).toContain('focus-visible:ring-[#1B8F3D]/50')
+    expect(expandedBtn.className).not.toContain('focus:ring-2')
+
+    rerender(<NewChatButton onClick={vi.fn()} isCollapsed={true} />)
+    const collapsedBtn = screen.getByRole('button', { name: 'Chat mới' })
+    expect(collapsedBtn.className).toContain('focus-visible:ring-2')
+    expect(collapsedBtn.className).toContain('focus-visible:ring-[#1B8F3D]/50')
+    expect(collapsedBtn.className).not.toContain('focus:ring-2')
+  })
 })

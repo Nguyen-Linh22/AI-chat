@@ -192,7 +192,7 @@ export function DeleteChatModal({
             type="button"
             disabled={isDeleting}
             onClick={onCancel}
-            className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#222C3D] px-4 py-2 text-xs font-medium text-slate-700 dark:text-[#F1F5F9] transition hover:bg-slate-200 dark:hover:bg-[#2A374C] hover:text-slate-900 dark:hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+            className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#222C3D] px-4 py-2 text-xs font-medium text-slate-700 dark:text-[#F1F5F9] transition hover:bg-slate-200 dark:hover:bg-[#2A374C] hover:text-slate-900 dark:hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
           >
             Hủy bỏ
           </button>
@@ -201,7 +201,7 @@ export function DeleteChatModal({
             type="button"
             disabled={isDeleting}
             onClick={onConfirm}
-            className="flex items-center gap-1.5 rounded-xl bg-[#B91E2B] px-4 py-2 text-xs font-semibold text-white shadow-md shadow-[#B91E2B]/20 transition hover:bg-[#9E1924] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl bg-[#B91E2B] px-4 py-2 text-xs font-semibold text-white shadow-md shadow-[#B91E2B]/20 transition hover:bg-[#9E1924] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none"
           >
             {isDeleting ? (
               <>
