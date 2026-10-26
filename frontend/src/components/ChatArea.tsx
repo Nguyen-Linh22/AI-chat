@@ -93,12 +93,15 @@ function ChatArea({
   // Cleanup stream on component unmount
   useEffect(() => {
     return () => {
-      abortCurrentStreamRef.current?.()
-      if (
-        typeof useMessageStore.getState === 'function' &&
-        useMessageStore.getState().abortCurrentStream !== abortCurrentStreamRef.current
-      ) {
-        useMessageStore.getState().abortCurrentStream?.()
+      const storeState =
+        typeof useMessageStore.getState === 'function'
+          ? useMessageStore.getState()
+          : null
+
+      if (typeof storeState?.abortCurrentStream === 'function') {
+        storeState.abortCurrentStream()
+      } else if (!storeState || storeState.abortCurrentStream === undefined) {
+        abortCurrentStreamRef.current?.()
       }
     }
   }, [])

@@ -663,6 +663,72 @@ describe('ChatArea', () => {
     expect(mockAbort).toHaveBeenCalledTimes(1)
   })
 
+  it('Fix1-B: should prioritize active store callback and not call stale ref when they differ', () => {
+    const mockRefAbort = vi.fn()
+    const mockStoreAbort = vi.fn()
+
+    configureStores({
+      abortCurrentStream: mockRefAbort,
+    })
+
+    const { unmount } = render(<ChatArea />)
+
+    // Simulate store updating to a new active stream callback before unmount
+    useMessageStoreMock.getState = vi.fn(() => ({
+      messages: [],
+      streamingMessageId: 'msg-stream',
+      abortCurrentStream: mockStoreAbort,
+    }))
+
+    unmount()
+
+    expect(mockStoreAbort).toHaveBeenCalledTimes(1)
+    expect(mockRefAbort).not.toHaveBeenCalled()
+  })
+
+  it('Fix1-B: should not call stale ref callback when store has set abortCurrentStream to null', () => {
+    const mockStaleAbort = vi.fn()
+
+    configureStores({
+      abortCurrentStream: mockStaleAbort,
+    })
+
+    const { unmount } = render(<ChatArea />)
+
+    // Simulate stream finishing or stopped before unmount: store sets abortCurrentStream to null
+    useMessageStoreMock.getState = vi.fn(() => ({
+      messages: [],
+      streamingMessageId: null,
+      abortCurrentStream: null,
+    }))
+
+    unmount()
+
+    expect(mockStaleAbort).not.toHaveBeenCalled()
+  })
+
+  it('Fix1-B: should fallback to ref callback when useMessageStore.getState is unavailable', () => {
+    const mockFallbackAbort = vi.fn()
+
+    configureStores({
+      abortCurrentStream: mockFallbackAbort,
+    })
+
+    // Simulate environment where getState is not a function
+    const originalGetState = useMessageStoreMock.getState
+    // @ts-expect-error - simulating environment without getState
+    useMessageStoreMock.getState = undefined
+
+    try {
+      const { unmount } = render(<ChatArea />)
+      unmount()
+
+      expect(mockFallbackAbort).toHaveBeenCalledTimes(1)
+    } finally {
+      useMessageStoreMock.getState = originalGetState
+    }
+  })
+
   // === Patch 2.2 Regression Tests: Regenerate Snapshot & Rollback Safety ===
   it('Patch 2.2: Test 1 - should rollback to original content and show error when stream fails before first chunk', async () => {
     const messages = [
