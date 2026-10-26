@@ -215,6 +215,31 @@ const configureStores = ({
     }
     return selector ? selector(state) : state
   })
+  useMessageStoreMock.getState = vi.fn(() => ({
+    messages,
+    streamingMessageId,
+    abortCurrentStream,
+    loadingMessages,
+    messageError,
+    nextCursor,
+    hasMoreOlder,
+    loadingOlder,
+    olderError,
+    switchChat: switchChatMock,
+    setCachedMessages: setCachedMessagesMock,
+    clearMessages: clearMessagesMock,
+    setLoadingMessages: setLoadingMessagesMock,
+    setMessageError: setMessageErrorMock,
+    updateMessage: updateMessageMock,
+    setStreamingMessageId: setStreamingMessageIdMock,
+    setAbortCurrentStream: setAbortCurrentStreamMock,
+    saveScrollPosition: saveScrollPositionMock,
+    getScrollPosition: getScrollPositionMock,
+    prependMessages,
+    setPagination,
+    setLoadingOlder,
+    setOlderError,
+  }))
 }
 
 describe('ChatArea', () => {
@@ -965,6 +990,81 @@ describe('ChatArea', () => {
       rerender(<ChatArea />)
 
       expect(statusRegion).toHaveTextContent('')
+    })
+  })
+
+  describe('M7.2.4 — Regression: Message length synchronization on cache hit', () => {
+    it('synchronizes message count when switching from chat with many messages to chat with few messages', () => {
+      const manyMessages = [
+        createMessage('m1', 'assistant', 'Ans 1'),
+        createMessage('m2', 'assistant', 'Ans 2'),
+        createMessage('m3', 'assistant', 'Ans 3'),
+        createMessage('m4', 'assistant', 'Ans 4'),
+        createMessage('m5', 'assistant', 'Ans 5'),
+      ]
+      const fewMessages = [
+        createMessage('f1', 'assistant', 'Single reply'),
+      ]
+
+      switchChatMock.mockReturnValue(true)
+
+      // Start on chat-many with 5 messages
+      configureStores({
+        currentChatId: 'chat-many',
+        messages: manyMessages,
+      })
+
+      const { rerender } = render(<ChatArea />)
+      expect(screen.getByText('Ans 5')).toBeInTheDocument()
+
+      // Switch to chat-few with 1 message (cache hit)
+      configureStores({
+        currentChatId: 'chat-few',
+        messages: fewMessages,
+      })
+      rerender(<ChatArea />)
+
+      expect(screen.getByText('Single reply')).toBeInTheDocument()
+      // Scroll-to-bottom button should NOT be falsely shown
+      expect(screen.queryByRole('button', { name: /Tin nhắn mới/i })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /Cuộn xuống/i })).not.toBeInTheDocument()
+    })
+
+    it('synchronizes message count when switching from chat with few messages to chat with many messages without false new message detection', () => {
+      const fewMessages = [
+        createMessage('f1', 'assistant', 'Single reply'),
+      ]
+      const manyMessages = [
+        createMessage('m1', 'assistant', 'Ans 1'),
+        createMessage('m2', 'assistant', 'Ans 2'),
+        createMessage('m3', 'assistant', 'Ans 3'),
+        createMessage('m4', 'assistant', 'Ans 4'),
+        createMessage('m5', 'assistant', 'Ans 5'),
+      ]
+
+      switchChatMock.mockReturnValue(true)
+
+      // Start on chat-few with 1 message
+      configureStores({
+        currentChatId: 'chat-few',
+        messages: fewMessages,
+      })
+
+      const { rerender } = render(<ChatArea />)
+      expect(screen.getByText('Single reply')).toBeInTheDocument()
+
+      // Switch to chat-many with 5 messages (cache hit)
+      configureStores({
+        currentChatId: 'chat-many',
+        messages: manyMessages,
+      })
+      rerender(<ChatArea />)
+
+      expect(screen.getByText('Ans 5')).toBeInTheDocument()
+      // Crucial: prevMessagesLengthRef should be synchronized to 5 immediately,
+      // so existing messages are NOT falsely flagged as newly added messages
+      expect(screen.queryByRole('button', { name: /Tin nhắn mới/i })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /Cuộn xuống/i })).not.toBeInTheDocument()
     })
   })
 })

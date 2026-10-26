@@ -51,10 +51,6 @@ function ChatArea({
   const setCurrentChatId = useChatStore((state) => state.setCurrentChatId)
   const selectedModelId = useAIStore((state) => state.selectedModelId)
   const messages = useMessageStore((state) => state.messages)
-  const messagesRef = useRef(messages)
-  useEffect(() => {
-    messagesRef.current = messages
-  }, [messages])
   const streamingMessageId = useMessageStore((state) => state.streamingMessageId)
   const abortCurrentStream = useMessageStore((state) => state.abortCurrentStream)
   const updateMessage = useMessageStore((state) => state.updateMessage)
@@ -98,7 +94,10 @@ function ChatArea({
   useEffect(() => {
     return () => {
       abortCurrentStreamRef.current?.()
-      if (typeof useMessageStore.getState === 'function') {
+      if (
+        typeof useMessageStore.getState === 'function' &&
+        useMessageStore.getState().abortCurrentStream !== abortCurrentStreamRef.current
+      ) {
         useMessageStore.getState().abortCurrentStream?.()
       }
     }
@@ -347,7 +346,11 @@ function ChatArea({
     const isCached = switchChat(currentChatId)
 
     if (isCached) {
-      prevMessagesLengthRef.current = messagesRef.current.length
+      const activeMessages =
+        typeof useMessageStore.getState === 'function'
+          ? useMessageStore.getState().messages
+          : undefined
+      prevMessagesLengthRef.current = activeMessages ? activeMessages.length : 0
       requestAnimationFrame(() => {
         if (isCancelled) return
         forceScrollToBottom(false)
