@@ -306,7 +306,12 @@ function ChatArea({
     setHasNewMessagesWhileScrolled(false)
     const container = scrollContainerRef.current
     if (container) {
-      if (smooth) {
+      const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+      if (smooth && !prefersReducedMotion) {
         container.scrollTo({
           top: container.scrollHeight,
           behavior: 'smooth'
@@ -450,9 +455,14 @@ function ChatArea({
         }
       })
     } else {
+      const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
       container.scrollTo({
         top: container.scrollHeight,
-        behavior: 'smooth'
+        behavior: prefersReducedMotion ? 'auto' : 'smooth'
       })
     }
   }, [messages, streamingMessageId, scrollToBottom])
@@ -637,7 +647,7 @@ function ChatArea({
 
       {/* Smart Scroll: Nút cuộn xuống dưới */}
       {showScrollToBottom && (
-        <div className="pointer-events-none absolute bottom-24 left-0 right-0 z-20 flex justify-center animate-dropdown">
+        <div className="pointer-events-none absolute bottom-24 left-0 right-0 z-20 flex justify-center animate-dropdown-fade">
           <button
             type="button"
             onClick={() => {
@@ -657,7 +667,7 @@ function ChatArea({
             <span>{hasNewMessagesWhileScrolled ? 'Tin nhắn mới' : 'Cuộn xuống tin nhắn mới nhất'}</span>
             {(streamingMessageId || hasNewMessagesWhileScrolled) && (
               <span className="relative ml-0.5 flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#1B8F3D] opacity-75"></span>
+                <span className="absolute inline-flex h-full w-full animate-ping motion-reduce:hidden rounded-full bg-[#1B8F3D] opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#1B8F3D]"></span>
               </span>
             )}

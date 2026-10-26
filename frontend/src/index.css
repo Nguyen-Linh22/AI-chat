@@ -14,8 +14,8 @@
   --workspace-border-subtle: #F1F5F9;
 
   --workspace-text-primary: #0F172A;
-  --workspace-text-secondary: #64748B;
-  --workspace-text-muted: #94A3B8;
+  --workspace-text-secondary: #475569;
+  --workspace-text-muted: #64748B;
 
   --brand-primary: #1B8F3D;
   --brand-primary-hover: #167632;
@@ -43,7 +43,7 @@
 
   --workspace-text-primary: #F1F5F9;
   --workspace-text-secondary: #94A3B8;
-  --workspace-text-muted: #64748B;
+  --workspace-text-muted: #94A3B8;
 
   --brand-primary: #1B8F3D;
   --brand-primary-hover: #22A347;
@@ -554,7 +554,12 @@ input:-webkit-autofill:focus {
 
 /* Accessibility: Prefers-reduced-motion overrides */
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
   .animate-auth-shake,
+  .animate-ui-shake,
   .animate-aurora-1,
   .animate-aurora-2,
   .animate-network-drift,
@@ -569,10 +574,17 @@ input:-webkit-autofill:focus {
   .chat-message-enter,
   .animate-prompt-card,
   .chat-cross-fade,
-  .scroll-to-bottom-btn {
+  .scroll-to-bottom-btn,
+  .ai-typewriter-container,
+  .skeleton-shimmer {
     animation: none !important;
     transition: none !important;
     transform: none !important;
+  }
+
+  .ai-cursor {
+    animation: none !important;
+    opacity: 1 !important;
   }
 }
 

@@ -246,7 +246,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   onSelectPrompt,
 }) => {
   return (
-    <div className="flex flex-col items-start w-full pt-2 sm:pt-4 px-2 sm:px-4 animate-dropdown">
+    <div className="flex flex-col items-start w-full pt-2 sm:pt-4 px-2 sm:px-4 animate-dropdown-fade">
       {/* Accessible text for regression test suites */}
       <span className="sr-only">
         Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!
@@ -270,7 +270,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
       {/* Quick Prompt Chips */}
       <div className="w-full mb-5">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748B] mb-2.5 select-none">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94A3B8] mb-2.5 select-none">
           Gợi ý nhanh
         </p>
         <div className="flex flex-wrap items-center gap-2">
@@ -291,7 +291,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
       {/* Hero Suggestion Cards Grid (4 Cards) */}
       <div className="w-full">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#64748B] mb-2.5 select-none">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94A3B8] mb-2.5 select-none">
           Khám phá năng lực
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 w-full">

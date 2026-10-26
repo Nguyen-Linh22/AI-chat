@@ -1073,5 +1073,47 @@ describe('Sidebar', () => {
       expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function))
       removeEventListenerSpy.mockRestore()
     })
+
+    it('M7: should scroll active chat into view with auto behavior when prefers-reduced-motion is enabled', () => {
+      const originalMatchMedia = window.matchMedia
+      window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+        matches: query.includes('prefers-reduced-motion'),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+
+      const scrollIntoViewMock = vi.fn()
+      window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock
+
+      try {
+        mockUseChatStore.mockImplementation((selector: (state: unknown) => unknown) =>
+          selector({
+            chats: [{ id: 'chat-active', title: 'Active Chat', updatedAt: new Date().toISOString() }],
+            currentChatId: 'chat-active',
+            isSidebarCollapsed: false,
+            setCurrentChatId: vi.fn(),
+            setSidebarCollapsed: vi.fn(),
+            loadChats: vi.fn(),
+            clearChats: vi.fn(),
+          })
+        )
+
+        render(<Sidebar isOpen={true} onClose={vi.fn()} />)
+
+        expect(scrollIntoViewMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            behavior: 'auto',
+            block: 'nearest',
+          })
+        )
+      } finally {
+        window.matchMedia = originalMatchMedia
+      }
+    })
   })
 })
