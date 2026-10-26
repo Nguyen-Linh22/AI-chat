@@ -403,4 +403,16 @@ const greeting = "Xin chào";
     expect(onChange).not.toHaveBeenCalled()
     expect(textarea.value).toBe('Existing text')
   })
+
+  it('21. should have focus-visible ring indicator on footer buttons', () => {
+    render(<ExpandedEditorModal {...defaultProps} content="Existing text" />)
+
+    const cancelBtn = screen.getByRole('button', { name: 'Hủy' })
+    const sendBtn = screen.getByRole('button', { name: 'Gửi' })
+
+    expect(cancelBtn.className).toContain('focus-visible:ring-2')
+    expect(cancelBtn.className).toContain('focus-visible:ring-[#1B8F3D]/50')
+    expect(sendBtn.className).toContain('focus-visible:ring-2')
+    expect(sendBtn.className).toContain('focus-visible:ring-[#1B8F3D]/50')
+  })
 })

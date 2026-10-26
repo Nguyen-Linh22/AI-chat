@@ -93,9 +93,15 @@ function ChatArea({
   // Cleanup stream on component unmount
   useEffect(() => {
     return () => {
-      abortCurrentStreamRef.current?.()
-      if (typeof useMessageStore.getState === 'function') {
-        useMessageStore.getState().abortCurrentStream?.()
+      const storeState =
+        typeof useMessageStore.getState === 'function'
+          ? useMessageStore.getState()
+          : null
+
+      if (typeof storeState?.abortCurrentStream === 'function') {
+        storeState.abortCurrentStream()
+      } else if (!storeState || storeState.abortCurrentStream === undefined) {
+        abortCurrentStreamRef.current?.()
       }
     }
   }, [])
@@ -343,7 +349,11 @@ function ChatArea({
     const isCached = switchChat(currentChatId)
 
     if (isCached) {
-      prevMessagesLengthRef.current = messages.length
+      const activeMessages =
+        typeof useMessageStore.getState === 'function'
+          ? useMessageStore.getState().messages
+          : undefined
+      prevMessagesLengthRef.current = activeMessages ? activeMessages.length : 0
       requestAnimationFrame(() => {
         if (isCancelled) return
         forceScrollToBottom(false)
