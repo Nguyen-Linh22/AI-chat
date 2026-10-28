@@ -768,3 +768,31 @@ html.view-transition-active #theme-toggle-btn {
     animation: none !important;
   }
 }
+
+
+/* ===== Sidebar Motion (Premium AI Workspace) ===== */
+.sidebar-motion {
+  will-change: transform, width;
+  transition-property: transform, box-shadow;
+  transition-duration: 300ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 768px) {
+  .sidebar-motion {
+    transition-property: width, min-width;
+    transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+  .sidebar-motion[data-collapsed="true"] {
+    transition-duration: 200ms;
+  }
+  .sidebar-motion[data-collapsed="false"] {
+    transition-duration: 240ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-motion {
+    transition: none !important;
+  }
+}
