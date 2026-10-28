@@ -13,6 +13,8 @@ import { useMessageStore } from '../stores/messageStore'
 import { ChatActionMenu } from './chat/ChatActionMenu'
 import { DeleteChatModal } from './chat/DeleteChatModal'
 import { NewChatButton } from './chat/NewChatButton'
+import { SearchChatButton } from './chat/SearchChatButton'
+import { SearchChatModal } from './chat/SearchChatModal'
 import { groupChatsByDate } from '../utils/chatDateGroups'
 import {
   Sidebar as SidebarContainer,
@@ -89,6 +91,9 @@ function Sidebar({
     }
   }, [currentChatId])
 
+  // Search Modal State
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+
   // Action Menu & Context Menu State
   const [activeMenuChatId, setActiveMenuChatId] = useState<string | null>(null)
   const [menuMode, setMenuMode] = useState<'popover' | 'context-menu'>('popover')
@@ -107,6 +112,24 @@ function Sidebar({
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
+  // Global Shortcut: Ctrl+K / Cmd+K to open conversation search
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        // Do not intercept if delete modal or rename is active
+        if (deleteTargetChat || editingChatId) return
+
+        event.preventDefault()
+        setIsSearchOpen((prev) => !prev)
+      }
+    }
+
+    window.addEventListener('keydown', handleGlobalKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown)
+    }
+  }, [deleteTargetChat, editingChatId])
+
   // M7-F04: Close mobile sidebar drawer on Escape and restore focus to opener button
   useEffect(() => {
     if (!isOpen) return
@@ -115,8 +138,8 @@ function Sidebar({
       if (event.key !== 'Escape') return
       if (event.defaultPrevented) return
 
-      // Do not close mobile drawer if modal, menu, or rename is active
-      if (deleteTargetChat || activeMenuChatId || editingChatId) {
+      // Do not close mobile drawer if modal, menu, rename, or search is active
+      if (deleteTargetChat || activeMenuChatId || editingChatId || isSearchOpen) {
         return
       }
 
@@ -151,7 +174,7 @@ function Sidebar({
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen, onClose, deleteTargetChat, activeMenuChatId, editingChatId])
+  }, [isOpen, onClose, deleteTargetChat, activeMenuChatId, editingChatId, isSearchOpen])
 
   const handleCreateChat = async () => {
     try {
@@ -309,93 +332,71 @@ function Sidebar({
   return (
     <>
       {/* Mobile Backdrop Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs transition-opacity md:hidden"
-          onClick={onClose}
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-xs transition-opacity duration-200 ease-out md:hidden motion-reduce:transition-none ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
       <SidebarContainer isOpen={isOpen} isCollapsed={isCollapsed}>
         {/* Sidebar Header */}
         <SidebarHeader>
-          {isCollapsed ? (
-            <div className="flex flex-col items-center gap-2.5 w-full py-1">
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/15 text-[#1B8F3D] dark:bg-emerald-500/20 dark:text-emerald-400 select-none shadow-xs"
-                title="AI Chat"
-                aria-label="AI Chat"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="group/logo relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 dark:from-emerald-500/25 dark:to-emerald-950/40 text-[#1B8F3D] dark:text-emerald-400 select-none shadow-xs border border-emerald-500/30 ring-1 ring-emerald-500/10 hover:border-emerald-500/60 hover:shadow-md hover:shadow-emerald-500/20 active:scale-95 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+              title={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
+              aria-label={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
+            >
+              <svg className={`h-4 w-4 transition-transform duration-300 ${isCollapsed ? 'group-hover/logo:scale-110' : 'group-hover/logo:scale-95'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              {/* Status Dot */}
+              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#131923]" aria-hidden="true" />
+            </button>
+
+            {/* Title & subtitle container */}
+            <div
+              className={`flex flex-col min-w-0 select-none overflow-hidden transition-[opacity,max-width] duration-200 ease-out motion-reduce:transition-none ${
+                isCollapsed
+                  ? 'max-w-0 opacity-0 pointer-events-none'
+                  : 'max-w-[140px] opacity-100'
+              }`}
+            >
+              <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white leading-none truncate">
+                AI Chat
+              </h1>
+              <span className="text-[10px] text-slate-500 dark:text-[#94A3B8] font-medium mt-1 flex items-center gap-1 truncate">
+                <span className="inline-block h-1 w-1 rounded-full bg-emerald-500/70 shrink-0" />
+                Workspace
               </span>
-              <button
-                type="button"
-                onClick={onToggleCollapse}
-                className="hidden md:flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#1A2230] text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-[#94A3B8] dark:hover:text-[#F1F5F9] dark:hover:bg-[#222C3D] transition active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
-                aria-label="Mở rộng thanh bên"
-                title="Mở rộng thanh bên"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
             </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/15 text-[#1B8F3D] dark:bg-emerald-500/20 dark:text-emerald-400 select-none shadow-xs"
-                  aria-hidden="true"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </span>
-                <div className="flex flex-col">
-                  <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white select-none leading-none">
-                    AI Chat
-                  </h1>
-                  <span className="text-[10px] text-slate-500 dark:text-[#94A3B8] font-medium select-none mt-1">
-                    Workspace
-                  </span>
-                </div>
-              </div>
+          </div>
 
-              <div className="flex items-center gap-1">
-                {/* Desktop collapse button */}
-                <button
-                  type="button"
-                  onClick={onToggleCollapse}
-                  className="hidden md:flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#1A2230] text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-[#94A3B8] dark:hover:text-[#F1F5F9] dark:hover:bg-[#222C3D] transition active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
-                  aria-label="Thu gọn thanh bên"
-                  title="Thu gọn thanh bên"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-
-                {/* Mobile close button */}
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-[#94A3B8] dark:hover:bg-[#1A2230] dark:hover:text-[#F1F5F9] md:hidden cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
-                  aria-label="Đóng thanh bên"
-                  title="Đóng thanh bên"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </>
-          )}
+          {/* Mobile close button (only visible on mobile screens) */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-[#94A3B8] dark:hover:bg-[#1A2230] dark:hover:text-[#F1F5F9] md:hidden cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none ml-auto shrink-0"
+            aria-label="Đóng thanh bên"
+            title="Đóng thanh bên"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </SidebarHeader>
 
-        {/* New Chat Button with Star Burst Effect */}
+        {/* Search Chat Button */}
+        <SearchChatButton
+          onClick={() => setIsSearchOpen(true)}
+          isCollapsed={isCollapsed}
+        />
+
+        {/* New Chat Button */}
         <NewChatButton
           onClick={handleCreateChat}
           isCollapsed={isCollapsed}
@@ -419,13 +420,16 @@ function Sidebar({
               </div>
             ) : (
               <div className="my-auto flex flex-col items-center justify-center px-3 py-8 text-center text-slate-400 dark:text-gray-500 select-none">
-                <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/[0.04] text-slate-500 dark:text-gray-400 ring-1 ring-slate-200 dark:ring-white/[0.08]">
+                <div className="relative mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-100 to-slate-200/50 dark:from-white/[0.06] dark:to-white/[0.02] text-slate-500 dark:text-emerald-400/80 ring-1 ring-slate-200/80 dark:ring-white/[0.08] shadow-xs">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </div>
-                <p className="text-xs font-medium text-slate-600 dark:text-gray-400">
+                <p className="text-xs font-semibold text-slate-700 dark:text-gray-400">
                   Chưa có cuộc trò chuyện
+                </p>
+                <p className="mt-1 text-[11px] text-slate-400 dark:text-[#94A3B8] max-w-[170px] leading-tight">
+                  Nhấn "Chat mới" để bắt đầu cuộc trò chuyện
                 </p>
               </div>
             )
@@ -452,7 +456,7 @@ function Sidebar({
                       tooltip={chat.title}
                       onClick={() => handleSelectChat(chat.id)}
                       aria-label={chat.title}
-                      className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-150 ${
+                      className={`relative flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-150 ${
                         isActive
                           ? 'border-emerald-500/50 bg-[#E2E8F0] dark:bg-[#2A374C] text-[#1B8F3D] dark:text-emerald-400 shadow-xs ring-1 ring-[#1B8F3D]'
                           : 'border-transparent bg-transparent hover:bg-slate-100/80 dark:hover:bg-[#222C3D]/80 text-slate-600 dark:text-[#94A3B8] hover:border-slate-300 dark:hover:border-white/[0.08] hover:text-slate-900 dark:hover:text-white'
@@ -496,7 +500,7 @@ function Sidebar({
                           setContextMenuPos({ x: e.clientX, y: e.clientY })
                           setActiveMenuChatId(chat.id)
                         }}
-                        className={`rounded-xl border p-2.5 pl-3 transition-colors duration-150 overflow-hidden ${
+                        className={`relative rounded-xl border p-2.5 pl-3 transition-all duration-150 overflow-hidden ${
                           isActive
                             ? 'border-slate-300/80 dark:border-white/[0.14] bg-[#E2E8F0]/90 dark:bg-[#2A374C] shadow-xs'
                             : 'border-transparent hover:border-slate-200 dark:hover:border-white/[0.08] bg-transparent hover:bg-slate-100/80 dark:hover:bg-[#222C3D]/80'
@@ -587,9 +591,9 @@ function Sidebar({
                               className="pr-7"
                               tooltip={chat.title}
                             >
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
                                 <svg
-                                  className={`h-4 w-4 shrink-0 transition-colors ${
+                                  className={`h-4 w-4 shrink-0 transition-colors duration-150 ${
                                     isActive
                                       ? 'text-[#1B8F3D] dark:text-emerald-400'
                                       : 'text-slate-400 dark:text-gray-400 group-hover:text-slate-600 dark:group-hover:text-gray-300'
@@ -606,13 +610,13 @@ function Sidebar({
                                   className={`truncate text-xs ${
                                     isActive
                                       ? 'font-semibold text-slate-900 dark:text-white'
-                                      : 'font-medium text-slate-700 dark:text-gray-300 group-hover:text-slate-900 dark:group-hover:text-white'
+                                      : 'font-medium text-slate-700 text-gray-300 group-hover:text-slate-900 dark:group-hover:text-white'
                                   }`}
                                 >
                                   {chat.title}
                                 </p>
                               </div>
-                              <div className="flex items-center justify-between mt-1 pl-6">
+                              <div className="flex items-center justify-between mt-1 pl-6 min-w-0">
                                 <span
                                   className={`truncate text-[11px] ${
                                     isActive
@@ -623,7 +627,7 @@ function Sidebar({
                                   Cuộc trò chuyện
                                 </span>
                                 <span
-                                  className={`text-[11px] shrink-0 ${
+                                  className={`text-[11px] shrink-0 font-mono tracking-tight ${
                                     isActive ? 'text-slate-600 dark:text-gray-300' : 'text-slate-500 dark:text-[#94A3B8]'
                                   }`}
                                 >
@@ -681,17 +685,18 @@ function Sidebar({
           {isCollapsed ? (
             <div className="flex flex-col items-center gap-2">
               <div
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-[#1A2230] text-slate-700 dark:text-[#F1F5F9] ring-1 ring-slate-200 dark:ring-white/[0.08] select-none cursor-pointer"
+                className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-gradient-to-br dark:from-[#1E2837] dark:to-[#131923] text-slate-700 dark:text-[#F1F5F9] ring-1 ring-slate-200 dark:ring-white/[0.1] select-none cursor-pointer hover:ring-emerald-500/40 transition"
                 title={(user as { name?: string } | null)?.name || (user?.email ? user.email : 'Tài khoản')}
               >
                 <svg className="h-4 w-4 text-slate-600 dark:text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
+                <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-1.5 ring-white dark:ring-[#131923]" aria-hidden="true" />
               </div>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-100/70 dark:bg-[#1A2230] text-slate-600 hover:text-[#B91E2B] dark:text-[#94A3B8] dark:hover:text-[#ff6b78] hover:bg-[#B91E2B]/10 dark:hover:bg-[#B91E2B]/15 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none"
+                className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-100/70 dark:bg-[#1A2230] text-slate-600 hover:text-[#B91E2B] dark:text-[#94A3B8] dark:hover:text-[#ff6b78] hover:bg-[#B91E2B]/10 dark:hover:bg-[#B91E2B]/15 hover:border-[#B91E2B]/30 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none"
                 aria-label="Đăng xuất"
                 title="Đăng xuất"
               >
@@ -703,10 +708,11 @@ function Sidebar({
           ) : (
             <>
               <div className="flex items-center gap-2.5 px-1 mb-2.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-[#1A2230] text-slate-700 dark:text-[#F1F5F9] ring-1 ring-slate-200 dark:ring-white/[0.08] select-none">
+                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-gradient-to-br dark:from-[#1E2837] dark:to-[#131923] text-slate-700 dark:text-[#F1F5F9] ring-1 ring-slate-200 dark:ring-white/[0.1] select-none">
                   <svg className="h-4 w-4 text-slate-500 dark:text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
+                  <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-1.5 ring-white dark:ring-[#131923]" aria-hidden="true" />
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -723,7 +729,7 @@ function Sidebar({
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="flex-1 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-100/70 dark:bg-[#1A2230] py-1.5 text-xs font-medium text-slate-700 dark:text-[#94A3B8] transition hover:bg-[#B91E2B]/10 dark:hover:bg-[#B91E2B]/20 hover:border-[#B91E2B]/40 hover:text-[#B91E2B] dark:hover:text-[#ff6b78] text-center cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none"
+                  className="flex-1 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-100/70 dark:bg-[#1A2230] py-1.5 text-xs font-medium text-slate-700 dark:text-[#94A3B8] transition-all hover:bg-[#B91E2B]/10 dark:hover:bg-[#B91E2B]/20 hover:border-[#B91E2B]/40 hover:text-[#B91E2B] dark:hover:text-[#ff6b78] text-center cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none"
                   aria-label="Đăng xuất"
                   title="Đăng xuất"
                 >
@@ -732,11 +738,11 @@ function Sidebar({
 
                 <button
                   type="button"
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-100/70 dark:bg-[#1A2230] text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F1F5F9] hover:bg-slate-200/80 dark:hover:bg-[#222C3D] transition cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+                  className="group flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-100/70 dark:bg-[#1A2230] text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F1F5F9] hover:bg-slate-200/80 dark:hover:bg-[#222C3D] hover:border-slate-300 dark:hover:border-white/[0.14] transition-all cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
                   title="Cài đặt"
                   aria-label="Cài đặt"
                 >
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                  <svg className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
@@ -775,6 +781,15 @@ function Sidebar({
           onCancel={handleCancelDelete}
         />
       )}
+
+      {/* Search Chat Modal */}
+      <SearchChatModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        chats={chats}
+        currentChatId={currentChatId}
+        onSelectChat={handleSelectChat}
+      />
     </>
   )
 }

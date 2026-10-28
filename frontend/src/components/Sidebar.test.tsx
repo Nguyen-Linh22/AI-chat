@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import Sidebar from './Sidebar'
 import { useMessageStore } from '../stores/messageStore'
@@ -1114,6 +1114,49 @@ describe('Sidebar', () => {
       } finally {
         window.matchMedia = originalMatchMedia
       }
+    })
+  })
+
+  describe('Conversation Search Integration', () => {
+    it('should render the search button in the sidebar', () => {
+      render(<Sidebar />)
+      expect(
+        screen.getByRole('button', { name: /Tìm kiếm cuộc trò chuyện/i })
+      ).toBeInTheDocument()
+    })
+
+    it('should open the search modal when clicking search button', () => {
+      render(<Sidebar />)
+      const searchButton = screen.getByRole('button', { name: /Tìm kiếm cuộc trò chuyện/i })
+      fireEvent.click(searchButton)
+
+      expect(screen.getByRole('dialog', { name: /Tìm kiếm cuộc trò chuyện/i })).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('Tìm kiếm theo tiêu đề cuộc trò chuyện...')).toBeInTheDocument()
+    })
+
+    it('should open the search modal when pressing Ctrl+K', () => {
+      render(<Sidebar />)
+      fireEvent.keyDown(window, { key: 'k', ctrlKey: true })
+
+      expect(screen.getByRole('dialog', { name: /Tìm kiếm cuộc trò chuyện/i })).toBeInTheDocument()
+    })
+
+    it('should navigate and close modal when selecting a chat from search', () => {
+      const navigateMock = vi.fn()
+      mockUseNavigate.mockReturnValue(navigateMock)
+
+      render(<Sidebar />)
+      const searchButton = screen.getByRole('button', { name: /Tìm kiếm cuộc trò chuyện/i })
+      fireEvent.click(searchButton)
+
+      expect(screen.getByRole('dialog', { name: /Tìm kiếm cuộc trò chuyện/i })).toBeInTheDocument()
+
+      const dialog = screen.getByRole('dialog', { name: /Tìm kiếm cuộc trò chuyện/i });
+      const resultItem = within(dialog).getByText('Cuộc trò chuyện thứ hai')
+      fireEvent.click(resultItem)
+
+      expect(navigateMock).toHaveBeenCalledWith('/c/chat-2')
+      expect(screen.queryByRole('dialog', { name: /Tìm kiếm cuộc trò chuyện/i })).not.toBeInTheDocument()
     })
   })
 })
