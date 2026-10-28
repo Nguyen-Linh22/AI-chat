@@ -732,3 +732,39 @@ html.view-transition-active #theme-toggle-btn {
     animation: none !important;
   }
 }
+
+
+/* Auth Visual Polish & Ambient Utilities */
+.auth-glow-red {
+  box-shadow: 0 0 50px -12px rgba(185, 30, 43, 0.3);
+}
+
+.auth-glow-green {
+  box-shadow: 0 0 50px -12px rgba(27, 143, 61, 0.3);
+}
+
+@keyframes auth-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-auth-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: auth-shimmer 3s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-auth-shimmer {
+    animation: none !important;
+  }
+}
