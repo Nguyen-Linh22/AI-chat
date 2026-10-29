@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { AuthAlert } from '../components/auth/AuthAlert'
@@ -8,6 +8,13 @@ import { AuthOverlayBanner } from '../components/auth/AuthOverlayBanner'
 import { AuthSubmitButton } from '../components/auth/AuthSubmitButton'
 import { FloatingInput } from '../components/auth/FloatingInput'
 import { apiClient } from '../services/apiClient'
+import { loginWithGoogle } from '../services/authService'
+import {
+  getGoogleClientId,
+  loadGoogleScript,
+  initGoogleIdentityServices,
+  promptGoogleSignIn,
+} from '../services/googleAuth'
 import { getChats } from '../services/chatService'
 import { useAuthStore } from '../stores/authStore'
 import { useChatStore } from '../stores/chatStore'
@@ -36,6 +43,7 @@ function LoginPage() {
   const [submitted, setSubmitted] = useState(false)
   const [serverError, setServerError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [isShaking, setIsShaking] = useState(false)
   const summaryRef = useRef<HTMLDivElement>(null)
 
@@ -112,6 +120,110 @@ function LoginPage() {
     }
   }
 
+  const handleGoogleCredential = useCallback(
+    async (credential: string) => {
+      try {
+        setGoogleLoading(true)
+        setServerError('')
+
+        const data = await loginWithGoogle(credential)
+
+        setUser(data.user)
+
+        useMessageStore.getState().clearAll()
+
+        const chats = await getChats()
+        setChats(chats)
+        setCurrentChatId?.(null)
+
+        navigate('/chat')
+      } catch (err: any) {
+        setServerError(err.message || 'Đăng nhập Google thất bại')
+        triggerShake()
+      } finally {
+        setGoogleLoading(false)
+      }
+    },
+    [navigate, setChats, setCurrentChatId, setUser]
+  )
+
+  useEffect(() => {
+    const clientId = getGoogleClientId()
+    if (!clientId) return
+
+    let isMounted = true
+
+    loadGoogleScript()
+      .then(() => {
+        if (!isMounted || !window.google?.accounts?.id) return
+
+        initGoogleIdentityServices({
+          clientId,
+          callback: async (response) => {
+            if (response?.credential) {
+              await handleGoogleCredential(response.credential)
+            } else {
+              setServerError('Không nhận được token xác thực từ Google')
+              triggerShake()
+            }
+          },
+        })
+      })
+      .catch(() => {
+        // Bỏ qua lỗi preload ngầm; khi người dùng bấm nút sẽ thử lại và báo lỗi cụ thể
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [handleGoogleCredential])
+
+  const handleGoogleSignIn = async () => {
+    if (loading || googleLoading) return
+
+    setServerError('')
+    const clientId = getGoogleClientId()
+
+    if (!clientId) {
+      setServerError('Đăng nhập Google chưa được cấu hình Client ID')
+      triggerShake()
+      return
+    }
+
+    try {
+      setGoogleLoading(true)
+      await loadGoogleScript()
+
+      if (!window.google?.accounts?.id) {
+        setServerError('Không thể tải dịch vụ Google Identity Services')
+        setGoogleLoading(false)
+        triggerShake()
+        return
+      }
+
+      initGoogleIdentityServices({
+        clientId,
+        callback: async (response) => {
+          if (response?.credential) {
+            await handleGoogleCredential(response.credential)
+          } else {
+            setServerError('Không nhận được token xác thực từ Google')
+            setGoogleLoading(false)
+            triggerShake()
+          }
+        },
+      })
+
+      promptGoogleSignIn(() => {
+        setGoogleLoading(false)
+      })
+    } catch (error: any) {
+      setServerError(error.message || 'Không thể kết nối đến Google')
+      setGoogleLoading(false)
+      triggerShake()
+    }
+  }
+
   return (
     <AuthLayout
       mode="login"
@@ -138,7 +250,7 @@ function LoginPage() {
         noValidate
         onSubmit={handleSubmit}
         className="mt-5 space-y-3.5 sm:mt-6 sm:space-y-4"
-        aria-busy={loading}
+        aria-busy={loading || googleLoading}
       >
         {submitted && invalidFields.length > 1 && (
           <AuthAlert
@@ -173,7 +285,7 @@ function LoginPage() {
           autoFocus
           enterKeyHint="next"
           error={visibleEmailError}
-          disabled={loading}
+          disabled={loading || googleLoading}
         />
 
         <div>
@@ -194,7 +306,7 @@ function LoginPage() {
             required
             enterKeyHint="go"
             error={visiblePasswordError}
-            disabled={loading}
+            disabled={loading || googleLoading}
             showPasswordToggle
             showPassword={showPassword}
             onTogglePassword={() => setShowPassword((prev) => !prev)}
@@ -220,8 +332,8 @@ function LoginPage() {
         <AuthSubmitButton
           tone="login"
           label="Đăng nhập"
-          loadingLabel="Đang đăng nhập..."
-          loading={loading}
+          loadingLabel={googleLoading ? 'Đang kết nối...' : 'Đang đăng nhập...'}
+          loading={loading || googleLoading}
         />
 
         <p className="sr-only" role="status">
@@ -244,30 +356,36 @@ function LoginPage() {
         <button
           type="button"
           aria-label="Tiếp tục bằng tài khoản Google"
-          onClick={() => {
-            setServerError('Đăng nhập Google sẽ sớm được kích hoạt trong phiên bản tiếp theo.')
-          }}
-          className="flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-gray-200 transition-colors duration-200 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          disabled={loading || googleLoading}
+          onClick={handleGoogleSignIn}
+          className="flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-gray-200 transition-colors duration-200 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              fill="#EA4335"
-              d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"
+          {googleLoading ? (
+            <span
+              className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-white"
+              aria-hidden="true"
             />
-            <path
-              fill="#4285F4"
-              d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9c-.2-.7-.4-1.5-.4-2.3z"
-            />
-            <path
-              fill="#34A853"
-              d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"
-            />
-          </svg>
-          <span>Google</span>
+          ) : (
+            <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="#EA4335"
+                d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"
+              />
+              <path
+                fill="#4285F4"
+                d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9c-.2-.7-.4-1.5-.4-2.3z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"
+              />
+            </svg>
+          )}
+          <span>{googleLoading ? 'Đang kết nối...' : 'Google'}</span>
         </button>
 
         <button

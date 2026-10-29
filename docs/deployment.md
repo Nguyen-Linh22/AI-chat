@@ -40,6 +40,7 @@ GitHub Repo (Nguyen-Linh22/AI-chat)
 5. **Output Directory**: `dist`.
 6. **Environment Variables**:
    - `VITE_API_URL`: `https://ai-chat-ua68.onrender.com`
+   - `VITE_GOOGLE_CLIENT_ID`: `<google-web-client-id>.apps.googleusercontent.com` (Chi tiết: xem `docs/google-authentication.md`)
 
 ### Cấu hình SPA Routing (`frontend/vercel.json`)
 Để giải quyết triệt để lỗi `404 Not Found` khi người dùng F5 hoặc truy cập trực tiếp các đường dẫn con (`/login`, `/register`, `/c/:chatId`), tệp `frontend/vercel.json` trên nhánh `master` đã được định cấu hình:
@@ -89,6 +90,7 @@ Tại mục **Environment Variables** của Render Dashboard, thêm các biến:
 - `CLOUDINARY_CLOUD_NAME`: `<tên-cloud-cloudinary>`
 - `CLOUDINARY_API_KEY`: `<khóa-api-cloudinary>`
 - `CLOUDINARY_API_SECRET`: `<secret-cloudinary>`
+- `GOOGLE_CLIENT_ID`: `<google-web-client-id>.apps.googleusercontent.com` (Chi tiết: xem `docs/google-authentication.md`)
 
 ---
 

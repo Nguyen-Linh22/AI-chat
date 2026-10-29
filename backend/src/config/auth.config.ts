@@ -18,3 +18,10 @@ export const BCRYPT_SALT_ROUNDS: number =
  */
 export const JWT_EXPIRES_IN: NonNullable<SignOptions['expiresIn']> =
   (process.env.JWT_EXPIRES_IN as NonNullable<SignOptions['expiresIn']>) || '7d'
+
+/**
+ * Google Client ID được cấu hình trên server để xác thực audience trong Google ID Token.
+ */
+export const getGoogleClientId = (): string | undefined => {
+  return process.env.GOOGLE_CLIENT_ID
+}

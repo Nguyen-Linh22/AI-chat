@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
+import { useMessageStore } from '../stores/messageStore'
 import LoginPage from './LoginPage'
 
 const {
@@ -353,5 +354,193 @@ describe('LoginPage', () => {
     expect(
       screen.getByRole('button', { name: 'Ẩn mật khẩu' })
     ).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  describe('Google Authentication Flow', () => {
+    let mockInitialize: ReturnType<typeof vi.fn>
+    let mockPrompt: ReturnType<typeof vi.fn>
+
+    beforeEach(() => {
+      mockInitialize = vi.fn()
+      mockPrompt = vi.fn()
+
+      window.google = {
+        accounts: {
+          id: {
+            initialize: mockInitialize,
+            prompt: mockPrompt,
+            renderButton: vi.fn(),
+            disableAutoSelect: vi.fn(),
+            cancel: vi.fn(),
+            revoke: vi.fn(),
+          },
+        },
+      }
+
+      vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'test-client-id.apps.googleusercontent.com')
+    })
+
+    it('renders Google sign-in button with correct accessible label', () => {
+      renderLoginPage()
+      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
+      expect(googleBtn).toBeInTheDocument()
+      expect(googleBtn).not.toBeDisabled()
+    })
+
+    it('shows error when VITE_GOOGLE_CLIENT_ID is not configured and user clicks Google button', async () => {
+      vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '')
+      const user = userEvent.setup()
+
+      renderLoginPage()
+      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
+      await user.click(googleBtn)
+
+      expect(await screen.findByText(/chưa được cấu hình Client ID/i)).toBeInTheDocument()
+      expect(mockPrompt).not.toHaveBeenCalled()
+    })
+
+    it('initializes Google Identity Services and triggers prompt on click', async () => {
+      const user = userEvent.setup()
+
+      renderLoginPage()
+      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
+      await user.click(googleBtn)
+
+      expect(mockInitialize).toHaveBeenCalledWith(
+        expect.objectContaining({
+          client_id: 'test-client-id.apps.googleusercontent.com',
+          callback: expect.any(Function),
+        })
+      )
+      expect(mockPrompt).toHaveBeenCalledTimes(1)
+    })
+
+    it('handles prompt dismissal or cancellation by restoring button state', async () => {
+      const user = userEvent.setup()
+      mockPrompt.mockImplementationOnce((notificationCallback: (notification: any) => void) => {
+        notificationCallback({
+          isDismissedMoment: () => true,
+          getDismissedReason: () => 'cancel',
+        })
+      })
+
+      renderLoginPage()
+      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
+      await user.click(googleBtn)
+
+      await waitFor(() => {
+        expect(googleBtn).not.toBeDisabled()
+        expect(screen.queryByText('Đang kết nối...')).not.toBeInTheDocument()
+      })
+    })
+
+    it('prevents multiple clicks while loading', async () => {
+      const user = userEvent.setup()
+      mockPrompt.mockImplementationOnce(() => {})
+
+      renderLoginPage()
+      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
+
+      await user.click(googleBtn)
+      expect(googleBtn).toBeDisabled()
+
+      await user.click(googleBtn)
+      expect(mockPrompt).toHaveBeenCalledTimes(1)
+    })
+
+    it('completes successful Google login: sends credential, sets user, clears messages, loads chats, and redirects', async () => {
+      const user = userEvent.setup()
+      const clearAllSpy = vi.spyOn(useMessageStore.getState(), 'clearAll')
+
+      let capturedCallback: ((response: { credential: string }) => Promise<void>) | null = null
+      mockInitialize.mockImplementation((opts: any) => {
+        capturedCallback = opts.callback
+      })
+
+      postMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          message: 'Đăng nhập Google thành công',
+          user: {
+            id: 'google-user-uuid',
+            email: 'googleuser@example.com',
+            createdAt: '2026-06-01T00:00:00.000Z',
+          },
+        }),
+      })
+
+      getChatsMock.mockResolvedValueOnce([{ id: 'chat-1', title: 'Chat cũ' }])
+
+      renderLoginPage()
+      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
+      await user.click(googleBtn)
+
+      expect(capturedCallback).toBeTypeOf('function')
+
+      await capturedCallback!({ credential: 'mocked-jwt-id-token' })
+
+      await waitFor(() => {
+        expect(postMock).toHaveBeenCalledWith('/api/auth/google', {
+          credential: 'mocked-jwt-id-token',
+        })
+        expect(setUserMock).toHaveBeenCalledWith({
+          id: 'google-user-uuid',
+          email: 'googleuser@example.com',
+          createdAt: '2026-06-01T00:00:00.000Z',
+        })
+        expect(clearAllSpy).toHaveBeenCalled()
+        expect(getChatsMock).toHaveBeenCalled()
+        expect(setChatsMock).toHaveBeenCalledWith([{ id: 'chat-1', title: 'Chat cũ' }])
+        expect(setCurrentChatIdMock).toHaveBeenCalledWith(null)
+        expect(navigateMock).toHaveBeenCalledWith('/chat')
+      })
+    })
+
+    it('surfaces safe conflict error (409) when email already registered with password', async () => {
+      const user = userEvent.setup()
+      let capturedCallback: ((response: { credential: string }) => Promise<void>) | null = null
+      mockInitialize.mockImplementation((opts: any) => {
+        capturedCallback = opts.callback
+      })
+
+      postMock.mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({
+          message:
+            'Email này đã được đăng ký bằng mật khẩu. Vui lòng đăng nhập bằng mật khẩu hiện tại (tính năng liên kết tài khoản hiện chưa khả dụng).',
+        }),
+      })
+
+      renderLoginPage()
+      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
+      await user.click(googleBtn)
+
+      await capturedCallback!({ credential: 'conflict-id-token' })
+
+      expect(
+        await screen.findByText(/Email này đã được đăng ký bằng mật khẩu/i)
+      ).toBeInTheDocument()
+      expect(setUserMock).not.toHaveBeenCalled()
+      expect(navigateMock).not.toHaveBeenCalled()
+    })
+
+    it('handles network / connection error gracefully', async () => {
+      const user = userEvent.setup()
+      let capturedCallback: ((response: { credential: string }) => Promise<void>) | null = null
+      mockInitialize.mockImplementation((opts: any) => {
+        capturedCallback = opts.callback
+      })
+
+      postMock.mockRejectedValueOnce(new Error('Network error'))
+
+      renderLoginPage()
+      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
+      await user.click(googleBtn)
+
+      await capturedCallback!({ credential: 'network-fail-token' })
+
+      expect(await screen.findByText('Network error')).toBeInTheDocument()
+      expect(googleBtn).not.toBeDisabled()
+    })
   })
 })

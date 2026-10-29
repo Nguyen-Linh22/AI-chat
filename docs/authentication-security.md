@@ -39,6 +39,13 @@ Tài liệu này mô tả chi tiết cơ chế xác thực phiên người dùng
 - Mô hình `User` có trường `tokenVersion`. Mỗi JWT phát ra chứa `tokenVersion` tại thời điểm tạo.
 - Khi người dùng đổi mật khẩu hoặc yêu cầu đăng xuất khỏi mọi thiết bị, hệ thống chỉ cần tăng `tokenVersion` trong cơ sở dữ liệu. Toàn bộ các token cũ lập tức bị vô hiệu hóa khi đi qua middleware xác thực.
 
+### Xác thực Google Identity Services (GIS):
+- Ứng dụng hỗ trợ đăng nhập và đăng ký một chạm thông qua Google Identity Services.
+- **Xác thực ID Token**: Backend sử dụng `google-auth-library` để kiểm tra chữ ký, thời hạn, và `audience` (`GOOGLE_CLIENT_ID`).
+- **Bảo vệ Xung Đột Tài Khoản (Safe Conflict)**: Ngăn chặn tự động liên kết ngầm (silent-linking). Nếu email đã được đăng ký bằng mật khẩu thông thường, backend sẽ từ chối với mã lỗi `409 Conflict` và yêu cầu người dùng đăng nhập bằng mật khẩu hiện tại (tính năng liên kết tài khoản hiện chưa khả dụng).
+- **Tài khoản Google-Only**: Người dùng đăng ký qua Google có trường `passwordHash` nhận giá trị `null`. Endpoint đăng nhập mật khẩu thông thường áp dụng so sánh bcrypt giả (dummy comparison) để loại trừ triệt để nguy cơ tấn công timing attack.
+- Chi tiết cấu hình và hướng dẫn thiết lập: Xem [Google Authentication Documentation](./google-authentication.md).
+
 ---
 
 ## 2. Bảo Vệ Nguồn Gốc (CORS & CSRF Defense)

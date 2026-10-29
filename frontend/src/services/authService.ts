@@ -21,3 +21,21 @@ export const getCurrentUser = async (): Promise<User | null> => {
 export const logout = async (): Promise<void> => {
   await apiClient.post('/api/auth/logout')
 }
+
+export interface GoogleAuthResponse {
+  message: string
+  user: User
+}
+
+export const loginWithGoogle = async (
+  credential: string
+): Promise<GoogleAuthResponse> => {
+  const response = await apiClient.post('/api/auth/google', { credential })
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Đăng nhập Google thất bại')
+  }
+
+  return data
+}
