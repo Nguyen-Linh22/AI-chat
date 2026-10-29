@@ -10,7 +10,8 @@ datasource db {
 model User {
   id           String        @id @default(uuid()) @db.Uuid
   email        String        @unique
-  passwordHash String
+  passwordHash String?
+  googleId     String?       @unique
   tokenVersion Int           @default(0)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt

@@ -3,12 +3,14 @@ import {
   register,
   login,
   me,
-  logout
+  logout,
+  googleAuth
 } from '../controllers/auth.controller.js'
 import { validate } from '../middlewares/validate.middleware.js'
 import {
   registerSchema,
-  loginSchema
+  loginSchema,
+  googleAuthSchema
 } from '../validators/auth.validator.js'
 import { authMiddleware } from '../middlewares/auth.middleware.js'
 
@@ -28,6 +30,13 @@ router.post(
   authRateLimiter,
   validate(loginSchema),
   login
+)
+
+router.post(
+  '/google',
+  authRateLimiter,
+  validate(googleAuthSchema),
+  googleAuth
 )
 
 router.get(

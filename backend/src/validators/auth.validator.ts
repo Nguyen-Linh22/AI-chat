@@ -23,3 +23,10 @@ export const loginSchema = z.object({
     .min(1, 'Mật khẩu không được để trống')
     .max(72, 'Mật khẩu không được vượt quá 72 ký tự'),
 })
+
+export const googleAuthSchema = z.object({
+  credential: z
+    .string()
+    .trim()
+    .min(1, 'Token Google không được để trống'),
+})

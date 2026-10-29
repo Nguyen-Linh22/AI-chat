@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { prisma } from '../lib/prisma.js'
 import { BCRYPT_SALT_ROUNDS, JWT_EXPIRES_IN } from '../config/auth.config.js'
-const createAccessToken = (userId: string, tokenVersion: number) => {
+export const createAccessToken = (userId: string, tokenVersion: number) => {
   const jwtSecret = process.env.JWT_SECRET
 
   if (!jwtSecret) {
@@ -85,14 +85,18 @@ export const loginUser = async (
     }
   })
 
-  // Nếu user không tồn tại, vẫn thực hiện bcrypt.compare với dummy hash
-  const hashToCompare = user ? user.passwordHash : DUMMY_PASSWORD_HASH
+  // Nếu user không tồn tại hoặc tài khoản tạo qua bên thứ ba (không có passwordHash),
+  // vẫn thực hiện bcrypt.compare với dummy hash nhằm ngăn chặn Side-Channel Timing Attack
+  const hashToCompare =
+    user && typeof user.passwordHash === 'string'
+      ? user.passwordHash
+      : DUMMY_PASSWORD_HASH
   const isPasswordCorrect = await bcrypt.compare(
     password,
     hashToCompare
   )
 
-  if (!user || !isPasswordCorrect) {
+  if (!user || !user.passwordHash || !isPasswordCorrect) {
     throw new Error('Email hoặc mật khẩu không đúng')
   }
 
@@ -135,6 +139,10 @@ export const revokeUserSessions = async (userId: string) => {
       tokenVersion: {
         increment: 1
       }
+    },
+    select: {
+      id: true,
+      tokenVersion: true
     }
   })
 }
