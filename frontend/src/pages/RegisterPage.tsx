@@ -14,7 +14,8 @@ import {
   getGoogleClientId,
   loadGoogleScript,
   initGoogleIdentityServices,
-  promptGoogleSignIn,
+  renderGoogleButton,
+  registerGoogleCredentialCallback,
 } from '../services/googleAuth'
 import { getChats } from '../services/chatService'
 import { useAuthStore } from '../stores/authStore'
@@ -58,6 +59,8 @@ function RegisterPage() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [isShaking, setIsShaking] = useState(false)
   const summaryRef = useRef<HTMLDivElement>(null)
+  const googleButtonRef = useRef<HTMLDivElement>(null)
+  const isMountedRef = useRef(true)
 
   const emailError = validateEmail(email)
   const passwordError = validatePassword(password, { minLength: PASSWORD_MIN_LENGTH })
@@ -133,107 +136,78 @@ function RegisterPage() {
 
   const handleGoogleCredential = useCallback(
     async (credential: string) => {
+      if (!isMountedRef.current) return
       try {
         setGoogleLoading(true)
         setServerError('')
 
         const data = await loginWithGoogle(credential)
+        if (!isMountedRef.current) return
 
         setUser(data.user)
 
         useMessageStore.getState().clearAll()
 
         const chats = await getChats()
+        if (!isMountedRef.current) return
         setChats(chats)
         setCurrentChatId?.(null)
 
         navigate('/chat')
       } catch (err: any) {
+        if (!isMountedRef.current) return
         setServerError(err.message || 'Đăng ký Google thất bại')
         triggerShake()
       } finally {
-        setGoogleLoading(false)
+        if (isMountedRef.current) {
+          setGoogleLoading(false)
+        }
       }
     },
     [navigate, setChats, setCurrentChatId, setUser]
   )
 
   useEffect(() => {
+    isMountedRef.current = true
     const clientId = getGoogleClientId()
     if (!clientId) return
 
-    let isMounted = true
+    const unregister = registerGoogleCredentialCallback(async (response) => {
+      if (!isMountedRef.current) return
+      if (response?.credential) {
+        await handleGoogleCredential(response.credential)
+      } else {
+        setServerError('Không nhận được token xác thực từ Google. Vui lòng thử lại.')
+        triggerShake()
+      }
+    })
 
     loadGoogleScript()
       .then(() => {
-        if (!isMounted || !window.google?.accounts?.id) return
+        if (!isMountedRef.current || !googleButtonRef.current) return
 
         initGoogleIdentityServices({
           clientId,
-          callback: async (response) => {
-            if (response?.credential) {
-              await handleGoogleCredential(response.credential)
-            } else {
-              setServerError('Không nhận được token xác thực từ Google')
-              triggerShake()
-            }
-          },
+        })
+
+        renderGoogleButton(googleButtonRef.current, {
+          theme: 'filled_black',
+          size: 'large',
+          text: 'signup_with',
+          shape: 'rectangular',
+          width: googleButtonRef.current.clientWidth || 320,
         })
       })
       .catch(() => {
-        // Bỏ qua lỗi preload ngầm; khi người dùng bấm nút sẽ thử lại và báo lỗi cụ thể
+        if (!isMountedRef.current) return
+        setServerError('Không thể tải dịch vụ xác thực Google. Vui lòng thử lại sau.')
       })
 
     return () => {
-      isMounted = false
+      isMountedRef.current = false
+      unregister()
     }
   }, [handleGoogleCredential])
-
-  const handleGoogleSignIn = async () => {
-    if (loading || googleLoading) return
-
-    setServerError('')
-    const clientId = getGoogleClientId()
-
-    if (!clientId) {
-      setServerError('Đăng ký Google chưa được cấu hình Client ID')
-      triggerShake()
-      return
-    }
-
-    try {
-      setGoogleLoading(true)
-      await loadGoogleScript()
-
-      if (!window.google?.accounts?.id) {
-        setServerError('Không thể tải dịch vụ Google Identity Services')
-        setGoogleLoading(false)
-        triggerShake()
-        return
-      }
-
-      initGoogleIdentityServices({
-        clientId,
-        callback: async (response) => {
-          if (response?.credential) {
-            await handleGoogleCredential(response.credential)
-          } else {
-            setServerError('Không nhận được token xác thực từ Google')
-            setGoogleLoading(false)
-            triggerShake()
-          }
-        },
-      })
-
-      promptGoogleSignIn(() => {
-        setGoogleLoading(false)
-      })
-    } catch (error: any) {
-      setServerError(error.message || 'Không thể kết nối đến Google')
-      setGoogleLoading(false)
-      triggerShake()
-    }
-  }
 
   return (
     <AuthLayout
@@ -377,41 +351,13 @@ function RegisterPage() {
       </div>
 
       {/* Social Sign-in Options */}
-      <div className="grid grid-cols-2 gap-2.5">
-        <button
-          type="button"
+      <div className="flex flex-col gap-2.5">
+        <div
+          ref={googleButtonRef}
+          data-testid="google-signin-button"
           aria-label="Tiếp tục bằng tài khoản Google"
-          disabled={loading || googleLoading}
-          onClick={handleGoogleSignIn}
-          className="flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-gray-200 transition-colors duration-200 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {googleLoading ? (
-            <span
-              className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-white"
-              aria-hidden="true"
-            />
-          ) : (
-            <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                fill="#EA4335"
-                d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"
-              />
-              <path
-                fill="#4285F4"
-                d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9c-.2-.7-.4-1.5-.4-2.3z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"
-              />
-            </svg>
-          )}
-          <span>{googleLoading ? 'Đang kết nối...' : 'Google'}</span>
-        </button>
+          className="flex justify-center w-full min-h-[40px] [&>div]:!w-full [&_iframe]:!w-full overflow-hidden rounded-xl"
+        />
 
         <button
           type="button"
@@ -419,7 +365,7 @@ function RegisterPage() {
           onClick={() => {
             setServerError('Đăng ký GitHub sẽ sớm được kích hoạt trong phiên bản tiếp theo.')
           }}
-          className="flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-gray-200 transition-colors duration-200 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-gray-200 transition-colors duration-200 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
         >
           <svg className="h-4 w-4 fill-currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -428,7 +374,7 @@ function RegisterPage() {
               d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2Z"
             />
           </svg>
-          <span>GitHub</span>
+          <span>Tiếp tục với GitHub</span>
         </button>
       </div>
 
