@@ -189,6 +189,7 @@ function LoginPage() {
       })
       .catch(() => {
         if (!isMountedRef.current) return
+        setServerError('Không thể tải dịch vụ xác thực Google. Vui lòng thử lại sau.')
       })
 
     return () => {

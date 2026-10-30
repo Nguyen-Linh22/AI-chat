@@ -558,5 +558,21 @@ describe('RegisterPage', () => {
       expect(setUserMock).not.toHaveBeenCalled()
       expect(navigateMock).not.toHaveBeenCalled()
     })
+
+    it('displays user-friendly error when Google script loading, initialization, or button render fails', async () => {
+      mockRenderButton.mockImplementationOnce(() => {
+        throw new Error('Google GSI render error')
+      })
+
+      renderRegisterPage()
+
+      expect(
+        await screen.findByText(/Không thể tải dịch vụ xác thực Google\. Vui lòng thử lại sau\./i)
+      ).toBeInTheDocument()
+
+      // Xác nhận form đăng ký mật khẩu vẫn hoạt động bình thường
+      expect(screen.getByRole('button', { name: /Đăng ký/i })).not.toBeDisabled()
+      expect(screen.getByLabelText('Email')).not.toBeDisabled()
+    })
   })
 })
