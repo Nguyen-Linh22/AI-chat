@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { useMessageStore } from '../stores/messageStore'
+import { resetGoogleAuthStateForTesting } from '../services/googleAuth'
 import RegisterPage from './RegisterPage'
 
 const {
@@ -364,18 +365,20 @@ describe('RegisterPage', () => {
 
   describe('Google Authentication Flow', () => {
     let mockInitialize: ReturnType<typeof vi.fn>
-    let mockPrompt: ReturnType<typeof vi.fn>
+    let mockRenderButton: ReturnType<typeof vi.fn>
 
     beforeEach(() => {
       mockInitialize = vi.fn()
-      mockPrompt = vi.fn()
+      mockRenderButton = vi.fn().mockImplementation((container: HTMLElement) => {
+        container.innerHTML = '<button aria-label="Tiếp tục bằng tài khoản Google">Google</button>'
+      })
 
       window.google = {
         accounts: {
           id: {
             initialize: mockInitialize,
-            prompt: mockPrompt,
-            renderButton: vi.fn(),
+            prompt: vi.fn(),
+            renderButton: mockRenderButton,
             disableAutoSelect: vi.fn(),
             cancel: vi.fn(),
             revoke: vi.fn(),
@@ -383,82 +386,50 @@ describe('RegisterPage', () => {
         },
       }
 
+      resetGoogleAuthStateForTesting()
       vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'test-client-id.apps.googleusercontent.com')
     })
 
-    it('renders Google sign-up button with correct accessible label', () => {
+    it('renders Google sign-up container and calls renderButton with GIS config', async () => {
       renderRegisterPage()
-      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
-      expect(googleBtn).toBeInTheDocument()
-      expect(googleBtn).not.toBeDisabled()
-    })
-
-    it('shows error when VITE_GOOGLE_CLIENT_ID is not configured and user clicks Google button', async () => {
-      vi.stubEnv('VITE_GOOGLE_CLIENT_ID', '')
-      const user = userEvent.setup()
-
-      renderRegisterPage()
-      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
-      await user.click(googleBtn)
-
-      expect(await screen.findByText(/chưa được cấu hình Client ID/i)).toBeInTheDocument()
-      expect(mockPrompt).not.toHaveBeenCalled()
-    })
-
-    it('initializes Google Identity Services and triggers prompt on click', async () => {
-      const user = userEvent.setup()
-
-      renderRegisterPage()
-      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
-      await user.click(googleBtn)
-
-      expect(mockInitialize).toHaveBeenCalledWith(
-        expect.objectContaining({
-          client_id: 'test-client-id.apps.googleusercontent.com',
-          callback: expect.any(Function),
-        })
-      )
-      expect(mockPrompt).toHaveBeenCalledTimes(1)
-    })
-
-    it('handles prompt dismissal or cancellation by restoring button state', async () => {
-      const user = userEvent.setup()
-      mockPrompt.mockImplementationOnce((notificationCallback: (notification: any) => void) => {
-        notificationCallback({
-          isDismissedMoment: () => true,
-          getDismissedReason: () => 'cancel',
-        })
-      })
-
-      renderRegisterPage()
-      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
-      await user.click(googleBtn)
-
       await waitFor(() => {
-        expect(googleBtn).not.toBeDisabled()
-        expect(screen.queryByText('Đang kết nối...')).not.toBeInTheDocument()
+        expect(mockInitialize).toHaveBeenCalledWith(
+          expect.objectContaining({
+            client_id: 'test-client-id.apps.googleusercontent.com',
+            callback: expect.any(Function),
+          })
+        )
+        expect(mockRenderButton).toHaveBeenCalledWith(
+          expect.any(HTMLElement),
+          expect.objectContaining({
+            type: 'standard',
+            theme: 'filled_black',
+            size: 'large',
+            text: 'signup_with',
+          })
+        )
       })
+      expect(screen.getByTestId('google-signin-button')).toBeInTheDocument()
     })
 
-    it('prevents multiple clicks while loading', async () => {
-      const user = userEvent.setup()
-      mockPrompt.mockImplementationOnce(() => {})
+    it('does not call initialize multiple times when re-rendered or remounted with same client ID', async () => {
+      const { unmount } = renderRegisterPage()
+      await waitFor(() => {
+        expect(mockInitialize).toHaveBeenCalledTimes(1)
+      })
 
+      unmount()
       renderRegisterPage()
-      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
-
-      await user.click(googleBtn)
-      expect(googleBtn).toBeDisabled()
-
-      await user.click(googleBtn)
-      expect(mockPrompt).toHaveBeenCalledTimes(1)
+      await waitFor(() => {
+        expect(mockRenderButton).toHaveBeenCalledTimes(2)
+      })
+      expect(mockInitialize).toHaveBeenCalledTimes(1)
     })
 
     it('completes successful Google sign-up: sends credential, sets user, clears messages, loads chats, and redirects to /chat', async () => {
-      const user = userEvent.setup()
       const clearAllSpy = vi.spyOn(useMessageStore.getState(), 'clearAll')
 
-      let capturedCallback: ((response: { credential: string }) => Promise<void>) | null = null
+      let capturedCallback: ((response: { credential?: string }) => Promise<void>) | null = null
       mockInitialize.mockImplementation((opts: any) => {
         capturedCallback = opts.callback
       })
@@ -478,8 +449,9 @@ describe('RegisterPage', () => {
       getChatsMock.mockResolvedValueOnce([])
 
       renderRegisterPage()
-      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
-      await user.click(googleBtn)
+      await waitFor(() => {
+        expect(mockInitialize).toHaveBeenCalled()
+      })
 
       expect(capturedCallback).toBeTypeOf('function')
 
@@ -503,8 +475,7 @@ describe('RegisterPage', () => {
     })
 
     it('surfaces safe conflict error (409) when email already registered with password', async () => {
-      const user = userEvent.setup()
-      let capturedCallback: ((response: { credential: string }) => Promise<void>) | null = null
+      let capturedCallback: ((response: { credential?: string }) => Promise<void>) | null = null
       mockInitialize.mockImplementation((opts: any) => {
         capturedCallback = opts.callback
       })
@@ -518,8 +489,9 @@ describe('RegisterPage', () => {
       })
 
       renderRegisterPage()
-      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
-      await user.click(googleBtn)
+      await waitFor(() => {
+        expect(mockInitialize).toHaveBeenCalled()
+      })
 
       await capturedCallback!({ credential: 'conflict-id-token' })
 
@@ -530,9 +502,27 @@ describe('RegisterPage', () => {
       expect(navigateMock).not.toHaveBeenCalled()
     })
 
+    it('handles missing credential in Google response gracefully', async () => {
+      let capturedCallback: ((response: { credential?: string }) => Promise<void>) | null = null
+      mockInitialize.mockImplementation((opts: any) => {
+        capturedCallback = opts.callback
+      })
+
+      renderRegisterPage()
+      await waitFor(() => {
+        expect(mockInitialize).toHaveBeenCalled()
+      })
+
+      await capturedCallback!({})
+
+      expect(
+        await screen.findByText(/Không nhận được token xác thực từ Google/i)
+      ).toBeInTheDocument()
+      expect(postMock).not.toHaveBeenCalled()
+    })
+
     it('handles network / connection error gracefully', async () => {
-      const user = userEvent.setup()
-      let capturedCallback: ((response: { credential: string }) => Promise<void>) | null = null
+      let capturedCallback: ((response: { credential?: string }) => Promise<void>) | null = null
       mockInitialize.mockImplementation((opts: any) => {
         capturedCallback = opts.callback
       })
@@ -540,13 +530,33 @@ describe('RegisterPage', () => {
       postMock.mockRejectedValueOnce(new Error('Network connection failed'))
 
       renderRegisterPage()
-      const googleBtn = screen.getByRole('button', { name: 'Tiếp tục bằng tài khoản Google' })
-      await user.click(googleBtn)
+      await waitFor(() => {
+        expect(mockInitialize).toHaveBeenCalled()
+      })
 
       await capturedCallback!({ credential: 'fail-token' })
 
       expect(await screen.findByText('Network connection failed')).toBeInTheDocument()
-      expect(googleBtn).not.toBeDisabled()
+    })
+
+    it('does not update state or navigate if callback fires after component unmount', async () => {
+      let capturedCallback: ((response: { credential?: string }) => Promise<void>) | null = null
+      mockInitialize.mockImplementation((opts: any) => {
+        capturedCallback = opts.callback
+      })
+
+      const { unmount } = renderRegisterPage()
+      await waitFor(() => {
+        expect(mockInitialize).toHaveBeenCalled()
+      })
+
+      unmount()
+
+      await capturedCallback!({ credential: 'post-unmount-token' })
+
+      expect(postMock).not.toHaveBeenCalled()
+      expect(setUserMock).not.toHaveBeenCalled()
+      expect(navigateMock).not.toHaveBeenCalled()
     })
   })
 })
