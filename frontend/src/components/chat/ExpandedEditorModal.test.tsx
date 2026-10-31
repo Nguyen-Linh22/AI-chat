@@ -415,4 +415,50 @@ const greeting = "Xin chào";
     expect(sendBtn.className).toContain('focus-visible:ring-2')
     expect(sendBtn.className).toContain('focus-visible:ring-[#1B8F3D]/50')
   })
+
+  it('22. should display PDF-specific styling, accessible name, and rich metadata title for PDF attachments', () => {
+    const mockFile = new File(['%PDF-1.4 test content'], 'financial-report.pdf', {
+      type: 'application/pdf',
+    })
+    render(<ExpandedEditorModal {...defaultProps} selectedFile={mockFile} />)
+
+    const pill = screen.getByTestId('modal-attachment-pill')
+    expect(pill).toBeInTheDocument()
+    expect(pill).toHaveAttribute(
+      'aria-label',
+      `Tệp đính kèm: financial-report.pdf, kích thước: ${mockFile.size} B`
+    )
+    expect(pill).toHaveAttribute('title', `financial-report.pdf (${mockFile.size} B)`)
+
+    const badge = screen.getByTestId('modal-attachment-type-badge')
+    expect(badge.className).toContain('bg-rose-500/15')
+    expect(badge.className).toContain('text-rose-600')
+
+    expect(screen.getByText('financial-report.pdf')).toBeInTheDocument()
+    const sizeSpan = screen.getByText(`${mockFile.size} B`)
+    expect(sizeSpan).toHaveClass('font-mono')
+  })
+
+  it('23. should display TXT-specific styling, accessible name, and rich metadata title for TXT attachments', () => {
+    const mockFile = new File(['plaintext content'], 'meeting-notes.txt', {
+      type: 'text/plain',
+    })
+    render(<ExpandedEditorModal {...defaultProps} selectedFile={mockFile} />)
+
+    const pill = screen.getByTestId('modal-attachment-pill')
+    expect(pill).toBeInTheDocument()
+    expect(pill).toHaveAttribute(
+      'aria-label',
+      `Tệp đính kèm: meeting-notes.txt, kích thước: ${mockFile.size} B`
+    )
+    expect(pill).toHaveAttribute('title', `meeting-notes.txt (${mockFile.size} B)`)
+
+    const badge = screen.getByTestId('modal-attachment-type-badge')
+    expect(badge.className).toContain('bg-sky-500/15')
+    expect(badge.className).toContain('text-sky-600')
+
+    expect(screen.getByText('meeting-notes.txt')).toBeInTheDocument()
+    const sizeSpan = screen.getByText(`${mockFile.size} B`)
+    expect(sizeSpan).toHaveClass('font-mono')
+  })
 })

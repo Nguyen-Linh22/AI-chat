@@ -360,11 +360,17 @@ export function ExpandedEditorModal({
           <div className="flex items-center gap-2 px-4 py-2 sm:px-6 border-b border-slate-100 dark:border-white/[0.04] bg-slate-50/50 dark:bg-white/[0.02]">
             <div
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 dark:border-white/10 bg-slate-100/90 dark:bg-white/[0.06] px-2.5 py-1 text-xs text-slate-700 dark:text-gray-200 shadow-2xs max-w-full"
-              title={selectedFile.name}
+              title={`${selectedFile.name} (${formatFileSize(selectedFile.size)})`}
               data-testid="modal-attachment-pill"
+              aria-label={`Tệp đính kèm: ${selectedFile.name}, kích thước: ${formatFileSize(selectedFile.size)}`}
             >
               <span
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[11px] select-none"
+                data-testid="modal-attachment-type-badge"
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
+                  selectedFile.name.toLowerCase().endsWith('.pdf') || selectedFile.type === 'application/pdf'
+                    ? 'bg-rose-500/15 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'
+                    : 'bg-sky-500/15 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400'
+                } text-[11px] select-none`}
                 aria-hidden="true"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -376,7 +382,7 @@ export function ExpandedEditorModal({
                 {selectedFile.name}
               </span>
 
-              <span className="text-[10px] text-slate-400 dark:text-gray-400 shrink-0 select-none">
+              <span className="text-[10px] font-mono text-slate-400 dark:text-gray-400 shrink-0 select-none">
                 {formatFileSize(selectedFile.size)}
               </span>
             </div>
