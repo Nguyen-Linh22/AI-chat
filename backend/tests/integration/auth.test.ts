@@ -483,4 +483,163 @@ describe('Authentication API', () => {
       expect(response.body).toHaveProperty('message')
     })
   })
+
+  describe('G7.6-C Case-Insensitive Email Normalization & Collision Integration Suite', () => {
+    it('đăng ký email viết hoa: DB lưu lowercase và trả về user.email lowercase', async () => {
+      const mixedEmail = `User.Case.${Date.now()}-${Math.random().toString(36).slice(2)}@EXAMPLE.COM`
+      const expectedLower = mixedEmail.trim().toLowerCase()
+      const password = 'TestPassword123!'
+
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: mixedEmail,
+          password
+        })
+        .expect(201)
+
+      expect(response.body.user.email).toBe(expectedLower)
+
+      const dbUser = await prisma.user.findUnique({
+        where: { id: response.body.user.id },
+        select: { id: true, email: true, passwordHash: true }
+      })
+
+      expect(dbUser).toBeDefined()
+      expect(dbUser?.email).toBe(expectedLower)
+      expect(dbUser?.passwordHash).toBeDefined()
+    })
+
+    it('đăng ký lại cùng email với casing khác: bị từ chối với HTTP 409 Conflict', async () => {
+      const baseEmail = `collision-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`
+      const lowerEmail = baseEmail.toLowerCase()
+      const upperEmail = baseEmail.toUpperCase()
+      const password = 'TestPassword123!'
+
+      // 1. Đăng ký lần 1 bằng chữ thường
+      await request(app)
+        .post('/api/auth/register')
+        .send({ email: lowerEmail, password })
+        .expect(201)
+
+      // 2. Đăng ký lần 2 bằng chữ in hoa
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send({ email: upperEmail, password })
+        .expect(409)
+
+      expect(response.body.message).toBe('Email đã được sử dụng')
+    })
+
+    it('đăng nhập bằng email viết hoa với mật khẩu đúng: thành công HTTP 200', async () => {
+      const baseEmail = `login-case-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`
+      const password = 'CorrectPassword123!'
+
+      await request(app)
+        .post('/api/auth/register')
+        .send({ email: baseEmail.toLowerCase(), password })
+        .expect(201)
+
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: baseEmail.toUpperCase(),
+          password
+        })
+        .expect(200)
+
+      expect(response.body.user.email).toBe(baseEmail.toLowerCase())
+      const cookies = response.headers['set-cookie'] as unknown as string[]
+      expect(cookies).toBeDefined()
+      expect(cookies.find((c: string) => c.startsWith('token='))).toBeDefined()
+    })
+
+    it('đăng nhập bằng email viết hoa với mật khẩu sai: từ chối HTTP 401', async () => {
+      const baseEmail = `login-wrong-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`
+      const password = 'CorrectPassword123!'
+
+      await request(app)
+        .post('/api/auth/register')
+        .send({ email: baseEmail.toLowerCase(), password })
+        .expect(201)
+
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: baseEmail.toUpperCase(),
+          password: 'WrongPassword999!'
+        })
+        .expect(401)
+
+      expect(response.body.message).toBe('Email hoặc mật khẩu không đúng')
+    })
+
+    it('xử lý hai request đăng ký đồng thời với email khác casing (Race Condition: một 201, một 409, không 500)', async () => {
+      const baseEmail = `race-case-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`
+      const lowerEmail = baseEmail.toLowerCase()
+      const upperEmail = baseEmail.toUpperCase()
+      const password = 'ConcurrentPassword123!'
+
+      const [res1, res2] = await Promise.all([
+        request(app).post('/api/auth/register').send({ email: lowerEmail, password }),
+        request(app).post('/api/auth/register').send({ email: upperEmail, password })
+      ])
+
+      const statuses = [res1.status, res2.status].sort()
+      expect(statuses).toEqual([201, 409])
+
+      const successRes = res1.status === 201 ? res1 : res2
+      const conflictRes = res1.status === 409 ? res1 : res2
+
+      expect(successRes.body.user.email).toBe(lowerEmail)
+      expect(conflictRes.body.message).toBe('Email đã được sử dụng')
+
+      // Kiểm tra trong DB chỉ có đúng 1 bản ghi được tạo
+      const usersInDb = await prisma.user.findMany({
+        where: {
+          email: {
+            equals: lowerEmail,
+            mode: 'insensitive'
+          }
+        },
+        select: {
+          id: true,
+          email: true
+        }
+      })
+      expect(usersInDb).toHaveLength(1)
+    })
+
+    it('xác minh collision thất bại không làm thay đổi credential hoặc tokenVersion của tài khoản hiện hữu', async () => {
+      const baseEmail = `integrity-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`
+      const password = 'OriginalPassword123!'
+
+      const regRes = await request(app)
+        .post('/api/auth/register')
+        .send({ email: baseEmail.toLowerCase(), password })
+        .expect(201)
+
+      const originalUser = await prisma.user.findUnique({
+        where: { id: regRes.body.user.id },
+        select: { id: true, email: true, passwordHash: true, tokenVersion: true }
+      })
+
+      expect(originalUser).toBeDefined()
+
+      // Thực hiện nỗ lực collision đăng ký đè bằng chữ in hoa
+      await request(app)
+        .post('/api/auth/register')
+        .send({ email: baseEmail.toUpperCase(), password: 'AttackerPassword123!' })
+        .expect(409)
+
+      const afterCollisionUser = await prisma.user.findUnique({
+        where: { id: regRes.body.user.id },
+        select: { id: true, email: true, passwordHash: true, tokenVersion: true }
+      })
+
+      expect(afterCollisionUser?.passwordHash).toBe(originalUser?.passwordHash)
+      expect(afterCollisionUser?.tokenVersion).toBe(originalUser?.tokenVersion)
+      expect(afterCollisionUser?.email).toBe(originalUser?.email)
+    })
+  })
 })

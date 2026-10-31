@@ -25,16 +25,31 @@ export const registerUser = async (
   email: string,
   password: string
 ) => {
-  const existingUser = await prisma.user.findUnique({
+  const normalizedEmail = email.trim().toLowerCase()
+
+  const existingUsers = await prisma.user.findMany({
     where: {
-      email
+      email: {
+        equals: normalizedEmail,
+        mode: 'insensitive'
+      }
     },
     select: {
-      id: true
+      id: true,
+      email: true
     }
   })
 
-  if (existingUser) {
+  if (existingUsers.length > 1) {
+    console.error(
+      'Data integrity anomaly: Multiple case-variant users found for email:',
+      normalizedEmail,
+      existingUsers.map((u) => u.id)
+    )
+    throw new Error('Email đã được sử dụng')
+  }
+
+  if (existingUsers.length === 1) {
     throw new Error('Email đã được sử dụng')
   }
 
@@ -43,7 +58,7 @@ export const registerUser = async (
   try {
     const user = await prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         passwordHash
       },
       select: {
@@ -72,9 +87,11 @@ export const loginUser = async (
   email: string,
   password: string
 ) => {
+  const normalizedEmail = email.trim().toLowerCase()
+
   const user = await prisma.user.findUnique({
     where: {
-      email
+      email: normalizedEmail
     },
     select: {
       id: true,

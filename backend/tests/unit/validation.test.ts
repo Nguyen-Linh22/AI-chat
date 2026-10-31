@@ -3,8 +3,52 @@ import { registerSchema, loginSchema } from '../../src/validators/auth.validator
 import { paginationQuerySchema } from '../../src/validators/pagination.validator.js'
 import { chatIdParamsSchema } from '../../src/validators/params.validator.js'
 import { streamMessageSchema } from '../../src/validators/message.validator.js'
+import { validate } from '../../src/middlewares/validate.middleware.js'
 
 describe('15.2-A — Unit Test Validation', () => {
+  describe('G7.6-C Email Case Normalization & Transform', () => {
+    it('registerSchema tự động trim và lowercase email', () => {
+      const result = registerSchema.safeParse({
+        email: '  Alice.Smith+Tag@EXAMPLE.COM  ',
+        password: 'ValidPassword123'
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.email).toBe('alice.smith+tag@example.com')
+      }
+    })
+
+    it('loginSchema tự động trim và lowercase email', () => {
+      const result = loginSchema.safeParse({
+        email: '  Bob.Builder@DOMAIN.ORG  ',
+        password: 'AnyPassword123'
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.email).toBe('bob.builder@domain.org')
+      }
+    })
+
+    it('validate middleware thực sự gán dữ liệu đã transform vào req.body cho controller', () => {
+      const middleware = validate(registerSchema)
+      const mockReq: any = {
+        body: {
+          email: '  CHARLIE@GMAIL.COM  ',
+          password: 'ValidPassword123'
+        }
+      }
+      const mockRes: any = {}
+      let nextCalled = false
+
+      middleware(mockReq, mockRes, () => {
+        nextCalled = true
+      })
+
+      expect(nextCalled).toBe(true)
+      expect(mockReq.body.email).toBe('charlie@gmail.com')
+    })
+  })
+
   describe('Register validation (registerSchema)', () => {
     it('email hợp lệ → PASS', () => {
       const result = registerSchema.safeParse({

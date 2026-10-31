@@ -4,6 +4,7 @@ export const registerSchema = z.object({
   email: z
     .string()
     .trim()
+    .toLowerCase()
     .email('Email không hợp lệ'),
 
   password: z
@@ -16,6 +17,7 @@ export const loginSchema = z.object({
   email: z
     .string()
     .trim()
+    .toLowerCase()
     .email('Email không hợp lệ'),
 
   password: z
