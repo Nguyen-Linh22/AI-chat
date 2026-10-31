@@ -10,19 +10,23 @@ import {
   GOOGLE_ACCOUNT_CONFLICT_ERROR
 } from '../../src/services/google-auth.service.js'
 import { googleAuth } from '../../src/controllers/auth.controller.js'
-import { loginUser } from '../../src/services/auth.service.js'
+import { loginUser, registerUser } from '../../src/services/auth.service.js'
 import { googleAuthSchema } from '../../src/validators/auth.validator.js'
 import { validate } from '../../src/middlewares/validate.middleware.js'
 
 const {
   prismaUserFindUniqueMock,
   prismaUserFindFirstMock,
+  prismaUserFindManyMock,
   prismaUserCreateMock,
+  prismaUserUpdateMock,
   verifyIdTokenMock
 } = vi.hoisted(() => ({
   prismaUserFindUniqueMock: vi.fn(),
   prismaUserFindFirstMock: vi.fn(),
+  prismaUserFindManyMock: vi.fn(),
   prismaUserCreateMock: vi.fn(),
+  prismaUserUpdateMock: vi.fn(),
   verifyIdTokenMock: vi.fn()
 }))
 
@@ -31,7 +35,9 @@ vi.mock('../../src/lib/prisma.js', () => ({
     user: {
       findUnique: prismaUserFindUniqueMock,
       findFirst: prismaUserFindFirstMock,
-      create: prismaUserCreateMock
+      findMany: prismaUserFindManyMock,
+      create: prismaUserCreateMock,
+      update: prismaUserUpdateMock
     }
   }
 }))
@@ -580,6 +586,44 @@ describe('Google Authentication End-to-End Unit Suite', () => {
       const result = await loginUser('password-user@example.com', realPassword)
       expect(result.user.id).toBe('password-user')
       expect(result.accessToken).toBeDefined()
+    })
+
+    it('G7.6-C: registerUser từ chối an toàn khi phát hiện nhiều hơn 1 tài khoản trùng email insensitive (Ambiguity Protection)', async () => {
+      prismaUserFindManyMock.mockResolvedValueOnce([
+        { id: 'user-1-lower', email: 'duplicate@example.com' },
+        { id: 'user-2-upper', email: 'Duplicate@example.com' }
+      ])
+
+      await expect(
+        registerUser('DUPLICATE@example.com', 'NewPassword123!')
+      ).rejects.toThrow('Email đã được sử dụng')
+
+      expect(prismaUserCreateMock).not.toHaveBeenCalled()
+      expect(prismaUserUpdateMock).not.toHaveBeenCalled()
+    })
+
+    it('G7.6-C: xung đột Google Auth tuyệt đối không gọi update hoặc mutate tài khoản hiện hữu', async () => {
+      verifyIdTokenMock.mockResolvedValueOnce({
+        getPayload: () => ({
+          sub: 'google-attacker-sub',
+          email: 'victim@example.com',
+          email_verified: true,
+          aud: MOCK_CLIENT_ID
+        })
+      })
+
+      prismaUserFindUniqueMock.mockResolvedValueOnce(null)
+      prismaUserFindFirstMock.mockResolvedValueOnce({
+        id: 'victim-local-id',
+        googleId: null
+      })
+
+      await expect(authenticateWithGoogle('mock-id-token')).rejects.toThrow(
+        GOOGLE_ACCOUNT_CONFLICT_ERROR
+      )
+
+      expect(prismaUserUpdateMock).not.toHaveBeenCalled()
+      expect(prismaUserCreateMock).not.toHaveBeenCalled()
     })
   })
 })
