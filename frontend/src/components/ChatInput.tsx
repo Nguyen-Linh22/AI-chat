@@ -633,7 +633,7 @@ function ChatInput() {
                     {selectedFile.name}
                   </span>
 
-                  <span className="text-[10px] font-mono text-slate-400 dark:text-gray-400 shrink-0 select-none">
+                  <span className="text-[10px] font-mono text-slate-600 dark:text-gray-400 shrink-0 select-none">
                     {formatFileSize(selectedFile.size)}
                   </span>
 

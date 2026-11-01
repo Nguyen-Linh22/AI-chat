@@ -233,4 +233,70 @@ describe('SearchChatModal', () => {
 
     expect(screen.getByText('Chưa có cuộc trò chuyện nào để tìm kiếm')).toBeInTheDocument()
   })
+
+  describe('M7.2.2-B: Accessibility Hardening', () => {
+    it('should apply focus-visible ring styles on close ESC button and clear query button', () => {
+      render(
+        <SearchChatModal
+          isOpen={true}
+          onClose={vi.fn()}
+          chats={mockChats}
+          currentChatId={null}
+          onSelectChat={vi.fn()}
+        />
+      )
+
+      const closeBtn = screen.getByRole('button', { name: 'Đóng tìm kiếm' })
+      expect(closeBtn.className).toContain('focus-visible:ring-2')
+      expect(closeBtn.className).toContain('focus-visible:ring-emerald-500/50')
+
+      const input = screen.getByPlaceholderText('Tìm kiếm theo tiêu đề cuộc trò chuyện...')
+      fireEvent.change(input, { target: { value: 'test' } })
+
+      const clearBtn = screen.getByRole('button', { name: 'Xóa nội dung tìm kiếm' })
+      expect(clearBtn.className).toContain('focus-visible:ring-2')
+      expect(clearBtn.className).toContain('focus-visible:ring-emerald-500/50')
+    })
+
+    it('should use WCAG AA compliant text color tokens on ESC kbd, empty state, and list headers', () => {
+      const { rerender } = render(
+        <SearchChatModal
+          isOpen={true}
+          onClose={vi.fn()}
+          chats={mockChats}
+          currentChatId={null}
+          onSelectChat={vi.fn()}
+        />
+      )
+
+      // ESC kbd contrast
+      const escKbd = screen.getByText('ESC')
+      expect(escKbd.className).toContain('text-slate-600')
+      expect(escKbd.className).not.toContain('text-slate-400')
+
+      // List group header and subheader contrast
+      const groupHeader = screen.getByText(/Gần đây \(\d+\)/)
+      expect(groupHeader.className).toContain('text-slate-600')
+      expect(groupHeader.className).not.toContain('text-slate-400')
+
+      const subHeader = screen.getByText('Mới nhất')
+      expect(subHeader.className).toContain('text-slate-600')
+      expect(subHeader.className).not.toContain('text-slate-400')
+
+      // Empty state subtitle contrast
+      rerender(
+        <SearchChatModal
+          isOpen={true}
+          onClose={vi.fn()}
+          chats={[]}
+          currentChatId={null}
+          onSelectChat={vi.fn()}
+        />
+      )
+
+      const emptySubtitle = screen.getByText('Bắt đầu một đoạn chat mới để có thể tìm kiếm tại đây.')
+      expect(emptySubtitle.className).toContain('text-slate-600')
+      expect(emptySubtitle.className).not.toContain('text-slate-400')
+    })
+  })
 })

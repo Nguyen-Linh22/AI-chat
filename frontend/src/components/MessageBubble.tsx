@@ -402,7 +402,10 @@ function MessageBubble({
                 return (
                   <div
                     data-testid="table-container"
-                    className="my-3.5 w-full max-w-full overflow-x-auto rounded-xl border border-slate-200/90 dark:border-white/10 shadow-2xs"
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Bảng dữ liệu"
+                    className="my-3.5 w-full max-w-full overflow-x-auto rounded-xl border border-slate-200/90 dark:border-white/10 shadow-2xs focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
                   >
                     <table className="w-full min-w-full border-collapse text-left text-sm" {...props}>
                       {children}
@@ -433,7 +436,7 @@ function MessageBubble({
               },
               th({ children, ...props }) {
                 return (
-                  <th className="px-3.5 py-2.5 text-xs font-semibold tracking-wider text-slate-700 dark:text-gray-200" {...props}>
+                  <th scope="col" className="px-3.5 py-2.5 text-xs font-semibold tracking-wider text-slate-700 dark:text-gray-200" {...props}>
                     {renderChildrenWithCursor(children)}
                   </th>
                 )

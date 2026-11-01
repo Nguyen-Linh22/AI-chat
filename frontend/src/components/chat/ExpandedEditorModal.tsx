@@ -13,6 +13,15 @@ const formatFileSize = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+const FOCUSABLE_SELECTOR = [
+  'button:not([disabled]):not([tabindex="-1"])',
+  '[href]:not([tabindex="-1"])',
+  'input:not([disabled]):not([tabindex="-1"])',
+  'select:not([disabled]):not([tabindex="-1"])',
+  'textarea:not([disabled]):not([tabindex="-1"])',
+  '[tabindex]:not([tabindex="-1"]):not([disabled])',
+].join(', ')
+
 interface PreviewCodeBlockProps {
   language?: string
   content: string
@@ -144,10 +153,17 @@ export function ExpandedEditorModal({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const editTabRef = useRef<HTMLButtonElement | null>(null)
   const previewTabRef = useRef<HTMLButtonElement | null>(null)
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null)
+  const dialogRef = useRef<HTMLDivElement | null>(null)
 
-  // Focus textarea when modal opens and move cursor to end of text
+  // Focus textarea when modal opens, move cursor to end of text, and restore focus on close
   useEffect(() => {
     if (isOpen) {
+      // Capture element that had focus before opening modal
+      if (document.activeElement instanceof HTMLElement) {
+        previouslyFocusedElementRef.current = document.activeElement
+      }
+
       const timer = setTimeout(() => {
         const textarea = textareaRef.current
         if (textarea) {
@@ -155,17 +171,69 @@ export function ExpandedEditorModal({
           textarea.selectionStart = textarea.selectionEnd = textarea.value.length
         }
       }, 50)
-      return () => clearTimeout(timer)
+
+      return () => {
+        clearTimeout(timer)
+
+        // Restore focus to opener element when modal closes or unmounts
+        const prevElement = previouslyFocusedElementRef.current
+        if (
+          prevElement &&
+          typeof prevElement.focus === 'function' &&
+          document.contains(prevElement)
+        ) {
+          prevElement.focus()
+        }
+      }
     }
   }, [isOpen])
 
-  // Listen for Escape key on window to close and Ctrl/Cmd+Enter to send across both tabs
+  // Listen for Escape key on window to close, Tab to trap focus, and Ctrl/Cmd+Enter to send across both tabs
   useEffect(() => {
     if (!isOpen) return
 
     const handleWindowKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose(content)
+      } else if (event.key === 'Tab') {
+        if (event.defaultPrevented) return
+
+        const dialog = dialogRef.current
+        if (!dialog) return
+
+        const focusableElements = Array.from(
+          dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+        ).filter(
+          (el) => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true'
+        )
+
+        if (focusableElements.length === 0) {
+          event.preventDefault()
+          dialog.focus()
+          return
+        }
+
+        const firstElement = focusableElements[0]
+        const lastElement = focusableElements[focusableElements.length - 1]
+
+        const currentFocused =
+          document.activeElement && dialog.contains(document.activeElement)
+            ? document.activeElement
+            : (event.target instanceof HTMLElement && dialog.contains(event.target)
+                ? event.target
+                : null)
+
+        if (event.shiftKey) {
+          if (currentFocused === firstElement || !currentFocused) {
+            event.preventDefault()
+            lastElement.focus()
+          }
+        } else {
+          if (currentFocused === lastElement || !currentFocused) {
+            event.preventDefault()
+            firstElement.focus()
+          }
+        }
       } else if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         // If focus is in textarea, handleKeyDown handles it
         if (event.target === textareaRef.current) {
@@ -264,10 +332,12 @@ export function ExpandedEditorModal({
 
       {/* Expanded Editor Dialog */}
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Soạn tin nhắn"
-        className="relative z-10 flex flex-col w-full max-w-4xl h-[80vh] sm:h-[85vh] rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-white/10 bg-white/98 dark:bg-[#131924]/95 shadow-2xl backdrop-blur-2xl animate-modal-enter overflow-hidden"
+        className="relative z-10 flex flex-col w-full max-w-4xl h-[80vh] sm:h-[85vh] rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-white/10 bg-white/98 dark:bg-[#131924]/95 shadow-2xl backdrop-blur-2xl animate-modal-enter overflow-hidden outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Segmented Control Tabs */}
@@ -338,7 +408,7 @@ export function ExpandedEditorModal({
           <button
             type="button"
             onClick={() => onClose(content)}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 transition cursor-pointer"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
             aria-label="Đóng trình soạn thảo"
             title="Đóng (Esc)"
           >
@@ -382,7 +452,7 @@ export function ExpandedEditorModal({
                 {selectedFile.name}
               </span>
 
-              <span className="text-[10px] font-mono text-slate-400 dark:text-gray-400 shrink-0 select-none">
+              <span className="text-[10px] font-mono text-slate-600 dark:text-gray-400 shrink-0 select-none">
                 {formatFileSize(selectedFile.size)}
               </span>
             </div>

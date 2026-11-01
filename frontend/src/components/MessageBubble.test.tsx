@@ -457,6 +457,19 @@ describe('MessageBubble', () => {
         expect(bodyCell).toHaveClass('align-middle')
       })
 
+      it('M7.2.2-B: should provide keyboard scrollable container with tabIndex, role region, and accessible name', () => {
+        render(<MessageBubble role="ai" content={sampleTable} />)
+
+        const region = screen.getByRole('region', { name: 'Bảng dữ liệu' })
+        expect(region).toBeInTheDocument()
+        expect(region).toHaveAttribute('tabIndex', '0')
+        expect(region).toHaveClass('focus-visible:ring-2')
+        expect(region).toHaveClass('focus-visible:ring-[#1B8F3D]/50')
+
+        const th = screen.getByRole('columnheader', { name: 'Ngôn ngữ' })
+        expect(th).toHaveAttribute('scope', 'col')
+      })
+
       it('should preserve all content and formatting in wide tables with many columns', () => {
         const wideTable = `| C1 | C2 | C3 | C4 | C5 | C6 |\n| --- | --- | --- | --- | --- | --- |\n| V1 [Link](https://example.com) | V2 **Bold** | V3 *Italic* | V4 \`code\` | V5 | V6 Long Content |`
 

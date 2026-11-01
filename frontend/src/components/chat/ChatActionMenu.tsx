@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 
 interface ChatActionMenuProps {
   isOpen: boolean
@@ -8,6 +8,7 @@ interface ChatActionMenuProps {
   onRename: () => void
   onDelete: () => void
   onClose: () => void
+  triggerRef?: React.RefObject<HTMLElement | null>
 }
 
 export function ChatActionMenu({
@@ -18,8 +19,36 @@ export function ChatActionMenu({
   onRename,
   onDelete,
   onClose,
+  triggerRef,
 }: ChatActionMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null)
+
+  // Capture previously focused element when menu opens and set initial focus
+  useEffect(() => {
+    if (isOpen) {
+      if (!previouslyFocusedElementRef.current && document.activeElement instanceof HTMLElement) {
+        previouslyFocusedElementRef.current = document.activeElement
+      }
+
+      // Initial focus on first enabled menu item
+      const focusTimer = setTimeout(() => {
+        if (!menuRef.current) return
+        const firstItem = menuRef.current.querySelector<HTMLButtonElement>(
+          'button[role="menuitem"]:not([disabled])'
+        )
+        if (firstItem && !firstItem.hasAttribute('disabled') && !firstItem.disabled) {
+          firstItem.focus()
+        }
+      }, 0)
+
+      return () => {
+        clearTimeout(focusTimer)
+      }
+    } else {
+      previouslyFocusedElementRef.current = null
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -35,8 +64,69 @@ export function ChatActionMenu({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault()
         event.stopPropagation()
         onClose()
+
+        // Restore focus to opener element when dismissed via Escape
+        const prev = triggerRef?.current || previouslyFocusedElementRef.current
+        if (prev && typeof prev.focus === 'function' && document.contains(prev)) {
+          prev.focus()
+        }
+        return
+      }
+
+      if (event.key === 'Tab') {
+        onClose()
+        return
+      }
+
+      const menu = menuRef.current
+      if (!menu) return
+
+      // Only handle menu navigation keys if focus is within the menu
+      if (!menu.contains(document.activeElement)) {
+        return
+      }
+
+      const items = Array.from(
+        menu.querySelectorAll<HTMLButtonElement>(
+          'button[role="menuitem"]:not([disabled])'
+        )
+      ).filter(
+        (el) =>
+          !el.hasAttribute('disabled') &&
+          !el.disabled &&
+          el.getAttribute('aria-disabled') !== 'true'
+      )
+
+      if (items.length === 0) return
+
+      const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement)
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % items.length
+        items[nextIndex]?.focus()
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        const prevIndex =
+          currentIndex === -1
+            ? items.length - 1
+            : (currentIndex - 1 + items.length) % items.length
+        items[prevIndex]?.focus()
+      } else if (event.key === 'Home') {
+        event.preventDefault()
+        items[0]?.focus()
+      } else if (event.key === 'End') {
+        event.preventDefault()
+        items[items.length - 1]?.focus()
+      } else if (event.key === ' ' || event.key === 'Spacebar') {
+        event.preventDefault()
+        ;(document.activeElement as HTMLElement)?.click()
+      } else if (event.key === 'Enter') {
+        event.preventDefault()
+        ;(document.activeElement as HTMLElement)?.click()
       }
     }
 
@@ -55,7 +145,7 @@ export function ChatActionMenu({
       window.removeEventListener('scroll', handleScrollOrResize, true)
       window.removeEventListener('resize', handleScrollOrResize)
     }
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, triggerRef])
 
   if (!isOpen) return null
 
@@ -130,7 +220,7 @@ export function ChatActionMenu({
           onClose()
           onRename()
         }}
-        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-[#F1F5F9] transition-all hover:bg-slate-100 dark:hover:bg-[#222C3D] hover:text-slate-900 dark:hover:text-white cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-[#F1F5F9] transition-all hover:bg-slate-100 dark:hover:bg-[#222C3D] hover:text-slate-900 dark:hover:text-white cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none focus:bg-slate-100 dark:focus:bg-[#222C3D] focus:text-slate-900 dark:focus:text-white"
       >
         <svg className="h-3.5 w-3.5 text-slate-400 dark:text-[#94A3B8] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -147,7 +237,7 @@ export function ChatActionMenu({
           onClose()
           onDelete()
         }}
-        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-[#B91E2B] dark:text-[#ff6b78] transition-all hover:bg-[#B91E2B]/10 dark:hover:bg-[#B91E2B]/20 cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none"
+        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-[#B91E2B] dark:text-[#ff6b78] transition-all hover:bg-[#B91E2B]/10 dark:hover:bg-[#B91E2B]/20 cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none focus:bg-[#B91E2B]/10 dark:focus:bg-[#B91E2B]/20"
       >
         <svg className="h-3.5 w-3.5 text-[#B91E2B] dark:text-[#ff6b78] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

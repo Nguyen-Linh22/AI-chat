@@ -94,7 +94,7 @@ export const SearchChatButton: React.FC<SearchChatButtonProps> = ({
 
         <kbd
           aria-hidden="true"
-          className="ml-auto inline-flex items-center gap-0.5 text-[10px] font-mono font-medium text-slate-400 dark:text-gray-400 bg-slate-100 dark:bg-white/[0.06] px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-white/10 shadow-2xs group-hover:border-emerald-500/30 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors select-none"
+          className="ml-auto inline-flex items-center gap-0.5 text-[10px] font-mono font-medium text-slate-600 dark:text-gray-400 bg-slate-100 dark:bg-white/[0.06] px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-white/10 shadow-2xs group-hover:border-emerald-500/30 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors select-none"
         >
           {shortcutHint}
         </kbd>
