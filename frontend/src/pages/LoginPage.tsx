@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AuthAlert } from '../components/auth/AuthAlert'
-import { AuthLayout } from '../components/auth/AuthLayout'
-import { AuthModeSwitch } from '../components/auth/AuthModeSwitch'
-import { AuthOverlayBanner } from '../components/auth/AuthOverlayBanner'
-import { AuthSubmitButton } from '../components/auth/AuthSubmitButton'
-import { FloatingInput } from '../components/auth/FloatingInput'
+import '../components/auth/LoginFormDesign.css'
 import { apiClient } from '../services/apiClient'
 import { loginWithGoogle } from '../services/authService'
 import {
@@ -37,7 +33,6 @@ function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(true)
 
   const [touched, setTouched] = useState({ email: false, password: false })
   const [dirty, setDirty] = useState({ email: false, password: false })
@@ -53,8 +48,6 @@ function LoginPage() {
   const emailError = validateEmail(email)
   const passwordError = validatePassword(password)
 
-  // Only surface a field error after the user has edited that field (or tried
-  // to submit), so the autofocused empty email never starts out "invalid".
   const visibleEmailError =
     submitted || (touched.email && dirty.email) ? emailError : undefined
   const visiblePasswordError =
@@ -76,7 +69,6 @@ function LoginPage() {
     setServerError('')
 
     if (invalidFields.length > 0) {
-      // Render the inline errors first, then move focus to the best target.
       flushSync(() => setSubmitted(true))
       triggerShake()
 
@@ -106,8 +98,6 @@ function LoginPage() {
       }
 
       setUser(data.user)
-
-      // Xóa toàn bộ tin nhắn & cache RAM của tài khoản trước (nếu có)
       useMessageStore.getState().clearAll()
 
       const chats = await getChats()
@@ -134,7 +124,6 @@ function LoginPage() {
         if (!isMountedRef.current) return
 
         setUser(data.user)
-
         useMessageStore.getState().clearAll()
 
         const chats = await getChats()
@@ -183,8 +172,8 @@ function LoginPage() {
           theme: 'filled_black',
           size: 'large',
           text: 'continue_with',
-          shape: 'rectangular',
-          width: googleButtonRef.current.clientWidth || 320,
+          shape: 'pill',
+          width: googleButtonRef.current.clientWidth || 280,
         })
       })
       .catch(() => {
@@ -198,190 +187,188 @@ function LoginPage() {
     }
   }, [handleGoogleCredential])
 
+  // Đồng bộ màu nền #212121 lên body để tránh khoảng hở / viền khi zoom hoặc overscroll
+  useEffect(() => {
+    const originalBg = document.body.style.backgroundColor
+    document.body.style.backgroundColor = '#212121'
+    return () => {
+      document.body.style.backgroundColor = originalBg
+    }
+  }, [])
+
   return (
-    <AuthLayout
-      mode="login"
-      banner={<AuthOverlayBanner mode="login" />}
-      bannerPosition="left"
-      shake={isShaking}
+    <div
+      data-testid="login-page-root"
+      className="login-page-root min-h-screen min-h-[100dvh] w-full flex flex-col justify-between items-center text-white relative overflow-x-hidden"
+      style={{ backgroundColor: '#212121' }}
     >
-      <AuthModeSwitch mode="login" />
+      {/* Centered Login Card exactly matching supplied design */}
+      <main className="login-form-wrapper flex-1 flex items-center justify-center my-auto py-6 px-4 w-full">
+        <div className={`container ${isShaking ? 'shake' : ''}`}>
+          <div className="login-box">
+            <form className="form" noValidate onSubmit={handleSubmit} aria-busy={loading || googleLoading}>
+              {/* User Avatar Logo from Reference Design */}
+              <div className="logo" aria-hidden="true" />
 
-      <header className="mt-5 sm:mt-6">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#FCA5A5]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#F87171] animate-pulse" />
-          AI Chat Workspace
-        </div>
-        <h1 className="mt-2 text-[26px] font-extrabold tracking-tight text-white sm:text-[30px]">
-          Đăng nhập
-        </h1>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-gray-400">
-          Tiếp tục nơi bạn đã dừng lại và mở các cuộc trò chuyện đã lưu.
-        </p>
-      </header>
+              {/* Header Title */}
+              <h1 className="header">Welcome Back!</h1>
 
-      <form
-        noValidate
-        onSubmit={handleSubmit}
-        className="mt-5 space-y-3.5 sm:mt-6 sm:space-y-4"
-        aria-busy={loading || googleLoading}
-      >
-        {submitted && invalidFields.length > 1 && (
-          <AuthAlert
-            ref={summaryRef}
-            tabIndex={-1}
-            title="Vui lòng kiểm tra lại thông tin"
-            items={invalidFields}
-            onItemClick={focusField}
-          />
-        )}
+              {/* Accessibility Error Alerts */}
+              {submitted && invalidFields.length > 1 && (
+                <div className="w-full">
+                  <AuthAlert
+                    ref={summaryRef}
+                    tabIndex={-1}
+                    title="Vui lòng kiểm tra lại thông tin"
+                    items={invalidFields}
+                    onItemClick={focusField}
+                  />
+                </div>
+              )}
 
-        {serverError && (
-          <AuthAlert title="Không thể đăng nhập" message={serverError} />
-        )}
+              {serverError && (
+                <div className="w-full">
+                  <AuthAlert title="Không thể đăng nhập" message={serverError} />
+                </div>
+              )}
 
-        <FloatingInput
-          id="email"
-          name="email"
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(event) => {
-            setEmail(event.target.value)
-            setDirty((prev) => (prev.email ? prev : { ...prev, email: true }))
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
-          autoComplete="email"
-          inputMode="email"
-          leadingIcon="mail"
-          focusAccent="red"
-          required
-          autoFocus
-          enterKeyHint="next"
-          error={visibleEmailError}
-          disabled={loading || googleLoading}
-        />
+              {/* Email Input */}
+              <div className="input-field-wrapper">
+                <label htmlFor="email" className="sr-only">
+                  Email
+                </label>
+                <div className="input-container">
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="Email"
+                    aria-label="Email"
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(event.target.value)
+                      setDirty((prev) => (prev.email ? prev : { ...prev, email: true }))
+                    }}
+                    onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
+                    autoComplete="email"
+                    inputMode="email"
+                    required
+                    autoFocus
+                    disabled={loading || googleLoading}
+                    aria-invalid={Boolean(visibleEmailError)}
+                    aria-describedby={visibleEmailError ? 'email-error' : undefined}
+                    className="input"
+                  />
+                </div>
+                {visibleEmailError && (
+                  <p id="email-error" className="input-error-msg">
+                    {visibleEmailError}
+                  </p>
+                )}
+              </div>
 
-        <div>
-          <FloatingInput
-            id="password"
-            name="password"
-            label="Mật khẩu"
-            type="password"
-            value={password}
-            onChange={(event) => {
-              setPassword(event.target.value)
-              setDirty((prev) => (prev.password ? prev : { ...prev, password: true }))
-            }}
-            onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
-            autoComplete="current-password"
-            leadingIcon="lock"
-            focusAccent="red"
-            required
-            enterKeyHint="go"
-            error={visiblePasswordError}
-            disabled={loading || googleLoading}
-            showPasswordToggle
-            showPassword={showPassword}
-            onTogglePassword={() => setShowPassword((prev) => !prev)}
-          />
+              {/* Password Input */}
+              <div className="input-field-wrapper">
+                <label htmlFor="password" className="sr-only">
+                  Mật khẩu
+                </label>
+                <div className="input-container">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Password"
+                    aria-label="Mật khẩu"
+                    value={password}
+                    onChange={(event) => {
+                      setPassword(event.target.value)
+                      setDirty((prev) => (prev.password ? prev : { ...prev, password: true }))
+                    }}
+                    onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
+                    autoComplete="current-password"
+                    required
+                    disabled={loading || googleLoading}
+                    aria-invalid={Boolean(visiblePasswordError)}
+                    aria-describedby={visiblePasswordError ? 'password-error' : undefined}
+                    className="input"
+                    style={{ paddingRight: '36px' }}
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="password-toggle"
+                  >
+                    {showPassword ? (
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                      </svg>
+                    ) : (
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {visiblePasswordError && (
+                  <p id="password-error" className="input-error-msg">
+                    {visiblePasswordError}
+                  </p>
+                )}
+              </div>
 
-          <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
-            <label className="flex cursor-pointer items-center gap-2 select-none">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-white/20 bg-black/40 text-[#B91E2B] accent-[#B91E2B] focus:ring-[#F87171] focus:ring-offset-[#0B0F18]"
+              {/* Primary Submit Button */}
+              <button
+                type="submit"
+                disabled={loading || googleLoading}
+                aria-busy={loading}
+                aria-label="Đăng nhập"
+                className="button sign-in"
+              >
+                {loading ? 'Đang đăng nhập...' : 'Sign In'}
+              </button>
+
+              {/* Official Google Sign-In Slot */}
+              <div
+                ref={googleButtonRef}
+                data-testid="google-signin-button"
+                aria-label="Tiếp tục với Google"
+                className="google-sign-in-slot"
               />
-              <span className="text-[12px] text-gray-300">Ghi nhớ đăng nhập</span>
-            </label>
 
-            <span className="text-[12px] text-gray-400 hover:text-gray-200 cursor-pointer transition-colors">
-              Quên mật khẩu?
-            </span>
+              {/* Footer with Registration and Password Links */}
+              <p className="footer">
+                Don't have an account?{' '}
+                <Link
+                  to="/register"
+                  role="button"
+                  aria-label="Đăng ký tài khoản - Sign up, it's free!"
+                  className="link"
+                  onClick={() => navigate('/register')}
+                >
+                  Sign up, it's free!
+                </Link>
+                <br />
+                <button
+                  type="button"
+                  onClick={() => setServerError('Tính năng quên mật khẩu đang được phát triển.')}
+                  className="link"
+                >
+                  Forgot password?
+                </button>
+              </p>
+            </form>
           </div>
         </div>
+      </main>
 
-        <AuthSubmitButton
-          tone="login"
-          label="Đăng nhập"
-          loadingLabel={googleLoading ? 'Đang kết nối...' : 'Đang đăng nhập...'}
-          loading={loading || googleLoading}
-        />
-
-        <p className="sr-only" role="status">
-          {loading ? 'Đang đăng nhập...' : ''}
-        </p>
-      </form>
-
-      {/* Alternative Social Divider */}
-      <div className="relative my-4 flex items-center justify-center">
-        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-white/10" />
-        </div>
-        <div className="relative bg-[#0B0F18] px-3 text-[11px] font-medium uppercase tracking-wider text-gray-400">
-          Hoặc tiếp tục với
-        </div>
-      </div>
-
-      {/* Social Sign-in Options */}
-      <div className="flex flex-col gap-2.5">
-        <div
-          ref={googleButtonRef}
-          data-testid="google-signin-button"
-          aria-label="Tiếp tục bằng tài khoản Google"
-          className="flex justify-center w-full min-h-[40px] [&>div]:!w-full [&_iframe]:!w-full overflow-hidden rounded-xl"
-        />
-
-        <button
-          type="button"
-          aria-label="Tiếp tục bằng tài khoản GitHub"
-          onClick={() => {
-            setServerError('Đăng nhập GitHub sẽ sớm được kích hoạt trong phiên bản tiếp theo.')
-          }}
-          className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-gray-200 transition-colors duration-200 hover:bg-white/[0.08] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-        >
-          <svg className="h-4 w-4 fill-currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2Z"
-            />
-          </svg>
-          <span>Tiếp tục với GitHub</span>
-        </button>
-      </div>
-
-      <div className="mt-4 flex flex-col gap-3 sm:mt-5 sm:gap-4">
-        <p className="text-center text-[13px] text-gray-400">
-          Chưa có tài khoản?{' '}
-          <button
-            type="button"
-            onClick={() => navigate('/register')}
-            className="-my-1.5 rounded py-1.5 font-semibold text-[#F87171] underline-offset-4 transition-colors hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F87171]/70"
-          >
-            Đăng ký
-          </button>
-        </p>
-
-        <p className="flex items-start justify-center gap-1.5 text-center text-[11px] leading-relaxed text-gray-400">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="mt-px h-3.5 w-3.5 shrink-0 text-emerald-400"
-            aria-hidden="true"
-          >
-            <path d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-          </svg>
-          <span>Phiên đăng nhập được bảo vệ bởi HttpOnly Cookie & TLS 1.3.</span>
-        </p>
-      </div>
-    </AuthLayout>
+      {/* Bottom Security Note */}
+      <footer className="relative z-20 pb-4 text-center text-[11px] text-gray-400 bg-transparent">
+        <span>Phiên đăng nhập được bảo vệ bởi HttpOnly Cookie & TLS 1.3.</span>
+      </footer>
+    </div>
   )
 }
 

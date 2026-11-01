@@ -24,7 +24,7 @@ export function AuthModeSwitch({ mode }: AuthModeSwitchProps) {
   return (
     <nav
       aria-label="Chuyển giữa đăng nhập và đăng ký"
-      className="grid w-full grid-cols-2 gap-1.5 rounded-2xl border border-white/10 bg-black/40 p-1.5 backdrop-blur-xl shadow-inner"
+      className="grid w-full grid-cols-2 gap-1.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-100/90 dark:bg-black/40 p-1.5 backdrop-blur-xl shadow-inner transition-colors duration-200"
     >
       {MODES.map((item) => {
         const isActive = item.id === mode
@@ -34,16 +34,16 @@ export function AuthModeSwitch({ mode }: AuthModeSwitchProps) {
             key={item.id}
             to={item.to}
             aria-current={isActive ? 'page' : undefined}
-            className={`flex h-11 items-center justify-center gap-2 rounded-xl text-[13px] font-semibold tracking-wide transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0F18] ${ringClass} ${
+            className={`flex h-10 sm:h-11 items-center justify-center gap-2 rounded-xl text-xs sm:text-[13px] font-semibold tracking-wide transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#0B0F18] ${ringClass} ${
               isActive
                 ? 'text-white shadow-md'
-                : 'text-gray-400 hover:bg-white/[0.06] hover:text-white'
+                : 'text-slate-600 dark:text-gray-400 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] hover:text-slate-900 dark:hover:text-white'
             }`}
             style={
               isActive
                 ? {
                     backgroundColor: brandFill,
-                    boxShadow: `inset 0 0 0 1px ${brandRing}, 0 2px 8px -2px rgba(0,0,0,0.5)`,
+                    boxShadow: `inset 0 0 0 1px ${brandRing}, 0 2px 8px -2px rgba(0,0,0,0.35)`,
                     color: '#FFFFFF',
                   }
                 : undefined
@@ -53,7 +53,7 @@ export function AuthModeSwitch({ mode }: AuthModeSwitchProps) {
               <svg
                 viewBox="0 0 20 20"
                 fill="currentColor"
-                className={`h-4 w-4 ${isActive ? (isLogin ? 'text-[#FCA5A5]' : 'text-white') : 'text-gray-400'}`}
+                className={`h-4 w-4 ${isActive ? (isLogin ? 'text-[#FCA5A5]' : 'text-white') : 'text-slate-500 dark:text-gray-400'}`}
                 aria-hidden="true"
               >
                 <path
@@ -71,7 +71,7 @@ export function AuthModeSwitch({ mode }: AuthModeSwitchProps) {
               <svg
                 viewBox="0 0 20 20"
                 fill="currentColor"
-                className={`h-4 w-4 ${isActive ? (!isLogin ? 'text-[#86EFAC]' : 'text-white') : 'text-gray-400'}`}
+                className={`h-4 w-4 ${isActive ? (!isLogin ? 'text-[#86EFAC]' : 'text-white') : 'text-slate-500 dark:text-gray-400'}`}
                 aria-hidden="true"
               >
                 <path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM2.615 16.428a1.224 1.224 0 0 1-.569-1.175 6.002 6.002 0 0 1 11.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 0 1 8 18a9.953 9.953 0 0 1-5.385-1.572ZM16.25 5.75a.75.75 0 0 0-1.5 0v2h-2a.75.75 0 0 0 0 1.5h2v2a.75.75 0 0 0 1.5 0v-2h2a.75.75 0 0 0 0-1.5h-2v-2Z" />
