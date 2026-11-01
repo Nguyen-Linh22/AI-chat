@@ -467,4 +467,83 @@ describe('ModelSelector', () => {
     expect(listbox.className).toContain('sm:max-w-none')
     expect(listbox.className).toContain('sm:w-80')
   })
+
+  it('should render dropdown header with synchronized px-2.5 padding (VIS-03)', async () => {
+    const user = userEvent.setup()
+    useAIStoreMock.mockImplementation((selector: (state: unknown) => unknown) =>
+      selector({
+        models: [
+          {
+            id: 'gemini-3.6-flash',
+            name: 'Gemini 3.6 Flash',
+            available: true,
+          },
+        ],
+        selectedModelId: 'gemini-3.6-flash',
+        setSelectedModelId: setSelectedModelIdMock,
+      })
+    )
+
+    render(<ModelSelector />)
+
+    const triggerBtn = screen.getByRole('button', { name: /Gemini 3.6 Flash/i })
+    await user.click(triggerBtn)
+
+    const header = screen.getByText('Mô hình AI').closest('div')
+    expect(header).toHaveClass('px-2.5')
+  })
+
+  it('should render premium capsule trigger button with gradient and AI sparkle icon', () => {
+    useAIStoreMock.mockImplementation((selector: (state: unknown) => unknown) =>
+      selector({
+        models: [
+          {
+            id: 'gemini-3.6-flash',
+            name: 'Gemini 3.6 Flash',
+            available: true,
+          },
+        ],
+        selectedModelId: 'gemini-3.6-flash',
+        setSelectedModelId: setSelectedModelIdMock,
+      })
+    )
+
+    render(<ModelSelector />)
+
+    const triggerBtn = screen.getByRole('button', { name: /Gemini 3.6 Flash/i })
+    expect(triggerBtn).toHaveClass('rounded-full')
+    expect(triggerBtn.className).toContain('bg-gradient-to-r')
+    expect(triggerBtn.className).toContain('hover:shadow-')
+    expect(screen.getByTestId('model-trigger-icon')).toHaveTextContent('✦')
+  })
+
+  it('should render premium popover with rounded-2xl glassmorphism and active selection indicator', async () => {
+    const user = userEvent.setup()
+    useAIStoreMock.mockImplementation((selector: (state: unknown) => unknown) =>
+      selector({
+        models: [
+          {
+            id: 'gemini-3.6-flash',
+            name: 'Gemini 3.6 Flash',
+            available: true,
+          },
+        ],
+        selectedModelId: 'gemini-3.6-flash',
+        setSelectedModelId: setSelectedModelIdMock,
+      })
+    )
+
+    render(<ModelSelector />)
+
+    const triggerBtn = screen.getByRole('button', { name: /Gemini 3.6 Flash/i })
+    await user.click(triggerBtn)
+
+    const listbox = screen.getByRole('listbox')
+    expect(listbox).toHaveClass('rounded-2xl')
+    expect(listbox.className).toContain('backdrop-blur-xl')
+    expect(listbox.className).toContain('shadow-2xl')
+
+    // Active selection badge
+    expect(screen.getByText('Đang chọn')).toBeInTheDocument()
+  })
 })

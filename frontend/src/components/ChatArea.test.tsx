@@ -400,6 +400,9 @@ describe('ChatArea', () => {
     )
 
     expect(skeletons.length).toBeGreaterThan(0)
+    const skeletonCard = skeletons[0].closest('.rounded-2xl')
+    expect(skeletonCard).toHaveClass('bg-slate-200/70')
+    expect(skeletonCard).toHaveClass('dark:bg-gray-800/80')
   })
 
   it('should show the message error when loading messages fails', async () => {
@@ -611,7 +614,10 @@ describe('ChatArea', () => {
     render(<ChatArea />)
 
     expect(screen.getByText('Không thể tải tin nhắn cũ.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Thử lại' })).toBeInTheDocument()
+    const retryBtn = screen.getByRole('button', { name: 'Thử lại' })
+    expect(retryBtn).toBeInTheDocument()
+    expect(retryBtn).toHaveClass('focus-visible:ring-2')
+    expect(retryBtn).toHaveClass('focus-visible:ring-[#1B8F3D]/50')
   })
 
   it('should render ChatBackground with pointer-events-none and aria-hidden', () => {

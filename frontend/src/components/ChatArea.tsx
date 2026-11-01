@@ -479,14 +479,14 @@ function ChatArea({
       <ChatBackground />
 
       {/* Docked Top Header: 56px (h-14) Premium AI Workspace Header */}
-      <header className="relative z-40 flex h-14 shrink-0 items-center justify-between border-b border-slate-200/90 dark:border-white/[0.08] bg-white/95 dark:bg-[#131923]/95 backdrop-blur-md px-3.5 sm:px-6 transition-colors duration-200 shadow-xs">
+      <header className="relative z-40 flex h-14 shrink-0 items-center justify-between border-b bg-transparent backdrop-blur-[1px] px-3.5 sm:px-6 transition-colors duration-200 border-indigo-200/25 dark:border-white/[0.06] shadow-[0_4px_20px_-4px_rgba(110,142,251,0.05)]">
         {/* Left: Mobile Navigation, Workspace Status & Breadcrumb Title */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-3 sm:mr-4">
           {onOpenMobileSidebar && (
             <button
               type="button"
               onClick={onOpenMobileSidebar}
-              className="md:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#1A2230] text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F1F5F9] hover:bg-slate-100 dark:hover:bg-[#222C3D] transition active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#15803D] dark:focus-visible:ring-emerald-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#131923] focus-visible:outline-none"
+              className="md:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-200/40 dark:border-white/10 bg-white/40 dark:bg-white/[0.05] text-slate-700 dark:text-[#94A3B8] hover:text-indigo-600 dark:hover:text-[#F1F5F9] hover:bg-indigo-50/60 dark:hover:bg-indigo-950/40 hover:border-indigo-400/40 transition active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#6e8efb] dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#131923] focus-visible:outline-none backdrop-blur-xs"
               aria-label="Mở menu danh sách đoạn chat"
               title="Mở menu"
             >
@@ -513,12 +513,12 @@ function ChatArea({
           </div>
 
           {/* Workspace Status Badge */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100/90 dark:bg-[#1A2230] border border-slate-200/80 dark:border-white/[0.08] text-[11px] font-semibold text-slate-700 dark:text-[#94A3B8] shrink-0 select-none">
-            <span className="h-2 w-2 rounded-full bg-[#1B8F3D]" aria-hidden="true" />
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/40 dark:bg-white/[0.06] border border-indigo-200/50 dark:border-indigo-400/20 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shrink-0 select-none backdrop-blur-xs shadow-[0_0_12px_rgba(110,142,251,0.08)]">
+            <span className="h-2 w-2 rounded-full bg-gradient-to-r from-[#6e8efb] to-[#a777e3] shadow-[0_0_8px_rgba(167,119,227,0.7)]" aria-hidden="true" />
             <span>AI Workspace</span>
           </div>
 
-          <span className="hidden sm:inline shrink-0 text-slate-300 dark:text-[#64748B] font-light select-none text-sm" aria-hidden="true">›</span>
+          <span className="hidden sm:inline shrink-0 text-indigo-300 dark:text-indigo-400/50 font-light select-none text-sm" aria-hidden="true">›</span>
 
           {/* Workspace Breadcrumbs Hierarchy */}
           <div
@@ -558,14 +558,14 @@ function ChatArea({
             /* Skeleton Loading */
             <div className="flex flex-col gap-6 py-4">
               <div className="flex justify-end">
-                <div className="w-[60%] sm:w-[45%] rounded-2xl bg-gray-800/80 p-4 space-y-2.5 border border-white/10 shadow-md">
+                <div className="w-[60%] sm:w-[45%] rounded-2xl bg-slate-200/70 dark:bg-gray-800/80 p-4 space-y-2.5 border border-slate-200/80 dark:border-white/10 shadow-md">
                   <div className="h-3 w-1/4 rounded skeleton-shimmer" />
                   <div className="h-3.5 w-full rounded skeleton-shimmer" />
                   <div className="h-3.5 w-3/4 rounded skeleton-shimmer" />
                 </div>
               </div>
               <div className="flex justify-start">
-                <div className="w-[85%] sm:w-[70%] rounded-2xl bg-gray-800/80 p-4 space-y-3 border border-white/10 shadow-md">
+                <div className="w-[85%] sm:w-[70%] rounded-2xl bg-slate-200/70 dark:bg-gray-800/80 p-4 space-y-3 border border-slate-200/80 dark:border-white/10 shadow-md">
                   <div className="h-3 w-1/5 rounded skeleton-shimmer" />
                   <div className="h-3.5 w-full rounded skeleton-shimmer" />
                   <div className="h-3.5 w-11/12 rounded skeleton-shimmer" />
@@ -609,7 +609,7 @@ function ChatArea({
                   <button
                     type="button"
                     onClick={() => loadOlderMessages()}
-                    className="text-[#1B8F3D] hover:underline font-semibold cursor-pointer"
+                    className="text-[#1B8F3D] dark:text-emerald-400 hover:underline font-semibold cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 dark:focus-visible:ring-emerald-400/50 focus-visible:outline-none rounded px-1.5 py-0.5 transition-all"
                   >
                     Thử lại
                   </button>
