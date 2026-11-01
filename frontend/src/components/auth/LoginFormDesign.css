@@ -1,0 +1,355 @@
+/* ==============================================================================
+ * Auth Pages (Login & Register) - Faithful Premium Animated Conic Card Design
+ * Solid #212121 Background Coverage
+ * ============================================================================== */
+
+:is(.login-page-root, .register-page-root) {
+  background-color: #212121 !important;
+  background-image: none !important;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  position: relative;
+  overflow-x: hidden;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  background: transparent !important;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .container {
+  --form-width: 320px;
+  --aspect-ratio: 1.33;
+  --login-box-color: #272727;
+  --input-color: #3a3a3a;
+  --button-color: #373737;
+  --footer-color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background: var(--login-box-color);
+  border-radius: 24px;
+  width: 100%;
+  max-width: min(calc(var(--form-width) + 1px), calc(100vw - 32px));
+  min-height: calc(var(--form-width) * var(--aspect-ratio) + 1px);
+  z-index: 8;
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    0 8px 16px rgba(0, 0, 0, 0.2),
+    0 0 8px rgba(255, 255, 255, 0.1),
+    0 0 16px rgba(255, 255, 255, 0.08);
+  padding: 2.5px;
+  box-sizing: border-box;
+}
+
+/* Register Card grows naturally to accommodate password strength checklist and confirm-password */
+.register-form-wrapper .container {
+  --form-width: 360px;
+  max-width: min(calc(var(--form-width) + 1px), calc(100vw - 32px));
+  min-height: auto;
+  height: auto;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .container::before {
+  content: "";
+  position: absolute;
+  inset: -140px;
+  z-index: 1;
+  background: conic-gradient(
+    from 45deg,
+    transparent 75%,
+    #fff,
+    transparent 100%
+  );
+  animation: login-spin 4s linear infinite;
+}
+
+.register-form-wrapper .container::before {
+  inset: -260px;
+}
+
+@keyframes login-spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) :is(.login-box, .register-box) {
+  background: var(--login-box-color);
+  border-radius: 22px;
+  padding: 26px 22px;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  box-shadow:
+    inset 0 40px 60px -8px rgba(255, 255, 255, 0.12),
+    inset 4px 0 12px -6px rgba(255, 255, 255, 0.12),
+    inset 0 0 12px -4px rgba(255, 255, 255, 0.12);
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .logo {
+  width: 65px;
+  height: 65px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2),
+    rgba(0, 0, 0, 0.2)
+  );
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.2),
+    -8px -8px 16px rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  border: 2px solid #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .logo::before {
+  content: "";
+  position: absolute;
+  bottom: 10px;
+  width: 50%;
+  height: 20%;
+  border-top-left-radius: 40px;
+  border-top-right-radius: 40px;
+  border-bottom-right-radius: 20px;
+  border-bottom-left-radius: 20px;
+  border: 2.5px solid #fff;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .logo::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  border: 2.5px solid #fff;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .header {
+  width: 100%;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  padding: 4px 0 2px;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  letter-spacing: -0.01em;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .sub-header {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: center;
+  margin-top: -4px;
+  margin-bottom: 6px;
+  line-height: 1.4;
+  max-width: 290px;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .input-field-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .input-container {
+  position: relative;
+  width: 100%;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--input-color);
+  color: white;
+  outline: none;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .input:focus {
+  border: 1px solid #fff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .input[aria-invalid="true"] {
+  border-color: #ef4444;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .input-error-msg {
+  font-size: 11px;
+  color: #f87171;
+  padding-left: 4px;
+  text-align: left;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.6);
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .password-toggle:hover {
+  color: #fff;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .button {
+  width: 100%;
+  height: 40px;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  background: var(--button-color);
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow:
+    inset 0px 3px 6px -4px rgba(255, 255, 255, 0.6),
+    inset 0px -3px 6px -2px rgba(0, 0, 0, 0.8);
+  box-sizing: border-box;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .sign-in {
+  margin-top: 5px;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow:
+    inset 0px 3px 6px rgba(255, 255, 255, 0.6),
+    inset 0px -3px 6px rgba(0, 0, 0, 0.8),
+    0px 0px 8px rgba(255, 255, 255, 0.05);
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Google Sign-in Slot conforming to sample position and size */
+:is(.login-form-wrapper, .register-form-wrapper) .google-sign-in-slot {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 40px;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .google-sign-in-slot > div {
+  width: 100% !important;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .footer {
+  width: 100%;
+  text-align: left;
+  color: var(--footer-color);
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .footer .link {
+  position: relative;
+  color: var(--footer-color);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.3s ease;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 12px;
+  display: inline;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .footer .link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  border-radius: 6px;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.3s ease;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .footer .link:hover {
+  color: #fff;
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .footer .link:hover::after {
+  width: 100%;
+}
+
+/* Shake Animation on Submit Failure */
+@keyframes login-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+:is(.login-form-wrapper, .register-form-wrapper) .shake {
+  animation: login-shake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  :is(.login-form-wrapper, .register-form-wrapper) .container::before {
+    animation: none !important;
+  }
+  :is(.login-form-wrapper, .register-form-wrapper) .shake {
+    animation: none !important;
+  }
+}

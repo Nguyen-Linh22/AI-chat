@@ -16,6 +16,7 @@ import { NewChatButton } from './chat/NewChatButton'
 import { SearchChatButton } from './chat/SearchChatButton'
 import { SearchChatModal } from './chat/SearchChatModal'
 import { groupChatsByDate } from '../utils/chatDateGroups'
+import sidebarDragonLogo from '../assets/sidebar-dragon-logo.webp'
 import {
   Sidebar as SidebarContainer,
   SidebarHeader,
@@ -347,13 +348,20 @@ function Sidebar({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="group/logo relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 dark:from-emerald-500/25 dark:to-emerald-950/40 text-[#1B8F3D] dark:text-emerald-400 select-none shadow-xs border border-emerald-500/30 ring-1 ring-emerald-500/10 hover:border-emerald-500/60 hover:shadow-md hover:shadow-emerald-500/20 active:scale-95 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+              className="group/logo relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#0F172A] dark:bg-[#0B0F17] select-none shadow-xs border border-emerald-500/35 ring-1 ring-emerald-500/15 hover:border-emerald-400/70 hover:shadow-md hover:shadow-emerald-500/20 active:scale-95 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:outline-none"
               title={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
               aria-label={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
+              aria-expanded={!isCollapsed}
+              aria-controls="app-sidebar"
             >
-              <svg className={`h-4 w-4 transition-transform duration-300 ${isCollapsed ? 'group-hover/logo:scale-110' : 'group-hover/logo:scale-95'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
+              <img
+                src={sidebarDragonLogo}
+                alt=""
+                aria-hidden="true"
+                className={`h-5 w-5 object-contain select-none transition-transform duration-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] ${
+                  isCollapsed ? 'group-hover/logo:scale-110' : 'group-hover/logo:scale-95'
+                }`}
+              />
               {/* Status Dot */}
               <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#131923]" aria-hidden="true" />
             </button>
@@ -384,7 +392,7 @@ function Sidebar({
             aria-label="Đóng thanh bên"
             title="Đóng thanh bên"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -428,7 +436,7 @@ function Sidebar({
                 <p className="text-xs font-semibold text-slate-700 dark:text-gray-400">
                   Chưa có cuộc trò chuyện
                 </p>
-                <p className="mt-1 text-[11px] text-slate-400 dark:text-[#94A3B8] max-w-[170px] leading-tight">
+                <p className="mt-1 text-[11px] text-slate-600 dark:text-[#94A3B8] max-w-[170px] leading-tight">
                   Nhấn "Chat mới" để bắt đầu cuộc trò chuyện
                 </p>
               </div>
@@ -545,12 +553,14 @@ function Sidebar({
                                 }}
                                 className="w-full rounded-lg border border-[#1B8F3D] bg-white dark:bg-[#0B0F17] px-2 py-1 text-xs font-semibold text-slate-900 dark:text-white outline-none shadow-xs focus:ring-1 focus:ring-[#1B8F3D]"
                                 aria-label="Tên cuộc trò chuyện mới"
+                                aria-invalid={renameError ? 'true' : undefined}
+                                aria-describedby={renameError ? 'rename-chat-error' : undefined}
                               />
                               <button
                                 type="button"
                                 onClick={() => handleRenameSubmit(chat.id, chat.title)}
                                 disabled={renameLoading}
-                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#1B8F3D] text-xs font-bold text-white hover:bg-[#167632] transition cursor-pointer disabled:opacity-50"
+                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#1B8F3D] text-xs font-bold text-white hover:bg-[#167632] transition cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:outline-none"
                                 title="Lưu tên"
                                 aria-label="Lưu tên"
                               >
@@ -562,7 +572,7 @@ function Sidebar({
                                 type="button"
                                 onClick={handleCancelRename}
                                 disabled={renameLoading}
-                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer disabled:opacity-50"
+                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/40 focus-visible:outline-none"
                                 title="Hủy"
                                 aria-label="Hủy đổi tên"
                               >
@@ -573,11 +583,11 @@ function Sidebar({
                             </div>
 
                             <div className="mt-1 flex items-center justify-between text-[11px] pl-5">
-                              <span className="text-slate-400 dark:text-gray-400">
+                              <span className="text-slate-600 dark:text-gray-400">
                                 {renameTitle.length}/50
                               </span>
                               {renameError && (
-                                <span className="text-[#B91E2B] dark:text-[#ff5c6a] truncate max-w-[140px] font-medium" title={renameError}>
+                                <span id="rename-chat-error" role="alert" aria-live="polite" className="text-[#B91E2B] dark:text-[#ff5c6a] truncate max-w-[140px] font-medium" title={renameError}>
                                   {renameError}
                                 </span>
                               )}
@@ -657,8 +667,8 @@ function Sidebar({
                                     setActiveMenuChatId(chat.id)
                                   }
                                 }}
-                                title="Thao tác với đoạn chat"
-                                aria-label="Thao tác với đoạn chat"
+                                title={`Thao tác với đoạn chat "${chat.title}"`}
+                                aria-label={`Thao tác với đoạn chat "${chat.title}"`}
                                 aria-haspopup="menu"
                                 aria-expanded={isMenuOpen}
                               >

@@ -611,10 +611,17 @@ function ChatInput() {
               <div className="flex flex-wrap items-center gap-2 px-1 pt-0.5 pb-1.5 max-h-28 overflow-y-auto scrollbar-thin">
                 <div
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 dark:border-white/10 bg-slate-100/90 dark:bg-white/[0.06] px-2.5 py-1 text-xs text-slate-700 dark:text-gray-200 shadow-2xs max-w-full transition-all"
-                  title={selectedFile.name}
+                  data-testid="attachment-pill"
+                  aria-label={`Tệp đính kèm: ${selectedFile.name}, kích thước: ${formatFileSize(selectedFile.size)}`}
+                  title={`${selectedFile.name} (${formatFileSize(selectedFile.size)})`}
                 >
                   <span
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[11px] select-none"
+                    data-testid="attachment-type-badge"
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
+                      selectedFile.name.toLowerCase().endsWith('.pdf') || selectedFile.type === 'application/pdf'
+                        ? 'bg-rose-500/15 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'
+                        : 'bg-sky-500/15 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400'
+                    } text-[11px] select-none`}
                     aria-hidden="true"
                   >
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -626,7 +633,7 @@ function ChatInput() {
                     {selectedFile.name}
                   </span>
 
-                  <span className="text-[10px] text-slate-400 dark:text-gray-400 shrink-0 select-none">
+                  <span className="text-[10px] font-mono text-slate-600 dark:text-gray-400 shrink-0 select-none">
                     {formatFileSize(selectedFile.size)}
                   </span>
 
@@ -705,7 +712,8 @@ function ChatInput() {
               {selectedModel?.name && (
                 <div
                   data-testid="model-indicator"
-                  className="flex items-center gap-1 rounded-md border border-slate-200/80 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.05] px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-gray-300 max-w-[95px] sm:max-w-[160px] select-none shrink-0 mb-0.5"
+                  aria-label={`Mô hình AI: ${selectedModel.name}`}
+                  className="flex items-center gap-1 rounded-md border border-slate-200/80 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.05] px-1.5 sm:px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-gray-300 sm:max-w-[160px] select-none shrink-0 mb-0.5"
                   title={`Mô hình AI: ${selectedModel.name}`}
                 >
                   <svg
@@ -722,7 +730,7 @@ function ChatInput() {
                       d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
                     />
                   </svg>
-                  <span className="truncate">{selectedModel.name}</span>
+                  <span className="hidden sm:inline truncate">{selectedModel.name}</span>
                 </div>
               )}
 

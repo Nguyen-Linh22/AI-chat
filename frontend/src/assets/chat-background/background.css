@@ -11,23 +11,22 @@
   z-index: 0;
 }
 
-/* Light Mode: Keep star layers completely hidden to preserve pristine light canvas */
-.chat-stars-bg .chat-stars-layer-1,
-.chat-stars-bg .chat-stars-layer-2,
-.chat-stars-bg .chat-stars-layer-3 {
-  display: none;
-}
-
 /* ==========================================================================
-   Dark Mode: Original Starfield Sky with 3-Layer Parallax
+   Starfield Sky with 3-Layer Continuous Vertical Parallax (Both Modes)
    ========================================================================== */
+html.dark .chat-stars-bg,
 .dark .chat-stars-bg {
   background: radial-gradient(ellipse at bottom, #1b2735 0%, #0B0F17 100%);
 }
 
-.dark .chat-stars-bg .chat-stars-layer-1,
-.dark .chat-stars-bg .chat-stars-layer-2,
-.dark .chat-stars-bg .chat-stars-layer-3 {
+html:not(.dark) .chat-stars-bg,
+html.light .chat-stars-bg {
+  background: radial-gradient(ellipse at top, #ffffff 0%, #f1f5f9 100%);
+}
+
+.chat-stars-bg .chat-stars-layer-1,
+.chat-stars-bg .chat-stars-layer-2,
+.chat-stars-bg .chat-stars-layer-3 {
   display: block;
   position: absolute;
   top: 0;
@@ -35,10 +34,20 @@
   pointer-events: none;
 }
 
+/* Light Mode: Elegant indigo/slate star particle effect across light canvas */
+html:not(.dark) .chat-stars-bg .chat-stars-layer-1,
+html:not(.dark) .chat-stars-bg .chat-stars-layer-2,
+html:not(.dark) .chat-stars-bg .chat-stars-layer-3,
+html.light .chat-stars-bg .chat-stars-layer-1,
+html.light .chat-stars-bg .chat-stars-layer-2,
+html.light .chat-stars-bg .chat-stars-layer-3 {
+  filter: invert(1) brightness(0.4) sepia(1) hue-rotate(200deg) saturate(3) opacity(0.45);
+}
+
 /* --------------------------------------------------------------------------
    Layer 1: 700 small stars (1px), 50s animation cycle
    -------------------------------------------------------------------------- */
-.dark .chat-stars-bg .chat-stars-layer-1 {
+.chat-stars-bg .chat-stars-layer-1 {
   width: 1px;
   height: 1px;
   background: transparent;
@@ -746,7 +755,7 @@
   animation: animStar 50s linear infinite;
 }
 
-.dark .chat-stars-bg .chat-stars-layer-1:after {
+.chat-stars-bg .chat-stars-layer-1:after {
   content: " ";
   position: absolute;
   top: 2000px;
@@ -1460,7 +1469,7 @@
 /* --------------------------------------------------------------------------
    Layer 2: 200 medium stars (2px), 100s animation cycle
    -------------------------------------------------------------------------- */
-.dark .chat-stars-bg .chat-stars-layer-2 {
+.chat-stars-bg .chat-stars-layer-2 {
   width: 2px;
   height: 2px;
   background: transparent;
@@ -1668,7 +1677,7 @@
   animation: animStar 100s linear infinite;
 }
 
-.dark .chat-stars-bg .chat-stars-layer-2:after {
+.chat-stars-bg .chat-stars-layer-2:after {
   content: " ";
   position: absolute;
   top: 2000px;
@@ -1882,7 +1891,7 @@
 /* --------------------------------------------------------------------------
    Layer 3: 100 large stars (3px), 150s animation cycle
    -------------------------------------------------------------------------- */
-.dark .chat-stars-bg .chat-stars-layer-3 {
+.chat-stars-bg .chat-stars-layer-3 {
   width: 3px;
   height: 3px;
   background: transparent;
@@ -1990,7 +1999,7 @@
   animation: animStar 150s linear infinite;
 }
 
-.dark .chat-stars-bg .chat-stars-layer-3:after {
+.chat-stars-bg .chat-stars-layer-3:after {
   content: " ";
   position: absolute;
   top: 2000px;
@@ -2117,9 +2126,9 @@
    Accessibility: Prefers-reduced-motion Overrides
    -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
-  .dark .chat-stars-bg .chat-stars-layer-1,
-  .dark .chat-stars-bg .chat-stars-layer-2,
-  .dark .chat-stars-bg .chat-stars-layer-3 {
+  .chat-stars-bg .chat-stars-layer-1,
+  .chat-stars-bg .chat-stars-layer-2,
+  .chat-stars-bg .chat-stars-layer-3 {
     animation: none !important;
     transform: none !important;
   }

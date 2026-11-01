@@ -415,4 +415,397 @@ const greeting = "Xin chào";
     expect(sendBtn.className).toContain('focus-visible:ring-2')
     expect(sendBtn.className).toContain('focus-visible:ring-[#1B8F3D]/50')
   })
-})
+
+  it('22. should display PDF-specific styling, accessible name, and rich metadata title for PDF attachments', () => {
+    const mockFile = new File(['%PDF-1.4 test content'], 'financial-report.pdf', {
+      type: 'application/pdf',
+    })
+    render(<ExpandedEditorModal {...defaultProps} selectedFile={mockFile} />)
+
+    const pill = screen.getByTestId('modal-attachment-pill')
+    expect(pill).toBeInTheDocument()
+    expect(pill).toHaveAttribute(
+      'aria-label',
+      `Tệp đính kèm: financial-report.pdf, kích thước: ${mockFile.size} B`
+    )
+    expect(pill).toHaveAttribute('title', `financial-report.pdf (${mockFile.size} B)`)
+
+    const badge = screen.getByTestId('modal-attachment-type-badge')
+    expect(badge.className).toContain('bg-rose-500/15')
+    expect(badge.className).toContain('text-rose-600')
+
+    expect(screen.getByText('financial-report.pdf')).toBeInTheDocument()
+    const sizeSpan = screen.getByText(`${mockFile.size} B`)
+    expect(sizeSpan).toHaveClass('font-mono')
+  })
+
+  it('23. should display TXT-specific styling, accessible name, and rich metadata title for TXT attachments', () => {
+    const mockFile = new File(['plaintext content'], 'meeting-notes.txt', {
+      type: 'text/plain',
+    })
+    render(<ExpandedEditorModal {...defaultProps} selectedFile={mockFile} />)
+
+    const pill = screen.getByTestId('modal-attachment-pill')
+    expect(pill).toBeInTheDocument()
+    expect(pill).toHaveAttribute(
+      'aria-label',
+      `Tệp đính kèm: meeting-notes.txt, kích thước: ${mockFile.size} B`
+    )
+    expect(pill).toHaveAttribute('title', `meeting-notes.txt (${mockFile.size} B)`)
+
+    const badge = screen.getByTestId('modal-attachment-type-badge')
+    expect(badge.className).toContain('bg-sky-500/15')
+    expect(badge.className).toContain('text-sky-600')
+
+    expect(screen.getByText('meeting-notes.txt')).toBeInTheDocument()
+    const sizeSpan = screen.getByText(`${mockFile.size} B`)
+    expect(sizeSpan).toHaveClass('font-mono')
+  })
+
+  describe('Focus Management & Restoration', () => {
+    function FocusTestHarness({
+      initialOpen = false,
+      removeOpenerOnClose = false,
+    }: {
+      initialOpen?: boolean
+      removeOpenerOnClose?: boolean
+    }) {
+      const [isOpen, setIsOpen] = useState(initialOpen)
+      const [openerMounted, setOpenerMounted] = useState(true)
+
+      const handleClose = () => {
+        if (removeOpenerOnClose) {
+          setOpenerMounted(false)
+        }
+        setIsOpen(false)
+      }
+
+      return (
+        <div>
+          {openerMounted && (
+            <button
+              type="button"
+              data-testid="test-opener-btn"
+              onClick={() => setIsOpen(true)}
+            >
+              Mở editor
+            </button>
+          )}
+          <ExpandedEditorModal
+            {...defaultProps}
+            isOpen={isOpen}
+            onClose={handleClose}
+          />
+        </div>
+      )
+    }
+
+    it('24. moves focus into textarea when modal opens', async () => {
+      vi.useFakeTimers()
+      const { unmount } = render(<FocusTestHarness initialOpen={false} />)
+
+      const openerBtn = screen.getByTestId('test-opener-btn')
+      openerBtn.focus()
+      expect(document.activeElement).toBe(openerBtn)
+
+      fireEvent.click(openerBtn)
+
+      // Fast-forward past 50ms textarea focus timer
+      act(() => {
+        vi.advanceTimersByTime(100)
+      })
+
+      const textarea = screen.getByPlaceholderText('Nhập nội dung tin nhắn chi tiết, đoạn mã, hoặc tài liệu...')
+      expect(document.activeElement).toBe(textarea)
+
+      vi.useRealTimers()
+      unmount()
+    })
+
+    it('25. restores focus to opener element when closed via Escape', async () => {
+      vi.useFakeTimers()
+      const { unmount } = render(<FocusTestHarness initialOpen={false} />)
+
+      const openerBtn = screen.getByTestId('test-opener-btn')
+      openerBtn.focus()
+      expect(document.activeElement).toBe(openerBtn)
+
+      fireEvent.click(openerBtn)
+
+      act(() => {
+        vi.advanceTimersByTime(100)
+      })
+
+      const textarea = screen.getByPlaceholderText('Nhập nội dung tin nhắn chi tiết, đoạn mã, hoặc tài liệu...')
+      expect(document.activeElement).toBe(textarea)
+
+      // Press Escape on window
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      })
+
+      expect(document.activeElement).toBe(openerBtn)
+
+      vi.useRealTimers()
+      unmount()
+    })
+
+    it('26. restores focus to opener element when closed via Hủy button', async () => {
+      vi.useFakeTimers()
+      const { unmount } = render(<FocusTestHarness initialOpen={false} />)
+
+      const openerBtn = screen.getByTestId('test-opener-btn')
+      openerBtn.focus()
+      expect(document.activeElement).toBe(openerBtn)
+
+      fireEvent.click(openerBtn)
+
+      act(() => {
+        vi.advanceTimersByTime(100)
+      })
+
+      const cancelBtn = screen.getByRole('button', { name: 'Hủy' })
+      act(() => {
+        fireEvent.click(cancelBtn)
+      })
+
+      expect(document.activeElement).toBe(openerBtn)
+
+      vi.useRealTimers()
+      unmount()
+    })
+
+    it('27. restores focus to opener element when closed via X (Đóng) button', async () => {
+      vi.useFakeTimers()
+      const { unmount } = render(<FocusTestHarness initialOpen={false} />)
+
+      const openerBtn = screen.getByTestId('test-opener-btn')
+      openerBtn.focus()
+      expect(document.activeElement).toBe(openerBtn)
+
+      fireEvent.click(openerBtn)
+
+      act(() => {
+        vi.advanceTimersByTime(100)
+      })
+
+      const closeBtn = screen.getByRole('button', { name: /Đóng trình soạn thảo/i })
+      act(() => {
+        fireEvent.click(closeBtn)
+      })
+
+      expect(document.activeElement).toBe(openerBtn)
+
+      vi.useRealTimers()
+      unmount()
+    })
+
+    it('28. does not throw or fail when opener is unmounted or removed from DOM before close', async () => {
+      vi.useFakeTimers()
+      const { unmount } = render(<FocusTestHarness initialOpen={false} removeOpenerOnClose={true} />)
+
+      const openerBtn = screen.getByTestId('test-opener-btn')
+      openerBtn.focus()
+      expect(document.activeElement).toBe(openerBtn)
+
+      fireEvent.click(openerBtn)
+
+      act(() => {
+        vi.advanceTimersByTime(100)
+      })
+
+      const cancelBtn = screen.getByRole('button', { name: 'Hủy' })
+      expect(() => {
+        act(() => {
+          fireEvent.click(cancelBtn)
+        })
+      }).not.toThrow()
+
+      expect(screen.queryByTestId('test-opener-btn')).not.toBeInTheDocument()
+
+      vi.useRealTimers()
+      unmount()
+    })
+    it('29. close button in header has visible focus-visible indicator', () => {
+      render(<ExpandedEditorModal {...defaultProps} />)
+      const closeBtn = screen.getByRole('button', { name: /Đóng trình soạn thảo/i })
+
+      expect(closeBtn.className).toContain('focus-visible:ring-2')
+      expect(closeBtn.className).toContain('focus-visible:ring-[#1B8F3D]/50')
+      expect(closeBtn.className).toContain('focus-visible:outline-none')
+    })
+
+    it('30. wraps focus from last focusable element to first focusable element on Tab', () => {
+      render(<ExpandedEditorModal {...defaultProps} content="Sample content" />)
+
+      const sendBtn = screen.getByRole('button', { name: /Gửi/i })
+      const editTab = screen.getByRole('tab', { name: /Soạn thảo/i })
+
+      sendBtn.focus()
+      expect(document.activeElement).toBe(sendBtn)
+
+      const tabEvent = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        bubbles: true,
+        cancelable: true,
+      })
+      window.dispatchEvent(tabEvent)
+
+      expect(document.activeElement).toBe(editTab)
+      expect(tabEvent.defaultPrevented).toBe(true)
+    })
+
+    it('31. wraps focus from first focusable element to last focusable element on Shift+Tab', () => {
+      render(<ExpandedEditorModal {...defaultProps} content="Sample content" />)
+
+      const sendBtn = screen.getByRole('button', { name: /Gửi/i })
+      const editTab = screen.getByRole('tab', { name: /Soạn thảo/i })
+
+      editTab.focus()
+      expect(document.activeElement).toBe(editTab)
+
+      const shiftTabEvent = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      })
+      window.dispatchEvent(shiftTabEvent)
+
+      expect(document.activeElement).toBe(sendBtn)
+      expect(shiftTabEvent.defaultPrevented).toBe(true)
+    })
+
+    it('32. wraps focus in preview mode between active preview tab and send button', async () => {
+      const user = userEvent.setup()
+      render(<ExpandedEditorModal {...defaultProps} content="Markdown content" />)
+
+      const previewTab = screen.getByRole('tab', { name: /Xem trước/i })
+      await user.click(previewTab)
+      expect(previewTab).toHaveAttribute('aria-selected', 'true')
+
+      const sendBtn = screen.getByRole('button', { name: /Gửi/i })
+      sendBtn.focus()
+      expect(document.activeElement).toBe(sendBtn)
+
+      // Tab on last element wraps to preview tab (since edit tab has tabIndex -1)
+      const tabEvent = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        bubbles: true,
+        cancelable: true,
+      })
+      window.dispatchEvent(tabEvent)
+
+      expect(document.activeElement).toBe(previewTab)
+      expect(tabEvent.defaultPrevented).toBe(true)
+
+      // Shift+Tab on preview tab wraps to send button
+      const shiftTabEvent = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      })
+      window.dispatchEvent(shiftTabEvent)
+
+      expect(document.activeElement).toBe(sendBtn)
+      expect(shiftTabEvent.defaultPrevented).toBe(true)
+    })
+
+    it('33. pulls focus into modal when Tab or Shift+Tab is pressed with focus outside', () => {
+      render(<ExpandedEditorModal {...defaultProps} content="Sample content" />)
+
+      const editTab = screen.getByRole('tab', { name: /Soạn thảo/i })
+      const sendBtn = screen.getByRole('button', { name: /Gửi/i })
+
+      // Focus body (outside dialog)
+      document.body.focus()
+      expect(document.activeElement).toBe(document.body)
+
+      // Forward Tab pulls to first focusable element
+      const tabEvent = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        bubbles: true,
+        cancelable: true,
+      })
+      window.dispatchEvent(tabEvent)
+
+      expect(document.activeElement).toBe(editTab)
+      expect(tabEvent.defaultPrevented).toBe(true)
+
+      // Focus body again
+      document.body.focus()
+
+      // Backward Tab pulls to last focusable element
+      const shiftTabEvent = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      })
+      window.dispatchEvent(shiftTabEvent)
+
+      expect(document.activeElement).toBe(sendBtn)
+      expect(shiftTabEvent.defaultPrevented).toBe(true)
+    })
+
+    it('34. wraps to Hủy button when Send button is disabled', () => {
+      // Empty content means Send button is disabled
+      render(<ExpandedEditorModal {...defaultProps} content="" />)
+
+      const editTab = screen.getByRole('tab', { name: /Soạn thảo/i })
+      const cancelBtn = screen.getByRole('button', { name: 'Hủy' })
+      const sendBtn = screen.getByRole('button', { name: /Gửi/i })
+
+      expect(sendBtn).toBeDisabled()
+
+      cancelBtn.focus()
+      expect(document.activeElement).toBe(cancelBtn)
+
+      // Tab on cancel button wraps to edit tab (since send is disabled)
+      const tabEvent = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        bubbles: true,
+        cancelable: true,
+      })
+      window.dispatchEvent(tabEvent)
+
+      expect(document.activeElement).toBe(editTab)
+      expect(tabEvent.defaultPrevented).toBe(true)
+
+      // Shift+Tab on edit tab wraps to cancel button
+      const shiftTabEvent = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      })
+      window.dispatchEvent(shiftTabEvent)
+
+      expect(document.activeElement).toBe(cancelBtn)
+      expect(shiftTabEvent.defaultPrevented).toBe(true)
+    })
+
+    it('35. does not trap focus when modal is closed', () => {
+      render(<ExpandedEditorModal {...defaultProps} isOpen={false} />)
+
+      const externalButton = document.createElement('button')
+      document.body.appendChild(externalButton)
+      externalButton.focus()
+      expect(document.activeElement).toBe(externalButton)
+
+      const tabEvent = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        bubbles: true,
+        cancelable: true,
+      })
+      window.dispatchEvent(tabEvent)
+
+      expect(tabEvent.defaultPrevented).toBe(false)
+      expect(document.activeElement).toBe(externalButton)
+
+      document.body.removeChild(externalButton)
+    })
+
+  })
+});

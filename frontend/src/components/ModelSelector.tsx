@@ -1,47 +1,145 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAIStore } from '../stores/aiStore'
 import { getAIModels } from '../services/aiService'
+import './ModelSelector.css'
+import geminiLogo from '../assets/models/gemini.webp'
+import ollamaLogo from '../assets/models/ollama.webp'
+import chatgptLogo from '../assets/models/chatgpt.webp'
+import groqLogo from '../assets/models/groq.webp'
 
 interface ModelVisualMeta {
   subtitle: string
+  providerName?: string
   badgeText?: string
   badgeColor?: string
   iconBg: string
   iconColor: string
   icon: string
+  logo?: string
+  fallbackLogo?: string
   titleColor?: string
 }
 
 const MODEL_META: Record<string, ModelVisualMeta> = {
   'ollama-qwen3-1.7b': {
-    subtitle: 'Nhanh chóng, hiệu quả',
-    iconBg: 'bg-teal-500/20 border border-teal-500/40',
-    iconColor: 'text-teal-300',
+    subtitle: 'Nhanh chóng, cục bộ & riêng tư',
+    providerName: 'Ollama',
+    iconBg: 'bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/15',
+    iconColor: 'text-teal-600 dark:text-teal-300',
     icon: '❄',
-    titleColor: 'text-amber-300',
+    logo: ollamaLogo,
+    fallbackLogo: 'https://zonalogo.com/assets/ollama-logo-png-svg.webp',
+    titleColor: 'text-teal-700 dark:text-teal-300',
   },
   'openai-gpt-5-mini': {
-    subtitle: 'Thông minh hơn, sâu sắc hơn',
-    iconBg: 'bg-white/10 border border-white/20',
-    iconColor: 'text-white',
+    subtitle: 'Thông minh hơn, suy luận sâu sắc',
+    providerName: 'OpenAI',
+    iconBg: 'bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/15',
+    iconColor: 'text-slate-800 dark:text-white',
     icon: '◎',
+    logo: chatgptLogo,
+    fallbackLogo: 'https://zonalogo.com/assets/chatgpt-logo.webp?asset=947',
   },
   'gemini-3.6-flash': {
-    subtitle: 'Tối ưu cho sáng tạo',
+    subtitle: 'Tốc độ cao, tối ưu sáng tạo đa thể thức',
+    providerName: 'Google',
     badgeText: 'Tạo ưu',
-    badgeColor: 'bg-purple-900/60 text-purple-300 border border-purple-500/40',
-    iconBg: 'bg-purple-500/20 border border-purple-500/40',
-    iconColor: 'text-purple-300',
+    badgeColor: 'bg-purple-100 text-purple-700 border border-purple-300 dark:bg-purple-900/60 dark:text-purple-300 dark:border-purple-500/40',
+    iconBg: 'bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/15',
+    iconColor: 'text-purple-600 dark:text-purple-300',
     icon: '✦',
+    logo: geminiLogo,
+    fallbackLogo: 'https://zonalogo.com/assets/logo-google-gemini.webp?asset=777',
   },
   'groq-gpt-oss-20b': {
-    subtitle: 'Mã nguồn mở mạnh mẽ',
+    subtitle: 'Mã nguồn mở suy luận siêu tốc LPU',
+    providerName: 'Groq',
     badgeText: 'Sáng',
-    badgeColor: 'bg-amber-900/60 text-amber-300 border border-amber-500/40',
-    iconBg: 'bg-orange-500/20 border border-orange-500/40',
-    iconColor: 'text-orange-400',
-    icon: 'Q',
+    badgeColor: 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/60 dark:text-amber-300 dark:border-amber-500/40',
+    iconBg: 'bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/15',
+    iconColor: 'text-orange-600 dark:text-orange-400',
+    icon: '⚡',
+    logo: groqLogo,
+    fallbackLogo: 'https://zonalogo.com/assets/groq-logo-png-svg.webp?asset=5226',
   },
+}
+
+function resolveModelMeta(model?: { id?: string; name?: string; provider?: string; model?: string } | null): ModelVisualMeta {
+  if (!model?.id) {
+    return {
+      subtitle: 'Mô hình AI',
+      iconBg: 'bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/15',
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      icon: '✦',
+    }
+  }
+
+  if (MODEL_META[model.id]) {
+    return MODEL_META[model.id]
+  }
+
+  const idLower = (model.id || '').toLowerCase()
+  const providerLower = (model.provider || '').toLowerCase()
+
+  if (idLower.includes('gemini') || providerLower.includes('gemini') || providerLower.includes('google')) {
+    return {
+      subtitle: model.provider ? `${model.provider} · ${model.model || model.name}` : 'Mô hình Google Gemini',
+      providerName: 'Google',
+      badgeText: 'Tạo ưu',
+      badgeColor: 'bg-purple-100 text-purple-700 border border-purple-300 dark:bg-purple-900/60 dark:text-purple-300 dark:border-purple-500/40',
+      iconBg: 'bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/15',
+      iconColor: 'text-purple-600 dark:text-purple-300',
+      icon: '✦',
+      logo: geminiLogo,
+      fallbackLogo: 'https://zonalogo.com/assets/logo-google-gemini.webp?asset=777',
+    }
+  }
+
+  if (idLower.includes('gpt') || idLower.includes('openai') || providerLower.includes('openai')) {
+    return {
+      subtitle: model.provider ? `${model.provider} · ${model.model || model.name}` : 'Mô hình OpenAI ChatGPT',
+      providerName: 'OpenAI',
+      iconBg: 'bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/15',
+      iconColor: 'text-slate-800 dark:text-white',
+      icon: '◎',
+      logo: chatgptLogo,
+      fallbackLogo: 'https://zonalogo.com/assets/chatgpt-logo.webp?asset=947',
+    }
+  }
+
+  if (idLower.includes('ollama') || idLower.includes('qwen') || providerLower.includes('ollama')) {
+    return {
+      subtitle: model.provider ? `${model.provider} · ${model.model || model.name}` : 'Mô hình Ollama Local',
+      providerName: 'Ollama',
+      iconBg: 'bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/15',
+      iconColor: 'text-teal-600 dark:text-teal-300',
+      icon: '❄',
+      logo: ollamaLogo,
+      fallbackLogo: 'https://zonalogo.com/assets/ollama-logo-png-svg.webp',
+      titleColor: 'text-teal-700 dark:text-teal-300',
+    }
+  }
+
+  if (idLower.includes('groq') || providerLower.includes('groq')) {
+    return {
+      subtitle: model.provider ? `${model.provider} · ${model.model || model.name}` : 'Mô hình Groq LPU',
+      providerName: 'Groq',
+      badgeText: 'Sáng',
+      badgeColor: 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-900/60 dark:text-amber-300 dark:border-amber-500/40',
+      iconBg: 'bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/15',
+      iconColor: 'text-orange-600 dark:text-orange-400',
+      icon: '⚡',
+      logo: groqLogo,
+      fallbackLogo: 'https://zonalogo.com/assets/groq-logo-png-svg.webp?asset=5226',
+    }
+  }
+
+  return {
+    subtitle: model.provider ? `${model.provider} · ${model.model || model.name}` : 'Mô hình AI',
+    iconBg: 'bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/15',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    icon: '✦',
+  }
 }
 
 const EMPTY_MODELS: never[] = []
@@ -69,7 +167,7 @@ function ModelSelector() {
     }
   }
 
-  // Tự động khôi phục / tải danh sách models nếu store chưa có (ngăn ngừa biến mất khi tải trang)
+  // Tự động khôi phục / tải danh sách models nếu store chưa có
   useEffect(() => {
     if (models.length === 0) {
       let isMounted = true
@@ -164,6 +262,8 @@ function ModelSelector() {
     models.find((model) => model.available !== false) ||
     models.find((model) => model.id === selectedModelId) ||
     models[0]
+
+  const selectedMeta = selectedModel ? resolveModelMeta(selectedModel) : null
 
   const handleSelectModel = (modelId: string, event?: React.SyntheticEvent) => {
     if (event) {
@@ -288,7 +388,7 @@ function ModelSelector() {
       data-testid="model-selector"
       className="relative flex items-center gap-1.5 z-50"
     >
-      {/* Trigger Button: Standardized 36px height (h-9) with AI accent */}
+      {/* Premium Capsule Trigger Button: custom animated gradient & glow */}
       <button
         ref={triggerRef}
         type="button"
@@ -299,28 +399,58 @@ function ModelSelector() {
         aria-label={`Mô hình AI hiện tại: ${selectedModel?.name ?? 'Chọn model'}`}
         onClick={() => setIsOpen((prev) => !prev)}
         onKeyDown={handleTriggerKeyDown}
-        className="group flex h-9 items-center gap-1.5 sm:gap-2 rounded-lg border border-slate-200/90 dark:border-white/10 bg-slate-50 dark:bg-[#1A2230] px-2.5 sm:px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-[#F1F5F9] shadow-xs transition-all duration-150 hover:border-slate-300 dark:hover:border-white/20 hover:bg-slate-100 dark:hover:bg-[#222C3D] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#15803D] dark:focus-visible:ring-emerald-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#131923] focus-visible:outline-none"
+        className="model-selector-trigger group relative flex h-9 items-center gap-1.5 sm:gap-2 rounded-full border border-white/20 dark:border-white/15 px-2.5 sm:px-3.5 py-1.5 text-xs font-medium text-white shadow-xs hover:shadow-[0_8px_22px_rgba(167,119,227,0.45)] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#15803D] dark:focus-visible:ring-emerald-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#131923] focus-visible:outline-none select-none bg-gradient-to-r"
       >
+        {/* Glow underlay blur (reproducing sample button-content::before) */}
         <span
-          className="flex h-4 w-4 shrink-0 items-center justify-center text-[#15803D] dark:text-emerald-400 font-bold select-none"
+          className="model-selector-glow"
+          aria-hidden="true"
+        />
+
+        {/* AI Icon in micro-badge */}
+        <span
+          data-testid="model-trigger-icon"
+          className="model-selector-icon-badge relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white p-0.5 text-white text-[11px] font-bold ring-1 ring-white/60 shadow-[0_0_8px_rgba(255,255,255,0.4)] select-none overflow-hidden"
           aria-hidden="true"
         >
-          ✦
+          {selectedMeta?.logo ? (
+            <>
+              <img
+                src={selectedMeta.logo}
+                alt=""
+                className="h-full w-full object-contain rounded-full"
+                onError={(e) => {
+                  if (selectedMeta.fallbackLogo && e.currentTarget.src !== selectedMeta.fallbackLogo) {
+                    e.currentTarget.src = selectedMeta.fallbackLogo
+                  }
+                }}
+              />
+              <span className="sr-only">✦</span>
+            </>
+          ) : (
+            selectedMeta?.icon ?? '✦'
+          )}
         </span>
-        <span className="hidden sm:inline text-xs font-normal text-slate-500 dark:text-[#94A3B8] select-none">
+
+        {/* Model Label Prefix */}
+        <span className="hidden sm:inline text-xs font-normal text-white/80 select-none">
           Model:
         </span>
-        <span className="max-w-[110px] sm:max-w-[150px] truncate font-semibold text-slate-900 dark:text-[#F1F5F9]">
+
+        {/* Selected Model Name */}
+        <span className="model-selector-name max-w-[110px] sm:max-w-[150px] truncate font-semibold text-white tracking-tight">
           {selectedModel?.name ?? 'Chọn model'}
         </span>
+
+        {/* Animated Chevron */}
         <svg
-          className={`h-3 w-3 text-slate-400 dark:text-[#94A3B8] transition-transform duration-150 ${
-            isOpen ? 'rotate-180 text-slate-700 dark:text-[#F1F5F9]' : ''
+          className={`model-selector-chevron h-3.5 w-3.5 text-white/90 transition-transform duration-200 ease-out motion-reduce:transition-none ${
+            isOpen ? 'rotate-180 text-white' : 'group-hover:text-white'
           }`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
-          strokeWidth={2}
+          strokeWidth={2.2}
           aria-hidden="true"
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -353,7 +483,7 @@ function ModelSelector() {
         ))}
       </select>
 
-      {/* Custom Dropdown Menu with Unified Surface Token (Pure Roving Tabindex) */}
+      {/* Custom Dropdown Menu: Premium Popover with glassmorphism, Roving Tabindex & responsive layout */}
       {isOpen && (
         <div
           id="model-selector-listbox"
@@ -361,28 +491,26 @@ function ModelSelector() {
           tabIndex={-1}
           aria-labelledby="model-selector-btn"
           onKeyDown={handleDropdownKeyDown}
-          className="absolute right-0 top-full mt-1.5 z-50 w-72 max-w-[calc(100vw-4.5rem)] sm:w-80 sm:max-w-none rounded-xl border border-slate-200 dark:border-white/[0.12] bg-white dark:bg-[#1A2230] p-2 shadow-2xl shadow-black/10 dark:shadow-black/60 backdrop-blur-xl animate-dropdown-fade space-y-1 focus:outline-none"
+          className="model-selector-popover absolute right-0 top-full mt-2.5 z-50 w-72 max-w-[calc(100vw-4.5rem)] sm:w-80 sm:max-w-none rounded-2xl border border-slate-200/90 dark:border-white/[0.08] bg-white/95 dark:bg-[#131923]/96 p-2 shadow-2xl shadow-slate-900/15 dark:shadow-black/80 backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/5 animate-dropdown-fade space-y-1 focus:outline-none origin-top-right"
         >
-          <div className="flex items-center justify-between px-2 py-1 border-b border-slate-100 dark:border-white/[0.06] mb-1 select-none">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94A3B8]">
+          {/* Header Bar */}
+          <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-slate-100 dark:border-white/[0.06] mb-1 select-none">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94A3B8] flex items-center gap-1.5">
+              <span className="text-[#15803D] dark:text-emerald-400 text-xs" aria-hidden="true">✦</span>
               Mô hình AI
             </span>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/10 text-[#15803D] dark:text-emerald-400 border border-emerald-500/20">
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-[#15803D] dark:text-emerald-400 border border-emerald-500/25 shadow-xs">
               {models.filter((m) => m.available !== false).length} khả dụng
             </span>
           </div>
 
+          {/* Model Options List */}
           <div className="max-h-[320px] overflow-y-auto space-y-1 scrollbar-thin">
             {models.map((model, index) => {
               const isAvailable = model.available !== false
               const isSelected = model.id === (selectedModelId ?? models[0]?.id)
               const isKeyboardFocused = focusedIndex === index
-              const meta = MODEL_META[model.id] ?? {
-                subtitle: model.provider ? `${model.provider} · ${model.model}` : 'Mô hình AI',
-                iconBg: 'bg-emerald-500/20 border border-emerald-500/40',
-                iconColor: 'text-emerald-400',
-                icon: '✦',
-              }
+              const meta = resolveModelMeta(model)
 
               return (
                 <button
@@ -412,46 +540,66 @@ function ModelSelector() {
                       handleSelectModel(model.id, e)
                     }
                   }}
-                  className={`w-full rounded-lg p-2 text-left transition-all duration-150 flex items-center justify-between gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#15803D] dark:focus-visible:ring-emerald-400 ${
+                  className={`model-card w-full rounded-xl p-2.5 text-left transition-all duration-150 flex items-center justify-between gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#15803D] dark:focus-visible:ring-emerald-400 ${
                     !isAvailable
                       ? 'opacity-40 cursor-not-allowed border border-transparent select-none'
                       : isSelected
-                      ? 'border border-emerald-500/40 bg-emerald-500/10 dark:bg-emerald-500/15 shadow-xs cursor-pointer'
+                      ? 'border border-emerald-500/50 bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:via-emerald-500/10 dark:to-transparent shadow-xs cursor-pointer'
                       : isKeyboardFocused
-                      ? 'border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-[#222C3D] cursor-pointer'
-                      : 'border border-transparent hover:border-slate-200 dark:hover:border-white/10 hover:bg-slate-100/70 dark:hover:bg-[#222C3D]/60 cursor-pointer'
+                      ? 'border border-slate-300 dark:border-white/15 bg-slate-100 dark:bg-[#222C3D] cursor-pointer'
+                      : 'border border-transparent hover:border-slate-200 dark:hover:border-white/10 hover:bg-slate-100/80 dark:hover:bg-[#222C3D]/60 hover:translate-x-0.5 cursor-pointer'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     {/* Icon Badge */}
                     <div
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${meta.iconBg} ${meta.iconColor}`}
+                      className={`model-card-icon relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl p-1 shadow-xs border transition-transform overflow-hidden ${
+                        !isAvailable
+                          ? 'border-slate-200/50 dark:border-white/5 bg-slate-100/50 dark:bg-white/5 opacity-60'
+                          : meta.iconBg
+                      }`}
                       aria-hidden="true"
                     >
-                      {meta.icon}
+                      {meta.logo ? (
+                        <img
+                          src={meta.logo}
+                          alt=""
+                          className={`h-full w-full object-contain rounded-lg ${!isAvailable ? 'grayscale opacity-60' : ''}`}
+                          loading="lazy"
+                          onError={(e) => {
+                            if (meta.fallbackLogo && e.currentTarget.src !== meta.fallbackLogo) {
+                              e.currentTarget.src = meta.fallbackLogo
+                            }
+                          }}
+                        />
+                      ) : (
+                        <span className={`text-xs font-bold ${meta.iconColor}`}>
+                          {meta.icon}
+                        </span>
+                      )}
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span
-                          className={`truncate text-xs font-semibold ${
+                          className={`truncate text-xs font-semibold tracking-tight ${
                             !isAvailable
                               ? 'text-slate-400 dark:text-[#64748B]'
                               : isSelected
                               ? 'text-[#15803D] dark:text-emerald-300'
-                              : 'text-slate-800 dark:text-[#F1F5F9]'
+                              : 'text-slate-900 dark:text-[#F1F5F9]'
                           }`}
                         >
                           {model.name}
                         </span>
 
                         {!isAvailable ? (
-                          <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-slate-200/90 dark:bg-[#131923] text-slate-700 dark:text-[#94A3B8] border border-slate-300/40 dark:border-white/[0.08]">
+                          <span className="rounded-md px-1.5 py-0.5 text-[10px] font-medium bg-slate-200/90 dark:bg-[#131923] text-slate-700 dark:text-[#94A3B8] border border-slate-300/40 dark:border-white/[0.08]">
                             {model.disabledReason || 'Không khả dụng'}
                           </span>
                         ) : meta.badgeText ? (
                           <span
-                            className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                            className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold shadow-xs ${
                               meta.badgeColor || 'bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300'
                             }`}
                           >
@@ -460,16 +608,22 @@ function ModelSelector() {
                         ) : null}
                       </div>
 
-                      <p className="text-[11px] text-slate-600 dark:text-[#94A3B8] truncate mt-0.5">
+                      <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] truncate mt-0.5">
                         {meta.subtitle}
                       </p>
                     </div>
                   </div>
 
+                  {/* Active Selected Checkmark */}
                   {isSelected && (
-                    <svg className="h-4 w-4 text-[#15803D] dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="hidden sm:inline-block text-[10px] font-semibold text-[#15803D] dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/20 px-1.5 py-0.5 rounded-full border border-emerald-500/20">
+                        Đang chọn
+                      </span>
+                      <svg className="h-4 w-4 text-[#15803D] dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
                   )}
                 </button>
               )

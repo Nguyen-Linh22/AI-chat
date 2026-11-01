@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it, beforeEach } from 'vitest'
+import { render, screen, act } from '@testing-library/react'
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import ThemeToggle from './ThemeToggle'
 import { useThemeStore } from '../stores/themeStore'
@@ -13,90 +13,148 @@ describe('ThemeToggle', () => {
     useThemeStore.getState().setTheme('dark')
   })
 
-  it('should render theme toggle button with dark mode state by default', () => {
+  it('1. Light theme renders unchecked switch', () => {
+    useThemeStore.getState().setTheme('light')
     render(<ThemeToggle />)
 
-    const button = screen.getByRole('button', {
+    const checkbox = screen.getByRole('checkbox', {
+      name: 'Chuyển sang giao diện tối',
+    })
+    expect(checkbox).toBeInTheDocument()
+    expect(checkbox).not.toBeChecked()
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light')
+  })
+
+  it('2. Dark theme renders checked switch', () => {
+    useThemeStore.getState().setTheme('dark')
+    render(<ThemeToggle />)
+
+    const checkbox = screen.getByRole('checkbox', {
       name: 'Chuyển sang giao diện sáng',
     })
-    expect(button).toBeInTheDocument()
-    expect(button).toHaveAttribute('title', 'Chuyển sang giao diện sáng')
+    expect(checkbox).toBeInTheDocument()
+    expect(checkbox).toBeChecked()
     expect(document.documentElement.classList.contains('dark')).toBe(true)
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
   })
 
-  it('should toggle from dark to light mode on click', async () => {
+  it('3 & 4. Clicking switches Dark to Light and Light to Dark', async () => {
     const user = userEvent.setup()
+    useThemeStore.getState().setTheme('dark')
     render(<ThemeToggle />)
 
-    const button = screen.getByRole('button', {
+    const checkbox = screen.getByRole('checkbox', {
       name: 'Chuyển sang giao diện sáng',
     })
 
-    await user.click(button)
-
-    expect(button).toHaveAttribute('aria-label', 'Chuyển sang giao diện tối')
-    expect(button).toHaveAttribute('title', 'Chuyển sang giao diện tối')
+    // 1st click: Dark -> Light
+    await user.click(checkbox)
+    expect(checkbox).not.toBeChecked()
+    expect(checkbox).toHaveAttribute('aria-label', 'Chuyển sang giao diện tối')
     expect(document.documentElement.classList.contains('dark')).toBe(false)
     expect(document.documentElement.getAttribute('data-theme')).toBe('light')
     expect(localStorage.getItem('theme')).toBe('light')
-  })
+    expect(useThemeStore.getState().theme).toBe('light')
 
-  it('should toggle from light back to dark mode on subsequent click', async () => {
-    const user = userEvent.setup()
-    render(<ThemeToggle />)
-
-    const button = screen.getByRole('button', {
-      name: 'Chuyển sang giao diện sáng',
-    })
-
-    // 1st click: dark -> light
-    await user.click(button)
-    expect(button).toHaveAttribute('aria-label', 'Chuyển sang giao diện tối')
-
-    // 2nd click: light -> dark
-    await user.click(button)
-    expect(button).toHaveAttribute('aria-label', 'Chuyển sang giao diện sáng')
+    // 2nd click: Light -> Dark
+    await user.click(checkbox)
+    expect(checkbox).toBeChecked()
+    expect(checkbox).toHaveAttribute('aria-label', 'Chuyển sang giao diện sáng')
     expect(document.documentElement.classList.contains('dark')).toBe(true)
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
     expect(localStorage.getItem('theme')).toBe('dark')
+    expect(useThemeStore.getState().theme).toBe('dark')
   })
 
-  it('should support keyboard focus and activation', async () => {
+  it('5. State stays synchronized with the existing theme store', () => {
+    const { rerender } = render(<ThemeToggle />)
+
+    const checkbox = screen.getByRole('checkbox', {
+      name: 'Chuyển sang giao diện sáng',
+    })
+    expect(checkbox).toBeChecked()
+
+    // External store update
+    act(() => {
+      useThemeStore.getState().setTheme('light')
+    })
+    rerender(<ThemeToggle />)
+
+    expect(checkbox).not.toBeChecked()
+    expect(checkbox).toHaveAttribute('aria-label', 'Chuyển sang giao diện tối')
+  })
+
+  it('6. Keyboard Space and Enter activation works', async () => {
     const user = userEvent.setup()
+    useThemeStore.getState().setTheme('dark')
     render(<ThemeToggle />)
 
-    const button = screen.getByRole('button', {
+    const checkbox = screen.getByRole('checkbox', {
       name: 'Chuyển sang giao diện sáng',
     })
 
-    button.focus()
-    expect(button).toHaveFocus()
+    checkbox.focus()
+    expect(checkbox).toHaveFocus()
 
-    await user.keyboard('{Enter}')
-    expect(button).toHaveAttribute('aria-label', 'Chuyển sang giao diện tối')
+    // Press Space: dark -> light
+    await user.keyboard(' ')
+    expect(checkbox).not.toBeChecked()
     expect(document.documentElement.classList.contains('dark')).toBe(false)
 
-    await user.keyboard(' ')
-    expect(button).toHaveAttribute('aria-label', 'Chuyển sang giao diện sáng')
+    // Press Enter: light -> dark
+    await user.keyboard('{Enter}')
+    expect(checkbox).toBeChecked()
     expect(document.documentElement.classList.contains('dark')).toBe(true)
   })
 
-  it('should include id and reduced motion classes on button and icons', () => {
+  it('7. Accessible label exists and native checkbox is not display:none', () => {
     const { container } = render(<ThemeToggle />)
 
-    const button = screen.getByRole('button', {
+    const checkbox = screen.getByRole('checkbox', {
       name: 'Chuyển sang giao diện sáng',
     })
-    expect(button).toHaveAttribute('id', 'theme-toggle-btn')
-    expect(button.className).toContain('motion-reduce:transition-none')
+    expect(checkbox).toBeInTheDocument()
+    expect(checkbox).toHaveAttribute('aria-label', 'Chuyển sang giao diện sáng')
+    expect(checkbox.classList.contains('sr-only')).toBe(true)
+    // Confirm not using inaccessible display:none inline
+    expect(checkbox).not.toHaveStyle({ display: 'none' })
 
-    const icons = container.querySelectorAll('svg')
-    expect(icons).toHaveLength(2)
-    icons.forEach((icon) => {
-      expect(icon.getAttribute('class')).toContain('motion-reduce:transition-none')
-      expect(icon.getAttribute('class')).toContain('transition-[transform,opacity]')
+    const label = container.querySelector('#theme-toggle-btn')
+    expect(label).toBeInTheDocument()
+    expect(label).toHaveAttribute('title', 'Chuyển sang giao diện sáng')
+  })
+
+  it('8. Existing theme persistence remains unchanged', async () => {
+    const user = userEvent.setup()
+    render(<ThemeToggle />)
+
+    const checkbox = screen.getByRole('checkbox', {
+      name: 'Chuyển sang giao diện sáng',
     })
+
+    await user.click(checkbox)
+    expect(localStorage.getItem('theme')).toBe('light')
+
+    await user.click(checkbox)
+    expect(localStorage.getItem('theme')).toBe('dark')
+  })
+
+  it('9. SVG visual structure and reduced motion elements are present', () => {
+    const { container } = render(<ThemeToggle />)
+
+    const svg = container.querySelector('svg.theme-toggle-svg')
+    expect(svg).toBeInTheDocument()
+    expect(svg).toHaveAttribute('viewBox', '0 0 69.667 44')
+
+    // Animated elements are present
+    expect(container.querySelector('.theme-toggle-container')).toBeInTheDocument()
+    expect(container.querySelector('.theme-toggle-button')).toBeInTheDocument()
+    expect(container.querySelector('.theme-toggle-sun')).toBeInTheDocument()
+    expect(container.querySelector('.theme-toggle-moon')).toBeInTheDocument()
+    expect(container.querySelector('.theme-toggle-cloud')).toBeInTheDocument()
+    expect(container.querySelector('.theme-toggle-stars')).toBeInTheDocument()
+    expect(container.querySelector('.theme-toggle-patches')).toBeInTheDocument()
   })
 
   describe('Experiment B — Circular Reveal View Transitions', () => {
@@ -128,9 +186,9 @@ describe('ThemeToggle', () => {
       document.startViewTransition = startViewTransitionMock
 
       render(<ThemeToggle />)
-      const button = screen.getByRole('button', { name: 'Chuyển sang giao diện sáng' })
+      const checkbox = screen.getByRole('checkbox', { name: 'Chuyển sang giao diện sáng' })
 
-      await user.click(button)
+      await user.click(checkbox)
 
       expect(startViewTransitionMock).toHaveBeenCalledTimes(1)
       expect(callbackExecuted).toBe(true)
@@ -157,28 +215,29 @@ describe('ThemeToggle', () => {
       })
       document.startViewTransition = startViewTransitionMock
 
-      render(<ThemeToggle />)
-      const button = screen.getByRole('button', { name: 'Chuyển sang giao diện sáng' })
+      const { container } = render(<ThemeToggle />)
+      const label = container.querySelector('#theme-toggle-btn') as HTMLElement
+      const checkbox = screen.getByRole('checkbox', { name: 'Chuyển sang giao diện sáng' })
 
-      // Mock button bounding rect: left: 200, top: 100, width: 36, height: 36
-      // Expected center: x = 200 + 18 = 218px, y = 100 + 18 = 118px
-      vi.spyOn(button, 'getBoundingClientRect').mockReturnValue({
+      // Mock label bounding rect: left: 200, top: 100, width: 51, height: 32
+      // Expected center: x = 200 + 25.5 = 225.5px, y = 100 + 16 = 116px
+      vi.spyOn(label, 'getBoundingClientRect').mockReturnValue({
         left: 200,
         top: 100,
-        width: 36,
-        height: 36,
-        right: 236,
-        bottom: 136,
+        width: 51,
+        height: 32,
+        right: 251,
+        bottom: 132,
         x: 200,
         y: 100,
         toJSON: () => {},
       })
 
       // Click with arbitrary coordinates far away (e.g. clientX: 999, clientY: 888)
-      await user.click(button, { clientX: 999, clientY: 888 })
+      await user.click(checkbox, { clientX: 999, clientY: 888 })
 
-      expect(document.documentElement.style.getPropertyValue('--vt-x')).toBe('218px')
-      expect(document.documentElement.style.getPropertyValue('--vt-y')).toBe('118px')
+      expect(document.documentElement.style.getPropertyValue('--vt-x')).toBe('225.5px')
+      expect(document.documentElement.style.getPropertyValue('--vt-y')).toBe('116px')
 
       resolveFinished!()
     })
@@ -208,9 +267,9 @@ describe('ThemeToggle', () => {
       }))
 
       render(<ThemeToggle />)
-      const button = screen.getByRole('button', { name: 'Chuyển sang giao diện sáng' })
+      const checkbox = screen.getByRole('checkbox', { name: 'Chuyển sang giao diện sáng' })
 
-      await user.click(button)
+      await user.click(checkbox)
 
       expect(startViewTransitionMock).not.toHaveBeenCalled()
       expect(document.documentElement.classList.contains('dark')).toBe(false)
@@ -224,9 +283,9 @@ describe('ThemeToggle', () => {
       })
 
       render(<ThemeToggle />)
-      const button = screen.getByRole('button', { name: 'Chuyển sang giao diện sáng' })
+      const checkbox = screen.getByRole('checkbox', { name: 'Chuyển sang giao diện sáng' })
 
-      await user.click(button)
+      await user.click(checkbox)
 
       // Verify theme was toggled exactly once to light
       expect(document.documentElement.classList.contains('dark')).toBe(false)
@@ -253,14 +312,14 @@ describe('ThemeToggle', () => {
       })
 
       render(<ThemeToggle />)
-      const button = screen.getByRole('button', { name: 'Chuyển sang giao diện sáng' })
+      const checkbox = screen.getByRole('checkbox', { name: 'Chuyển sang giao diện sáng' })
 
       // First click: dark -> light
-      await user.click(button)
+      await user.click(checkbox)
       expect(document.documentElement.classList.contains('dark')).toBe(false)
 
       // Second click while first transition is still in-flight
-      await user.click(button)
+      await user.click(checkbox)
       expect(skipSpy).toHaveBeenCalledTimes(1)
       expect(document.documentElement.classList.contains('dark')).toBe(true)
 
@@ -303,15 +362,15 @@ describe('ThemeToggle', () => {
       })
 
       render(<ThemeToggle />)
-      const button = screen.getByRole('button', { name: 'Chuyển sang giao diện sáng' })
+      const checkbox = screen.getByRole('checkbox', { name: 'Chuyển sang giao diện sáng' })
 
       // 1. First click: initiates T1
-      await user.click(button)
+      await user.click(checkbox)
       expect(document.documentElement.classList.contains('view-transition-active')).toBe(true)
       expect(document.documentElement.style.getPropertyValue('--vt-x')).not.toBe('')
 
       // 2. Second click before T1 finishes: triggers T2 and aborts T1
-      await user.click(button)
+      await user.click(checkbox)
       expect(skipSpy).toHaveBeenCalledTimes(1)
       // T2 has set its variables and class
       expect(document.documentElement.classList.contains('view-transition-active')).toBe(true)

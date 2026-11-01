@@ -212,7 +212,7 @@ describe('Sidebar', () => {
 
     await user.click(
       screen.getByRole('button', {
-        name: /Cuộc trò chuyện thứ hai/i,
+        name: /^Cuộc trò chuyện thứ hai/i,
       })
     )
 
@@ -253,7 +253,7 @@ describe('Sidebar', () => {
 
     await user.click(
       screen.getByRole('button', {
-        name: /Cuộc trò chuyện thứ nhất/i,
+        name: /^Cuộc trò chuyện thứ nhất/i,
       })
     )
 
@@ -294,7 +294,7 @@ describe('Sidebar', () => {
     render(<Sidebar />)
 
     // Open action menu
-    await user.click(screen.getByRole('button', { name: 'Thao tác với đoạn chat' }))
+    await user.click(screen.getByRole('button', { name: /Thao tác với đoạn chat/ }))
 
     // Click "Đổi tên"
     await user.click(screen.getByRole('menuitem', { name: /Đổi tên/i }))
@@ -335,7 +335,7 @@ describe('Sidebar', () => {
 
     render(<Sidebar />)
 
-    await user.click(screen.getByRole('button', { name: 'Thao tác với đoạn chat' }))
+    await user.click(screen.getByRole('button', { name: /Thao tác với đoạn chat/ }))
     await user.click(screen.getByRole('menuitem', { name: /Đổi tên/i }))
 
     const input = screen.getByLabelText('Tên cuộc trò chuyện mới')
@@ -371,7 +371,7 @@ describe('Sidebar', () => {
 
     render(<Sidebar />)
 
-    await user.click(screen.getByRole('button', { name: 'Thao tác với đoạn chat' }))
+    await user.click(screen.getByRole('button', { name: /Thao tác với đoạn chat/ }))
     await user.click(screen.getByRole('menuitem', { name: /Đổi tên/i }))
 
     const input = screen.getByLabelText('Tên cuộc trò chuyện mới')
@@ -408,7 +408,7 @@ describe('Sidebar', () => {
 
     render(<Sidebar />)
 
-    await user.click(screen.getByRole('button', { name: 'Thao tác với đoạn chat' }))
+    await user.click(screen.getByRole('button', { name: /Thao tác với đoạn chat/ }))
     await user.click(screen.getByRole('menuitem', { name: /Đổi tên/i }))
 
     const input = screen.getByLabelText('Tên cuộc trò chuyện mới')
@@ -448,7 +448,7 @@ describe('Sidebar', () => {
 
     render(<Sidebar />)
 
-    await user.click(screen.getByRole('button', { name: 'Thao tác với đoạn chat' }))
+    await user.click(screen.getByRole('button', { name: /Thao tác với đoạn chat/ }))
     await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
 
     expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -495,7 +495,7 @@ describe('Sidebar', () => {
 
     render(<Sidebar />)
 
-    const actionButtons = screen.getAllByRole('button', { name: 'Thao tác với đoạn chat' })
+    const actionButtons = screen.getAllByRole('button', { name: /Thao tác với đoạn chat/ })
     await user.click(actionButtons[1])
     await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
 
@@ -541,7 +541,7 @@ describe('Sidebar', () => {
 
     render(<Sidebar />)
 
-    const actionButtons = screen.getAllByRole('button', { name: 'Thao tác với đoạn chat' })
+    const actionButtons = screen.getAllByRole('button', { name: /Thao tác với đoạn chat/ })
     await user.click(actionButtons[0])
     await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
 
@@ -581,7 +581,7 @@ describe('Sidebar', () => {
 
     render(<Sidebar />)
 
-    await user.click(screen.getByRole('button', { name: 'Thao tác với đoạn chat' }))
+    await user.click(screen.getByRole('button', { name: /Thao tác với đoạn chat/ }))
     await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
 
     await user.click(screen.getByRole('button', { name: 'Xóa vĩnh viễn' }))
@@ -617,7 +617,7 @@ describe('Sidebar', () => {
 
     render(<Sidebar />)
 
-    await user.click(screen.getByRole('button', { name: 'Thao tác với đoạn chat' }))
+    await user.click(screen.getByRole('button', { name: /Thao tác với đoạn chat/ }))
     await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
 
     await user.click(screen.getByRole('button', { name: 'Xóa vĩnh viễn' }))
@@ -648,7 +648,7 @@ describe('Sidebar', () => {
 
     render(<Sidebar />)
 
-    const chatItem = screen.getByRole('button', { name: /Chat chuột phải/i })
+    const chatItem = screen.getByRole('button', { name: /^Chat chuột phải/i })
     fireEvent.contextMenu(chatItem)
 
     expect(screen.getByRole('menu')).toBeInTheDocument()
@@ -822,7 +822,7 @@ describe('Sidebar', () => {
 
     render(<Sidebar />)
 
-    await user.click(screen.getByRole('button', { name: 'Thao tác với đoạn chat' }))
+    await user.click(screen.getByRole('button', { name: /Thao tác với đoạn chat/ }))
     await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
     await user.click(screen.getByRole('button', { name: 'Xóa vĩnh viễn' }))
 
@@ -866,7 +866,7 @@ describe('Sidebar', () => {
 
     render(<Sidebar />)
 
-    await user.click(screen.getByRole('button', { name: 'Thao tác với đoạn chat' }))
+    await user.click(screen.getByRole('button', { name: /Thao tác với đoạn chat/ }))
     await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
     await user.click(screen.getByRole('button', { name: 'Xóa vĩnh viễn' }))
 
@@ -919,7 +919,7 @@ describe('Sidebar', () => {
     render(<Sidebar />)
 
     // Open chat-a menu
-    const actionButtons = screen.getAllByRole('button', { name: 'Thao tác với đoạn chat' })
+    const actionButtons = screen.getAllByRole('button', { name: /Thao tác với đoạn chat/ })
     await user.click(actionButtons[0])
     await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
     await user.click(screen.getByRole('button', { name: 'Xóa vĩnh viễn' }))
@@ -1052,7 +1052,7 @@ describe('Sidebar', () => {
       render(<Sidebar isOpen={true} onClose={onClose} />)
 
       // Open action menu then open delete modal
-      const actionBtn = screen.getByRole('button', { name: 'Thao tác với đoạn chat' })
+      const actionBtn = screen.getByRole('button', { name: /Thao tác với đoạn chat/ })
       await user.click(actionBtn)
       await user.click(screen.getByRole('menuitem', { name: /Xóa/i }))
 
@@ -1157,6 +1157,151 @@ describe('Sidebar', () => {
 
       expect(navigateMock).toHaveBeenCalledWith('/c/chat-2')
       expect(screen.queryByRole('dialog', { name: /Tìm kiếm cuộc trò chuyện/i })).not.toBeInTheDocument()
+    })
+  })
+
+  describe('M7.2.2-A: Accessibility Hardening', () => {
+    it('assigns distinct accessible names to chat action buttons disambiguating by title', () => {
+      render(<Sidebar />)
+      expect(
+        screen.getByRole('button', {
+          name: 'Thao tác với đoạn chat "Cuộc trò chuyện thứ nhất"',
+        })
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', {
+          name: 'Thao tác với đoạn chat "Cuộc trò chuyện thứ hai"',
+        })
+      ).toBeInTheDocument()
+    })
+
+    it('sets aria-current="page" on the active chat and omits it on inactive chats', () => {
+      render(<Sidebar />)
+      const activeBtn = screen.getByRole('button', {
+        name: /^Cuộc trò chuyện thứ nhất/i,
+      })
+      const inactiveBtn = screen.getByRole('button', {
+        name: /^Cuộc trò chuyện thứ hai/i,
+      })
+      expect(activeBtn).toHaveAttribute('aria-current', 'page')
+      expect(inactiveBtn).not.toHaveAttribute('aria-current')
+    })
+
+    it('sets aria-expanded and aria-controls on the sidebar collapse button', () => {
+      const { rerender } = render(<Sidebar isCollapsed={false} />)
+      const collapseBtn = screen.getByRole('button', { name: 'Thu gọn thanh bên' })
+      expect(collapseBtn).toHaveAttribute('aria-expanded', 'true')
+      expect(collapseBtn).toHaveAttribute('aria-controls', 'app-sidebar')
+
+      rerender(<Sidebar isCollapsed={true} />)
+      const expandBtn = screen.getByRole('button', { name: 'Mở rộng thanh bên' })
+      expect(expandBtn).toHaveAttribute('aria-expanded', 'false')
+      expect(expandBtn).toHaveAttribute('aria-controls', 'app-sidebar')
+    })
+
+    it('provides id and accessible name for the sidebar complementary landmark', () => {
+      const { container } = render(<Sidebar />)
+      const aside = container.querySelector('aside')
+      expect(aside).toHaveAttribute('id', 'app-sidebar')
+      expect(aside).toHaveAttribute('aria-label', 'Thanh bên cuộc trò chuyện')
+      expect(
+        screen.getByRole('complementary', { name: 'Thanh bên cuộc trò chuyện' })
+      ).toBeInTheDocument()
+    })
+
+    it('links rename error with aria-invalid, aria-describedby and role="alert"', async () => {
+      const user = userEvent.setup()
+      render(<Sidebar />)
+
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Thao tác với đoạn chat "Cuộc trò chuyện thứ nhất"',
+        })
+      )
+      await user.click(screen.getByRole('menuitem', { name: /Đổi tên/i }))
+
+      const input = screen.getByLabelText('Tên cuộc trò chuyện mới')
+      expect(input).not.toHaveAttribute('aria-invalid')
+      expect(input).not.toHaveAttribute('aria-describedby')
+
+      // Clear input and press Enter to trigger validation error
+      await user.clear(input)
+      await user.keyboard('{Enter}')
+
+      expect(input).toHaveAttribute('aria-invalid', 'true')
+      expect(input).toHaveAttribute('aria-describedby', 'rename-chat-error')
+
+      const alert = screen.getByRole('alert')
+      expect(alert).toHaveAttribute('id', 'rename-chat-error')
+      expect(alert).toHaveAttribute('aria-live', 'polite')
+      expect(alert).toHaveTextContent('Tên cuộc trò chuyện không được để trống')
+    })
+
+    it('ensures Save and Cancel rename buttons have visible focus indicator classes', async () => {
+      const user = userEvent.setup()
+      render(<Sidebar />)
+
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Thao tác với đoạn chat "Cuộc trò chuyện thứ nhất"',
+        })
+      )
+      await user.click(screen.getByRole('menuitem', { name: /Đổi tên/i }))
+
+      const saveBtn = screen.getByRole('button', { name: 'Lưu tên' })
+      const cancelBtn = screen.getByRole('button', { name: 'Hủy đổi tên' })
+
+      expect(saveBtn.className).toContain('focus-visible:ring-2')
+      expect(saveBtn.className).toContain('focus-visible:ring-emerald-500/50')
+      expect(cancelBtn.className).toContain('focus-visible:ring-2')
+      expect(cancelBtn.className).toContain('focus-visible:ring-slate-400')
+    })
+
+    it('uses WCAG AA compliant text color tokens for empty state, rename counter, and search kbd', async () => {
+      const user = userEvent.setup()
+
+      // 1. Rename counter contrast
+      render(<Sidebar />)
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Thao tác với đoạn chat "Cuộc trò chuyện thứ nhất"',
+        })
+      )
+      await user.click(screen.getByRole('menuitem', { name: /Đổi tên/i }))
+
+      const counter = screen.getByText(/24\/50/)
+      expect(counter.className).toContain('text-slate-600')
+      expect(counter.className).not.toContain('text-slate-400')
+
+      // 2. SearchChatButton kbd contrast
+      const kbd = screen.getByText(/Ctrl K|⌘K/)
+      expect(kbd.className).toContain('text-slate-600')
+      expect(kbd.className).not.toContain('text-slate-400')
+
+      // 3. Empty state subtitle contrast
+      mockUseChatStore.mockImplementation((selector: (state: unknown) => unknown) =>
+        selector({
+          chats: [],
+          addChat: vi.fn(),
+          removeChat: vi.fn(),
+          updateChat: vi.fn(),
+          setCurrentChatId: vi.fn(),
+          currentChatId: null,
+          clearChats: mockClearChats,
+        })
+      )
+
+      render(<Sidebar />)
+      const emptyDesc = screen.getByText('Nhấn "Chat mới" để bắt đầu cuộc trò chuyện')
+      expect(emptyDesc.className).toContain('text-slate-600')
+      expect(emptyDesc.className).not.toContain('text-slate-400')
+    })
+
+    it('marks mobile close button SVG as aria-hidden="true"', () => {
+      render(<Sidebar isOpen={true} />)
+      const closeBtn = screen.getByRole('button', { name: 'Đóng thanh bên' })
+      const svg = closeBtn.querySelector('svg')
+      expect(svg).toHaveAttribute('aria-hidden', 'true')
     })
   })
 })

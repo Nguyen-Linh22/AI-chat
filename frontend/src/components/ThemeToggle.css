@@ -1,0 +1,137 @@
+/* ==============================================================================
+ * AI Chat Clone - ThemeToggle Animated Sun/Moon Switch Styles (M7.4)
+ * ============================================================================== */
+
+/* The interactive switch container / touch target */
+.theme-toggle-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  min-height: 40px;
+  min-width: 44px;
+  padding: 2px 4px;
+  border-radius: 9999px;
+  transition: opacity 0.15s ease;
+}
+
+/* Visually hidden but fully keyboard-accessible native checkbox */
+.theme-toggle-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Visible focus-visible ring when navigating via keyboard */
+.theme-toggle-wrapper:has(.theme-toggle-input:focus-visible) {
+  outline: 2px solid #15803d;
+  outline-offset: 3px;
+}
+
+:is(.dark, [data-theme='dark']) .theme-toggle-wrapper:has(.theme-toggle-input:focus-visible) {
+  outline-color: #34d399; /* emerald-400 */
+}
+
+/* Compact SVG Switch Dimensions suitable for chat header */
+.theme-toggle-svg {
+  width: 51px;
+  height: 32px;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+:is(.dark, [data-theme='dark']) .theme-toggle-svg {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+}
+
+/* Smooth transition for all animated visual elements */
+.theme-toggle-container,
+.theme-toggle-patches,
+.theme-toggle-stars,
+.theme-toggle-button,
+.theme-toggle-sun,
+.theme-toggle-moon,
+.theme-toggle-cloud {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 0.25s;
+}
+
+/* Capsule background: Light mode (day sky blue) */
+.theme-toggle-container {
+  fill: #83cbd8;
+}
+
+/* Capsule background: Dark mode (night sky dark blue) */
+.theme-toggle-input:checked ~ .theme-toggle-svg .theme-toggle-container {
+  fill: #2b4360;
+}
+
+/* Button circular motion: Left in light mode, Right in dark mode */
+.theme-toggle-button {
+  transform: translate(2.333px, 2.333px);
+}
+
+.theme-toggle-input:checked ~ .theme-toggle-svg .theme-toggle-button {
+  transform: translate(28px, 2.333px);
+}
+
+/* Sun element: Visible in Light mode, hidden in Dark mode */
+.theme-toggle-sun {
+  opacity: 1;
+}
+
+.theme-toggle-input:checked ~ .theme-toggle-svg .theme-toggle-sun {
+  opacity: 0;
+}
+
+/* Moon element: Hidden in Light mode, visible in Dark mode */
+.theme-toggle-moon {
+  opacity: 0;
+}
+
+.theme-toggle-input:checked ~ .theme-toggle-svg .theme-toggle-moon {
+  opacity: 1;
+}
+
+/* Cloud element: Visible in Light mode, hidden in Dark mode */
+.theme-toggle-cloud {
+  opacity: 1;
+}
+
+.theme-toggle-input:checked ~ .theme-toggle-svg .theme-toggle-cloud {
+  opacity: 0;
+}
+
+/* Stars element: Hidden in Light mode, visible in Dark mode */
+.theme-toggle-stars {
+  opacity: 0;
+}
+
+.theme-toggle-input:checked ~ .theme-toggle-svg .theme-toggle-stars {
+  opacity: 1;
+}
+
+/* Reduced Motion Respect: disable all transitions */
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle-container,
+  .theme-toggle-patches,
+  .theme-toggle-stars,
+  .theme-toggle-button,
+  .theme-toggle-sun,
+  .theme-toggle-moon,
+  .theme-toggle-cloud {
+    transition: none !important;
+  }
+}
+

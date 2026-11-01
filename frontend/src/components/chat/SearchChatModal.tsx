@@ -222,7 +222,7 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
                 setQuery('')
                 inputRef.current?.focus()
               }}
-              className="mr-1.5 flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white transition-all cursor-pointer active:scale-90"
+              className="mr-1.5 flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:outline-none"
               title="Xóa tìm kiếm"
               aria-label="Xóa nội dung tìm kiếm"
             >
@@ -247,9 +247,9 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
             onClick={onClose}
             aria-label="Đóng tìm kiếm"
             title="Đóng (Esc)"
-            className="flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer"
+            className="flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:outline-none rounded-md"
           >
-            <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-400 dark:text-gray-400 bg-slate-100 dark:bg-white/[0.06] rounded-md border border-slate-200 dark:border-white/10 select-none hover:border-slate-300 dark:hover:border-white/20 transition-colors">
+            <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-600 dark:text-gray-400 bg-slate-100 dark:bg-white/[0.06] rounded-md border border-slate-200 dark:border-white/10 select-none hover:border-slate-300 dark:hover:border-white/20 transition-colors">
               ESC
             </kbd>
           </button>
@@ -285,7 +285,7 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
               <p className="text-xs font-semibold text-slate-700 dark:text-gray-300">
                 Chưa có cuộc trò chuyện nào để tìm kiếm
               </p>
-              <p className="mt-1 text-[11px] text-slate-400 dark:text-[#94A3B8]">
+              <p className="mt-1 text-[11px] text-slate-600 dark:text-[#94A3B8]">
                 Bắt đầu một đoạn chat mới để có thể tìm kiếm tại đây.
               </p>
             </div>
@@ -310,7 +310,7 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
               <p className="text-xs font-semibold text-slate-700 dark:text-gray-300">
                 Không tìm thấy cuộc trò chuyện nào
               </p>
-              <p className="mt-1 text-[11px] text-slate-400 dark:text-[#94A3B8] max-w-xs truncate">
+              <p className="mt-1 text-[11px] text-slate-600 dark:text-[#94A3B8] max-w-xs truncate">
                 Không có kết quả nào khớp với "{cleanQuery}"
               </p>
               <button
@@ -319,7 +319,7 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
                   setQuery('')
                   inputRef.current?.focus()
                 }}
-                className="mt-3 inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:border-emerald-500/40 hover:text-[#1B8F3D] dark:hover:text-emerald-400 transition-colors cursor-pointer"
+                className="mt-3 inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:border-emerald-500/40 hover:text-[#1B8F3D] dark:hover:text-emerald-400 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:outline-none"
               >
                 <span>Xóa tìm kiếm</span>
               </button>
@@ -328,12 +328,12 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
             /* Matching or Recent List */
             <div className="space-y-1">
               <div className="flex items-center justify-between px-2.5 py-1 select-none">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-[#94A3B8]">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94A3B8]">
                   {cleanQuery
                     ? `Kết quả tìm kiếm (${displayedChats.length})`
                     : `Gần đây (${displayedChats.length})`}
                 </span>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                <span className="text-[10px] text-slate-600 dark:text-[#94A3B8] font-normal">
                   {cleanQuery ? 'Khớp theo tiêu đề' : 'Mới nhất'}
                 </span>
               </div>
@@ -393,7 +393,7 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
                       >
                         <HighlightMatch text={chat.title} query={cleanQuery} />
                       </p>
-                      <p className="truncate text-[10px] text-slate-400 dark:text-[#94A3B8] mt-0.5">
+                      <p className="truncate text-[10px] text-slate-600 dark:text-[#94A3B8] mt-0.5">
                         {relativeTime}
                       </p>
                     </div>

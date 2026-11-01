@@ -1353,6 +1353,7 @@ describe('ChatInput', () => {
       expect(indicator).toBeInTheDocument()
       expect(indicator).toHaveTextContent('Qwen 3 1.7B')
       expect(indicator).toHaveAttribute('title', 'Mô hình AI: Qwen 3 1.7B')
+      expect(indicator).toHaveAttribute('aria-label', 'Mô hình AI: Qwen 3 1.7B')
 
       // Ensure model indicator is inside the composer container alongside the textarea
       const textarea = screen.getByPlaceholderText('Nhập tin nhắn...')
@@ -1414,6 +1415,109 @@ describe('ChatInput', () => {
       expect(indicator).toBeInTheDocument()
       expect(indicator).toHaveTextContent('Gemini 1.5 Flash')
       expect(screen.queryByText('Qwen 3 1.7B')).not.toBeInTheDocument()
+    })
+
+    it('should apply responsive classes and accessible labels for compact viewports', () => {
+      mockUseAIStore.mockImplementation((selector: (state: unknown) => unknown) =>
+        selector({
+          selectedModelId: 'ollama-qwen3-1.7b',
+          models: [
+            {
+              id: 'ollama-qwen3-1.7b',
+              name: 'Qwen 3 1.7B',
+            },
+          ],
+        })
+      )
+
+      render(<ChatInput />)
+
+      const indicator = screen.getByTestId('model-indicator')
+      expect(indicator).toBeInTheDocument()
+      expect(indicator).toHaveAttribute('aria-label', 'Mô hình AI: Qwen 3 1.7B')
+      expect(indicator).toHaveAttribute('title', 'Mô hình AI: Qwen 3 1.7B')
+      expect(indicator.className).toContain('px-1.5')
+      expect(indicator.className).toContain('sm:px-2')
+
+      const nameSpan = screen.getByText('Qwen 3 1.7B')
+      expect(nameSpan).toHaveClass('hidden')
+      expect(nameSpan).toHaveClass('sm:inline')
+    })
+  })
+
+  describe('M6.2 — Attachment Pill & Tooltip Experience', () => {
+    it('should display PDF-specific styling, accessible name, and rich metadata title for PDF files', async () => {
+      const user = userEvent.setup()
+      const { container } = render(<ChatInput />)
+
+      const pdfFile = new File(['%PDF-1.4 sample content'], 'bao-cao-tai-chinh.pdf', {
+        type: 'application/pdf',
+      })
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(fileInput, pdfFile)
+
+      const pill = screen.getByTestId('attachment-pill')
+      expect(pill).toBeInTheDocument()
+      expect(pill).toHaveAttribute(
+        'aria-label',
+        `Tệp đính kèm: bao-cao-tai-chinh.pdf, kích thước: ${pdfFile.size} B`
+      )
+      expect(pill).toHaveAttribute('title', `bao-cao-tai-chinh.pdf (${pdfFile.size} B)`)
+
+      const badge = screen.getByTestId('attachment-type-badge')
+      expect(badge.className).toContain('bg-rose-500/15')
+      expect(badge.className).toContain('text-rose-600')
+
+      expect(screen.getByText('bao-cao-tai-chinh.pdf')).toBeInTheDocument()
+      const sizeSpan = screen.getByText(`${pdfFile.size} B`)
+      expect(sizeSpan).toHaveClass('font-mono')
+    })
+
+    it('should display TXT-specific styling, accessible name, and rich metadata title for TXT files', async () => {
+      const user = userEvent.setup()
+      const { container } = render(<ChatInput />)
+
+      const txtFile = new File(['plaintext data'], 'ghi-chu-cuoc-hop.txt', {
+        type: 'text/plain',
+      })
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(fileInput, txtFile)
+
+      const pill = screen.getByTestId('attachment-pill')
+      expect(pill).toBeInTheDocument()
+      expect(pill).toHaveAttribute(
+        'aria-label',
+        `Tệp đính kèm: ghi-chu-cuoc-hop.txt, kích thước: ${txtFile.size} B`
+      )
+      expect(pill).toHaveAttribute('title', `ghi-chu-cuoc-hop.txt (${txtFile.size} B)`)
+
+      const badge = screen.getByTestId('attachment-type-badge')
+      expect(badge.className).toContain('bg-sky-500/15')
+      expect(badge.className).toContain('text-sky-600')
+
+      expect(screen.getByText('ghi-chu-cuoc-hop.txt')).toBeInTheDocument()
+      const sizeSpan = screen.getByText(`${txtFile.size} B`)
+      expect(sizeSpan).toHaveClass('font-mono')
+    })
+
+    it('should retain draft text when removing attachment via delete button', async () => {
+      const user = userEvent.setup()
+      const { container } = render(<ChatInput />)
+
+      const textarea = screen.getByPlaceholderText('Nhập tin nhắn...')
+      await user.type(textarea, 'Bản thảo tin nhắn quan trọng')
+
+      const pdfFile = new File(['content'], 'document.pdf', { type: 'application/pdf' })
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+      await user.upload(fileInput, pdfFile)
+
+      expect(screen.getByTestId('attachment-pill')).toBeInTheDocument()
+
+      const deleteBtn = screen.getByRole('button', { name: 'Xóa file document.pdf' })
+      await user.click(deleteBtn)
+
+      expect(screen.queryByTestId('attachment-pill')).not.toBeInTheDocument()
+      expect((textarea as HTMLTextAreaElement).value).toBe('Bản thảo tin nhắn quan trọng')
     })
   })
 

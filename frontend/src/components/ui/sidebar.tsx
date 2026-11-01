@@ -12,6 +12,8 @@ export const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
     return (
       <SidebarContext.Provider value={{ isCollapsed, isOpen }}>
         <aside
+          id="app-sidebar"
+          aria-label="Thanh bên cuộc trò chuyện"
           ref={ref}
           data-collapsed={isCollapsed ? 'true' : 'false'}
           className={`sidebar-motion fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col overflow-hidden border-r border-slate-200 dark:border-white/[0.06] bg-workspace-sidebar md:static md:translate-x-0 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:opacity-0 dark:before:opacity-100 before:bg-gradient-to-b before:from-emerald-500/[0.03] before:via-transparent before:to-transparent before:rounded-[inherit] ${
@@ -155,6 +157,7 @@ export const SidebarMenuButton = React.forwardRef<HTMLButtonElement, SidebarMenu
         ref={ref}
         type="button"
         data-active={isActive ? 'true' : 'false'}
+        aria-current={isActive ? 'page' : undefined}
         title={tooltip}
         className={`relative w-full text-left transition-all duration-150 cursor-pointer focus:outline-none hover:bg-slate-100/70 dark:hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent focus-visible:outline-none rounded-lg ${className}`}
         {...props}
