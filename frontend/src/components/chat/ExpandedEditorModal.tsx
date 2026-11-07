@@ -30,7 +30,7 @@ interface PreviewCodeBlockProps {
 function PreviewCodeBlock({ language, content }: PreviewCodeBlockProps) {
   const [copied, setCopied] = useState(false)
   const theme = useThemeStore((state) => state.theme)
-  const isDark = theme === 'dark'
+  const isDark = theme === 'dark' || theme === 'zyricon'
 
   const handleCopy = async () => {
     try {
@@ -60,7 +60,7 @@ function PreviewCodeBlock({ language, content }: PreviewCodeBlockProps) {
           type="button"
           onClick={handleCopy}
           title="Sao chép mã"
-          className="flex items-center gap-1 px-2 py-0.5 text-xs rounded-lg text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/10 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+          className="flex items-center gap-1 px-2 py-0.5 text-xs rounded-lg text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-indigo-200 hover:bg-slate-200/70 dark:hover:bg-[#1E1B4B]/40 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-amber-500/50 dark:focus-visible:ring-indigo-400/50 focus-visible:outline-none"
         >
           {copied ? 'Đã chép' : 'Sao chép'}
         </button>
@@ -106,7 +106,7 @@ function PreviewCode({
 
   return (
     <code
-      className="rounded-md bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 text-xs font-mono font-medium text-emerald-700 dark:text-emerald-300 border border-slate-200/80 dark:border-white/10 break-words"
+      className="rounded-md bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 text-xs font-mono font-medium text-amber-800 dark:text-indigo-300 border border-slate-200/80 dark:border-white/10 break-words"
       {...props}
     >
       {children}
@@ -141,6 +141,9 @@ export function ExpandedEditorModal({
   modelName,
   selectedFile,
 }: ExpandedEditorModalProps) {
+  const theme = useThemeStore((state) => state.theme)
+  const isZyricon = theme === 'zyricon'
+
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
   if (prevIsOpen !== isOpen) {
@@ -337,17 +340,37 @@ export function ExpandedEditorModal({
         role="dialog"
         aria-modal="true"
         aria-label="Soạn tin nhắn"
-        className="relative z-10 flex flex-col w-full max-w-4xl h-[80vh] sm:h-[85vh] rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-white/10 bg-white/98 dark:bg-[#131924]/95 shadow-2xl backdrop-blur-2xl animate-modal-enter overflow-hidden outline-none"
+        className={`relative z-10 flex flex-col w-full max-w-4xl h-[80vh] sm:h-[85vh] rounded-2xl sm:rounded-3xl border ${
+          isZyricon
+            ? 'border-[#694788]/40 bg-[#140E20]/98 shadow-[0_20px_60px_rgba(7,4,11,0.9)]'
+            : 'border-slate-200 dark:border-white/10 bg-white/98 dark:bg-[#131924]/95 shadow-2xl'
+        } backdrop-blur-2xl animate-modal-enter overflow-hidden outline-none`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with Segmented Control Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-white/[0.08] px-4 py-2.5 sm:px-6 sm:py-3">
+        <div
+          className={`flex flex-wrap items-center justify-between gap-2 border-b ${
+            isZyricon
+              ? 'border-[#694788]/25 bg-[#140E20]'
+              : 'border-slate-200 dark:border-white/[0.08]'
+          } px-4 py-2.5 sm:px-6 sm:py-3`}
+        >
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-sm font-semibold text-slate-900 dark:text-white tracking-wide truncate">
+            <span
+              className={`text-sm font-semibold ${
+                isZyricon ? 'text-[#F7F3F6]' : 'text-slate-900 dark:text-white'
+              } tracking-wide truncate`}
+            >
               Soạn tin nhắn
             </span>
             {modelName && (
-              <span className="hidden sm:inline-block rounded-md border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.05] px-2 py-0.5 text-[11px] text-slate-600 dark:text-gray-400 truncate max-w-[140px]">
+              <span
+                className={`hidden sm:inline-block rounded-md border ${
+                  isZyricon
+                    ? 'border-[#694788]/30 bg-[#1D152D] text-[#C4A5B8]'
+                    : 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-gray-400'
+                } px-2 py-0.5 text-[11px] truncate max-w-[140px]`}
+              >
                 {modelName}
               </span>
             )}
@@ -357,7 +380,11 @@ export function ExpandedEditorModal({
           <div
             role="tablist"
             aria-label="Chế độ soạn thảo"
-            className="flex items-center rounded-xl bg-slate-100 dark:bg-white/[0.06] p-0.5 border border-slate-200/80 dark:border-white/10"
+            className={`flex items-center rounded-xl ${
+              isZyricon
+                ? 'bg-[#1D152D] border border-[#694788]/30'
+                : 'bg-slate-100 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/10'
+            } p-0.5`}
           >
             <button
               ref={editTabRef}
@@ -369,9 +396,15 @@ export function ExpandedEditorModal({
               tabIndex={activeTab === 'edit' ? 0 : -1}
               onClick={() => handleSwitchTab('edit')}
               onKeyDown={handleTabKeyDown}
-              className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded-lg transition-all cursor-pointer font-medium focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none ${
+              className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded-lg transition-all cursor-pointer font-medium focus-visible:ring-2 ${
+                isZyricon ? 'focus-visible:ring-[#C27595]/50' : 'focus-visible:ring-amber-500/60 dark:focus-visible:ring-indigo-400/50'
+              } focus-visible:outline-none ${
                 activeTab === 'edit'
-                  ? 'bg-white dark:bg-[#1A2436] text-slate-900 dark:text-white shadow-xs font-semibold'
+                  ? isZyricon
+                    ? 'bg-[#3B2568]/60 text-white shadow-xs font-semibold'
+                    : 'bg-white dark:bg-[#1A2436] text-slate-900 dark:text-white shadow-xs font-semibold'
+                  : isZyricon
+                  ? 'text-[#C4A5B8] hover:text-[#F7F3F6]'
                   : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -391,9 +424,15 @@ export function ExpandedEditorModal({
               tabIndex={activeTab === 'preview' ? 0 : -1}
               onClick={() => handleSwitchTab('preview')}
               onKeyDown={handleTabKeyDown}
-              className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded-lg transition-all cursor-pointer font-medium focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none ${
+              className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded-lg transition-all cursor-pointer font-medium focus-visible:ring-2 ${
+                isZyricon ? 'focus-visible:ring-[#C27595]/50' : 'focus-visible:ring-amber-500/60 dark:focus-visible:ring-indigo-400/50'
+              } focus-visible:outline-none ${
                 activeTab === 'preview'
-                  ? 'bg-white dark:bg-[#1A2436] text-slate-900 dark:text-white shadow-xs font-semibold'
+                  ? isZyricon
+                    ? 'bg-[#3B2568]/60 text-white shadow-xs font-semibold'
+                    : 'bg-white dark:bg-[#1A2436] text-slate-900 dark:text-white shadow-xs font-semibold'
+                  : isZyricon
+                  ? 'text-[#C4A5B8] hover:text-[#F7F3F6]'
                   : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -408,7 +447,13 @@ export function ExpandedEditorModal({
           <button
             type="button"
             onClick={() => onClose(content)}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+            className={`flex h-7 w-7 items-center justify-center rounded-lg ${
+              isZyricon
+                ? 'text-[#C4A5B8] hover:text-white hover:bg-[#694788]/30'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-indigo-200 dark:hover:bg-[#1E1B4B]/40'
+            } transition cursor-pointer focus-visible:ring-2 ${
+              isZyricon ? 'focus-visible:ring-[#C27595]/50' : 'focus-visible:ring-amber-500/60 dark:focus-visible:ring-indigo-400/50'
+            } focus-visible:outline-none`}
             aria-label="Đóng trình soạn thảo"
             title="Đóng (Esc)"
           >
@@ -474,7 +519,11 @@ export function ExpandedEditorModal({
               onKeyDown={handleKeyDown}
               placeholder="Nhập nội dung tin nhắn chi tiết, đoạn mã, hoặc tài liệu..."
               aria-label="Nội dung tin nhắn mở rộng"
-              className="h-full w-full resize-none bg-transparent text-xs sm:text-sm text-slate-800 dark:text-gray-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 outline-none scrollbar-thin font-sans leading-relaxed"
+              className={`h-full w-full resize-none bg-transparent text-xs sm:text-sm ${
+                isZyricon
+                  ? 'text-[#F7F3F6] placeholder:text-[#8F7686]'
+                  : 'text-slate-800 dark:text-gray-100 placeholder:text-slate-500 dark:placeholder:text-slate-400'
+              } outline-none scrollbar-thin font-sans leading-relaxed`}
             />
           </div>
         )}
@@ -486,7 +535,7 @@ export function ExpandedEditorModal({
             role="tabpanel"
             aria-labelledby="tab-preview"
             tabIndex={0}
-            className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto scrollbar-thin text-xs sm:text-sm text-slate-800 dark:text-gray-100 leading-relaxed outline-none focus-visible:ring-1 focus-visible:ring-[#1B8F3D]/30"
+            className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto scrollbar-thin text-xs sm:text-sm text-slate-800 dark:text-gray-100 leading-relaxed outline-none focus-visible:ring-1 focus-visible:ring-amber-500/40 dark:focus-visible:ring-indigo-400/30 zyricon:focus-visible:ring-[#C27595]/40"
             data-testid="markdown-preview-panel"
           >
             {content.trim() ? (
@@ -537,7 +586,7 @@ export function ExpandedEditorModal({
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#1B8F3D] dark:text-emerald-400 underline underline-offset-2 hover:opacity-85 font-medium break-all"
+                        className="text-amber-700 dark:text-indigo-400 underline underline-offset-2 hover:opacity-85 font-medium break-all"
                         {...props}
                       >
                         {children}
@@ -602,7 +651,7 @@ export function ExpandedEditorModal({
                   },
                   blockquote({ children, ...props }) {
                     return (
-                      <blockquote className="my-2.5 border-l-3 border-[#1B8F3D]/60 dark:border-emerald-500/60 pl-3.5 italic text-slate-600 dark:text-gray-400 bg-slate-50/50 dark:bg-white/[0.02] py-1 rounded-r-lg" {...props}>
+                      <blockquote className="my-2.5 border-l-3 border-amber-500/60 dark:border-indigo-500/60 pl-3.5 italic text-slate-600 dark:text-gray-400 bg-slate-50/50 dark:bg-white/[0.02] py-1 rounded-r-lg" {...props}>
                         {children}
                       </blockquote>
                     )
@@ -678,8 +727,18 @@ export function ExpandedEditorModal({
         )}
 
         {/* Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#0e141f]/60 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-gray-400">
+        <div
+          className={`flex flex-wrap items-center justify-between gap-3 border-t ${
+            isZyricon
+              ? 'border-[#694788]/25 bg-[#0F0A18]/80'
+              : 'border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#0e141f]/60'
+          } px-4 py-3 sm:px-6`}
+        >
+          <div
+            className={`flex items-center gap-2.5 text-[11px] ${
+              isZyricon ? 'text-[#C4A5B8]' : 'text-slate-500 dark:text-gray-400'
+            }`}
+          >
             <span>{charCount.toLocaleString()} ký tự</span>
             <span>•</span>
             <span>{wordCount.toLocaleString()} từ</span>
@@ -688,14 +747,24 @@ export function ExpandedEditorModal({
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="hidden text-[11px] text-slate-500 dark:text-gray-400 sm:inline">
+            <span
+              className={`hidden text-[11px] ${
+                isZyricon ? 'text-[#8F7686]' : 'text-slate-500 dark:text-gray-400'
+              } sm:inline`}
+            >
               Ctrl + Enter để gửi
             </span>
 
             <button
               type="button"
               onClick={() => onClose(content)}
-              className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/10 rounded-xl transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+              className={`px-3 py-1.5 text-xs font-medium rounded-xl transition cursor-pointer focus-visible:ring-2 ${
+                isZyricon ? 'focus-visible:ring-[#C27595]/50' : 'focus-visible:ring-amber-500/60 dark:focus-visible:ring-indigo-400/50'
+              } focus-visible:outline-none ${
+                isZyricon
+                  ? 'text-[#C4A5B8] hover:text-[#F7F3F6] hover:bg-[#694788]/25'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-gray-300 dark:hover:text-indigo-200 dark:hover:bg-[#1E1B4B]/40'
+              }`}
             >
               Hủy
             </button>
@@ -704,10 +773,12 @@ export function ExpandedEditorModal({
               type="button"
               onClick={isActive ? onStop : onSend}
               disabled={!isActive && (isDisabled || !trimmed)}
-              className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-md transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 active:scale-95 focus-visible:ring-2 focus-visible:outline-none ${
+              className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-md transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 disabled:shadow-none active:scale-95 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
                 isActive
-                  ? 'bg-[#B91E2B] hover:bg-[#9E1924] shadow-[#B91E2B]/30 focus-visible:ring-[#B91E2B]/50'
-                  : 'bg-[#1B8F3D] hover:bg-[#167632] hover:scale-105 shadow-[#1B8F3D]/30 focus-visible:ring-[#1B8F3D]/50'
+                  ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/30 focus-visible:ring-rose-500 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#131924] zyricon:focus-visible:ring-offset-[#0F0A18]'
+                  : isZyricon
+                  ? 'bg-gradient-to-r from-[#98578D] to-[#C27595] hover:from-[#A8629D] hover:to-[#D285A5] hover:scale-105 shadow-md shadow-[0_0_15px_rgba(152,87,141,0.35)] focus-visible:ring-[#C27595] focus-visible:ring-offset-[#0F0A18]'
+                  : 'bg-gradient-to-r from-[#B45309] to-[#C2410C] hover:from-[#92400E] hover:to-[#9A3412] dark:bg-gradient-to-r dark:from-[#4F46E5] dark:to-[#7C3AED] dark:hover:from-[#7C3AED] dark:hover:to-[#4F46E5] hover:scale-105 shadow-md shadow-amber-600/25 dark:shadow-[0_4px_16px_rgba(79,70,229,0.35)] dark:hover:shadow-[0_8px_24px_rgba(124,58,237,0.5)] focus-visible:ring-amber-600 focus-visible:ring-offset-white dark:focus-visible:ring-indigo-400/80 dark:focus-visible:ring-offset-[#131924]'
               }`}
             >
               {isActive ? (

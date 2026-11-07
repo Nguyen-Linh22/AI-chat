@@ -411,9 +411,9 @@ const greeting = "Xin chào";
     const sendBtn = screen.getByRole('button', { name: 'Gửi' })
 
     expect(cancelBtn.className).toContain('focus-visible:ring-2')
-    expect(cancelBtn.className).toContain('focus-visible:ring-[#1B8F3D]/50')
+    expect(cancelBtn.className).toContain('focus-visible:ring-amber-500/60')
     expect(sendBtn.className).toContain('focus-visible:ring-2')
-    expect(sendBtn.className).toContain('focus-visible:ring-[#1B8F3D]/50')
+    expect(sendBtn.className).toContain('focus-visible:ring-amber-600')
   })
 
   it('22. should display PDF-specific styling, accessible name, and rich metadata title for PDF attachments', () => {
@@ -631,7 +631,7 @@ const greeting = "Xin chào";
       const closeBtn = screen.getByRole('button', { name: /Đóng trình soạn thảo/i })
 
       expect(closeBtn.className).toContain('focus-visible:ring-2')
-      expect(closeBtn.className).toContain('focus-visible:ring-[#1B8F3D]/50')
+      expect(closeBtn.className).toContain('focus-visible:ring-amber-500/60')
       expect(closeBtn.className).toContain('focus-visible:outline-none')
     })
 

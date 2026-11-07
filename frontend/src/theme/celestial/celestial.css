@@ -1,0 +1,305 @@
+/* ==============================================================================
+ * CELESTIAL DAYLIGHT — HARDWARE COMPOSITED STYLES & KEYFRAMES
+ * ============================================================================== */
+
+/* 1. Root Container */
+.celestial-background-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 2. Base Sky Atmosphere (Multi-stop Rayleigh Scattering Gradient) */
+.celestial-sky-atmosphere {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-color: #C8E8FC; /* Solid fallback prevents unpainted frame flashes */
+  background-image:
+    radial-gradient(
+      circle at 82% 14%,
+      rgba(255, 255, 240, 0.45) 0%,
+      rgba(200, 232, 252, 0.15) 38%,
+      transparent 70%
+    ),
+    linear-gradient(
+      180deg,
+      #84C2F5 0%,
+      #98CEF8 14%,
+      #A6D7FA 26%,
+      #B9E0FB 42%,
+      #C8E8FC 58%,
+      #D7EEFD 74%,
+      #E5F4FD 86%,
+      #F4FAFF 100%
+    );
+}
+
+/* 3. Sun Container & Layers */
+.celestial-sun-container {
+  position: absolute;
+  top: 14%;
+  left: 82%;
+  width: 560px;
+  height: 560px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2;
+  transition: width 0.3s ease, height 0.3s ease, top 0.3s ease, left 0.3s ease;
+}
+
+.celestial-sun-corona {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: celestial-sun-breathe 16s ease-in-out infinite;
+}
+
+.celestial-sun-rays {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 800px;
+  height: 600px;
+  transform: translate(-90%, -10%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.85;
+}
+
+/* 4. Cloud Canopy & Duplicated 200% Strips */
+.celestial-cloud-canopy {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.celestial-cloud-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.celestial-cloud-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  display: flex;
+  will-change: transform;
+  animation: celestial-drift-horizontal linear infinite;
+}
+
+.celestial-cloud-segment {
+  width: 50%;
+  height: 100%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.celestial-cloud-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+}
+
+/* 5. Keyframes */
+@keyframes celestial-drift-horizontal {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes celestial-sun-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.90;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 1.0;
+  }
+}
+
+/* 6. Responsive Adaptations */
+@media (max-width: 1023px) {
+  .celestial-sun-container {
+    top: 12%;
+    left: 84%;
+    width: 460px;
+    height: 460px;
+  }
+  .celestial-sun-rays {
+    width: 660px;
+    height: 500px;
+  }
+}
+
+@media (max-width: 767px) {
+  .celestial-sun-container {
+    top: 9%;
+    left: 78%;
+    width: 320px;
+    height: 320px;
+  }
+  .celestial-sun-rays {
+    width: 480px;
+    height: 360px;
+  }
+}
+
+@media (max-width: 375px) {
+  .celestial-sun-container {
+    top: 8%;
+    left: 76%;
+    width: 280px;
+    height: 280px;
+  }
+}
+
+/* 7. Accessibility: Prefers-Reduced-Motion */
+@media (prefers-reduced-motion: reduce) {
+  .celestial-cloud-strip {
+    animation: none !important;
+    transform: translate3d(0, 0, 0) !important;
+  }
+  .celestial-sun-corona {
+    animation: none !important;
+    transform: scale(1) !important;
+    opacity: 0.95 !important;
+  }
+}
+
+/* ==============================================================================
+ * 8. CELESTIAL SIDEBAR BACKGROUND — LIGHT THEME ATMOSPHERE (MILESTONE M3)
+ * ============================================================================== */
+
+/* Root Sidebar Background Container */
+.celestial-sidebar-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+/* Tier 1: Rayleigh Scattering Vertical Gradient with Solid Fallback */
+.celestial-sidebar-atmosphere {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-color: #C8E8FC; /* Solid fallback prevents unpainted frame flashes */
+  background-image: linear-gradient(
+    180deg,
+    #84C2F5 0%,
+    #98CEF8 15%,
+    #B9E0FB 35%,
+    #C8E8FC 55%,
+    #D7EEFD 75%,
+    #F4FAFF 100%
+  );
+}
+
+/* Tier 2: Directional Sunlight & Solar Halo radiating from top-right (100% 0%) */
+.celestial-sidebar-sunlight {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image: radial-gradient(
+    circle at 100% 0%,
+    rgba(255, 255, 240, 0.45) 0%,
+    rgba(254, 240, 138, 0.18) 25%,
+    rgba(245, 158, 11, 0.06) 50%,
+    transparent 75%
+  );
+}
+
+/* Tier 3: Floating Cloud Layers */
+.celestial-sidebar-clouds {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.celestial-sidebar-cloud-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.celestial-sidebar-cloud-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  display: flex;
+  will-change: transform;
+  animation: celestial-drift-horizontal linear infinite;
+}
+
+/* Tier 4: Atmospheric Horizon Mist at bottom */
+.celestial-sidebar-mist {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 25%;
+  pointer-events: none;
+  background-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.25) 70%,
+    rgba(255, 255, 255, 0.50) 100%
+  );
+}
+
+/* Collapsed Sidebar (64px width): Soften cloud opacity to prevent icon clutter */
+:is(aside[data-collapsed="true"], [data-sidebar-collapsed="true"]) .celestial-sidebar-cloud-layer {
+  opacity: 0.18 !important;
+}
+
+/* Reduced Motion Support for Sidebar Clouds */
+@media (prefers-reduced-motion: reduce) {
+  .celestial-sidebar-cloud-strip {
+    animation: none !important;
+    transform: translate3d(0, 0, 0) !important;
+  }
+}
+
+

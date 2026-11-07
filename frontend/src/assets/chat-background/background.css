@@ -21,7 +21,22 @@ html.dark .chat-stars-bg,
 
 html:not(.dark) .chat-stars-bg,
 html.light .chat-stars-bg {
-  background: radial-gradient(ellipse at top, #ffffff 0%, #f1f5f9 100%);
+  background: transparent;
+}
+
+/* Zyricon Cosmic Mode: Canvas transparent backdrop */
+html.zyricon .chat-stars-bg,
+.zyricon .chat-stars-bg {
+  background: transparent !important;
+}
+
+html.zyricon .chat-stars-bg .chat-stars-layer-1,
+html.zyricon .chat-stars-bg .chat-stars-layer-2,
+html.zyricon .chat-stars-bg .chat-stars-layer-3,
+.zyricon .chat-stars-bg .chat-stars-layer-1,
+.zyricon .chat-stars-bg .chat-stars-layer-2,
+.zyricon .chat-stars-bg .chat-stars-layer-3 {
+  display: none !important;
 }
 
 .chat-stars-bg .chat-stars-layer-1,
@@ -41,7 +56,7 @@ html:not(.dark) .chat-stars-bg .chat-stars-layer-3,
 html.light .chat-stars-bg .chat-stars-layer-1,
 html.light .chat-stars-bg .chat-stars-layer-2,
 html.light .chat-stars-bg .chat-stars-layer-3 {
-  filter: invert(1) brightness(0.4) sepia(1) hue-rotate(200deg) saturate(3) opacity(0.45);
+  filter: invert(1) brightness(0.7) sepia(1) hue-rotate(30deg) saturate(2) opacity(0.08);
 }
 
 /* --------------------------------------------------------------------------
@@ -2132,4 +2147,39 @@ html.light .chat-stars-bg .chat-stars-layer-3 {
     animation: none !important;
     transform: none !important;
   }
+}
+
+/* ==========================================================================
+   Celestial Daylight - Scoped Frosted Glass Header for ChatArea
+   Applies EXCLUSIVELY to ChatArea Header in Light Theme.
+   Zero mutation on Dark Theme, Zyricon, Modals, or Sidebar headers.
+   ========================================================================== */
+
+.light .chat-area-header,
+[data-theme="light"] .chat-area-header {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Explicit Dark Theme protection */
+.dark:not(.zyricon) .chat-area-header,
+[data-theme="dark"] .chat-area-header {
+  background-color: transparent !important;
+  backdrop-filter: blur(1px) !important;
+  -webkit-backdrop-filter: blur(1px) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 0 4px 20px -4px rgba(110, 142, 251, 0.05) !important;
+}
+
+/* Explicit Zyricon Theme protection */
+.zyricon .chat-area-header,
+[data-theme="zyricon"] .chat-area-header {
+  background-color: rgba(7, 4, 11, 0.7) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom-color: rgba(196, 165, 184, 0.1) !important;
+  box-shadow: 0 4px 20px -4px rgba(7, 4, 11, 0.7) !important;
 }

@@ -24,14 +24,14 @@ export const SearchChatButton: React.FC<SearchChatButtonProps> = ({
         {/* Subtle ambient hover pulse / glow */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -m-1 rounded-2xl bg-emerald-500/0 blur-md transition-all duration-300 group-hover:bg-emerald-500/15 dark:group-hover:bg-emerald-500/20 motion-reduce:hidden"
+          className="pointer-events-none absolute inset-0 -m-1 rounded-2xl bg-emerald-500/0 blur-md transition-all duration-300 group-hover:bg-amber-500/20 dark:group-hover:bg-indigo-500/20 zyricon:group-hover:bg-[#98578D]/25 motion-reduce:hidden"
         />
 
         {/* Collapsed Button: 36x36px Icon Button centered at x=32px */}
         <button
           type="button"
           onClick={onClick}
-          className="relative z-10 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#1A2230] text-slate-600 dark:text-[#94A3B8] shadow-xs transition-all duration-200 ease-out hover:border-emerald-500/60 hover:text-[#1B8F3D] dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-[#222C3D] hover:shadow-sm hover:shadow-emerald-500/10 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+          className="relative z-10 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-white/[0.08] zyricon:border-[#694788]/30 bg-white dark:bg-[#1A2230] zyricon:bg-[#140E20] text-slate-600 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] shadow-xs transition-all duration-200 ease-out hover:border-amber-500/60 dark:hover:border-indigo-400/60 zyricon:hover:border-[#98578D]/50 hover:text-amber-700 dark:hover:text-indigo-300 zyricon:hover:text-[#C27595] hover:bg-amber-50/70 dark:hover:bg-[#1E1B4B]/50 zyricon:hover:bg-[#1D152D] hover:shadow-sm hover:shadow-amber-500/15 dark:hover:shadow-indigo-500/25 zyricon:hover:shadow-[0_0_12px_rgba(105,71,136,0.25)] active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 dark:focus-visible:ring-indigo-400/50 zyricon:focus-visible:ring-[#C27595] focus-visible:outline-none"
           title={`Tìm kiếm cuộc trò chuyện (${shortcutHint})`}
           aria-label="Tìm kiếm cuộc trò chuyện"
         >
@@ -59,19 +59,19 @@ export const SearchChatButton: React.FC<SearchChatButtonProps> = ({
       {/* Subtle ambient hover glow */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -m-0.5 rounded-xl bg-emerald-500/0 blur-sm transition-all duration-300 group-hover:bg-emerald-500/10 dark:group-hover:bg-emerald-500/15 motion-reduce:hidden"
+        className="pointer-events-none absolute inset-0 -m-0.5 rounded-xl bg-amber-500/0 blur-sm transition-all duration-300 group-hover:bg-amber-500/15 dark:group-hover:bg-indigo-500/15 zyricon:group-hover:bg-[#98578D]/20 motion-reduce:hidden"
       />
 
       <button
         type="button"
         onClick={onClick}
-        className="relative z-10 flex h-9 w-full items-center overflow-hidden rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#1A2230] px-2.5 shadow-xs transition-all duration-200 hover:border-emerald-500/50 hover:bg-slate-50/90 dark:hover:bg-[#222C3D] hover:shadow-sm hover:shadow-emerald-500/5 active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none text-left"
+        className="relative z-10 flex h-9 w-full items-center overflow-hidden rounded-xl border border-slate-200 dark:border-white/[0.08] zyricon:border-[#694788]/30 bg-white dark:bg-[#1A2230] zyricon:bg-[#140E20] px-2.5 shadow-xs transition-all duration-200 hover:border-amber-500/50 dark:hover:border-indigo-500/50 zyricon:hover:border-[#98578D]/45 hover:bg-amber-50/60 dark:hover:bg-[#1E1B4B]/30 zyricon:hover:bg-[#1D152D] hover:shadow-sm hover:shadow-amber-500/10 dark:hover:shadow-indigo-500/15 zyricon:hover:shadow-[0_0_12px_rgba(105,71,136,0.2)] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 dark:focus-visible:ring-indigo-400/50 zyricon:focus-visible:ring-[#C27595] focus-visible:outline-none text-left"
         title={`Tìm kiếm cuộc trò chuyện (${shortcutHint})`}
         aria-label="Tìm kiếm cuộc trò chuyện"
       >
         <span
           aria-hidden="true"
-          className="flex h-5 w-5 shrink-0 items-center justify-center text-slate-500 dark:text-[#94A3B8] transition-all duration-200 group-hover:text-[#1B8F3D] dark:group-hover:text-emerald-400 group-hover:scale-105 motion-reduce:transform-none"
+          className="flex h-5 w-5 shrink-0 items-center justify-center text-slate-500 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] transition-all duration-200 group-hover:text-amber-600 dark:group-hover:text-indigo-400 zyricon:group-hover:text-[#C27595] group-hover:scale-105 motion-reduce:transform-none"
         >
           <svg
             className="h-4 w-4"
@@ -88,13 +88,13 @@ export const SearchChatButton: React.FC<SearchChatButtonProps> = ({
           </svg>
         </span>
 
-        <span className="truncate pl-2 text-xs font-medium text-slate-600 dark:text-[#94A3B8] transition-colors duration-200 group-hover:text-slate-900 dark:group-hover:text-[#F1F5F9] select-none">
+        <span className="truncate pl-2 text-xs font-medium text-slate-600 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] transition-colors duration-200 group-hover:text-slate-900 dark:group-hover:text-[#F1F5F9] zyricon:group-hover:text-[#F7F3F6] select-none">
           Tìm kiếm cuộc trò chuyện
         </span>
 
         <kbd
           aria-hidden="true"
-          className="ml-auto inline-flex items-center gap-0.5 text-[10px] font-mono font-medium text-slate-600 dark:text-gray-400 bg-slate-100 dark:bg-white/[0.06] px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-white/10 shadow-2xs group-hover:border-emerald-500/30 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors select-none"
+          className="ml-auto inline-flex items-center gap-0.5 text-[10px] font-mono font-medium text-slate-600 dark:text-gray-400 zyricon:text-[#C4A5B8] bg-slate-100 dark:bg-white/[0.06] zyricon:bg-[#694788]/20 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-white/10 zyricon:border-[#694788]/35 shadow-2xs group-hover:border-amber-500/40 dark:group-hover:border-indigo-500/30 zyricon:group-hover:border-[#98578D]/40 group-hover:text-amber-800 dark:group-hover:text-indigo-300 zyricon:group-hover:text-[#EBDDE9] transition-colors select-none"
         >
           {shortcutHint}
         </kbd>

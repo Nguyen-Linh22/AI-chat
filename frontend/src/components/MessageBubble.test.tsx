@@ -464,7 +464,7 @@ describe('MessageBubble', () => {
         expect(region).toBeInTheDocument()
         expect(region).toHaveAttribute('tabIndex', '0')
         expect(region).toHaveClass('focus-visible:ring-2')
-        expect(region).toHaveClass('focus-visible:ring-[#1B8F3D]/50')
+        expect(region).toHaveClass('focus-visible:ring-amber-600')
 
         const th = screen.getByRole('columnheader', { name: 'Ngôn ngữ' })
         expect(th).toHaveAttribute('scope', 'col')
@@ -653,6 +653,87 @@ describe('MessageBubble', () => {
         expect(screen.queryByTestId('code-block')).not.toBeInTheDocument()
         expect(screen.queryByTestId('code-language-badge')).not.toBeInTheDocument()
         expect(screen.getByText('apiKey').tagName).toBe('CODE')
+      })
+    })
+
+    describe('Markdown Link Contrast & Differentiated Styling (AC-01 Patch)', () => {
+      it('should render AI Markdown link with text-sky-700 on bg-white bubble without opacity reduction', () => {
+        useThemeStore.setState({ theme: 'light' })
+        const { container } = render(
+          <MessageBubble
+            role="assistant"
+            content="Check out [Celestial Docs](https://example.com/ai)"
+          />
+        )
+
+        const link = screen.getByRole('link', { name: 'Celestial Docs' })
+        expect(link).toBeInTheDocument()
+        expect(link).toHaveAttribute('href', 'https://example.com/ai')
+        expect(link).toHaveClass('text-sky-700')
+        expect(link).toHaveClass('dark:text-indigo-400')
+        expect(link).toHaveClass('font-medium')
+        expect(link).toHaveClass('underline')
+        expect(link).not.toHaveClass('text-sky-300')
+        expect(link).not.toHaveClass('hover:opacity-85')
+
+        // Verify parent AI bubble is bg-white
+        const bubble = container.querySelector('.rounded-2xl')
+        expect(bubble).toHaveClass('bg-white')
+      })
+
+      it('should render User Markdown link with text-sky-300 on bg-slate-900 bubble without opacity reduction', () => {
+        useThemeStore.setState({ theme: 'light' })
+        const { container } = render(
+          <MessageBubble
+            role="user"
+            content="Check out [User Portfolio](https://portfolio.example.com)"
+          />
+        )
+
+        const link = screen.getByRole('link', { name: 'User Portfolio' })
+        expect(link).toBeInTheDocument()
+        expect(link).toHaveAttribute('href', 'https://portfolio.example.com')
+        expect(link).toHaveClass('text-sky-300')
+        expect(link).toHaveClass('font-medium')
+        expect(link).toHaveClass('underline')
+        expect(link).not.toHaveClass('text-sky-700')
+        expect(link).not.toHaveClass('hover:opacity-85')
+
+        // Verify parent User bubble is bg-slate-900
+        const bubble = container.querySelector('.rounded-2xl')
+        expect(bubble).toHaveClass('bg-slate-900')
+      })
+
+      it('should preserve Zyricon link styling for both AI and User bubbles without hover:opacity-85', () => {
+        useThemeStore.setState({ theme: 'zyricon' })
+
+        const { unmount: unmountAi } = render(
+          <MessageBubble
+            role="assistant"
+            content="[Zyricon AI Link](https://zyricon.ai)"
+          />
+        )
+        const aiLink = screen.getByRole('link', { name: 'Zyricon AI Link' })
+        expect(aiLink).toHaveClass('text-[#C27595]')
+        expect(aiLink).toHaveClass('hover:text-[#D98BA9]')
+        expect(aiLink).not.toHaveClass('hover:opacity-85')
+        expect(aiLink).not.toHaveClass('text-sky-300')
+        expect(aiLink).not.toHaveClass('text-sky-700')
+        unmountAi()
+
+        const { unmount: unmountUser } = render(
+          <MessageBubble
+            role="user"
+            content="[Zyricon User Link](https://zyricon.user)"
+          />
+        )
+        const userLink = screen.getByRole('link', { name: 'Zyricon User Link' })
+        expect(userLink).toHaveClass('text-[#C27595]')
+        expect(userLink).toHaveClass('hover:text-[#D98BA9]')
+        expect(userLink).not.toHaveClass('hover:opacity-85')
+        expect(userLink).not.toHaveClass('text-sky-300')
+        expect(userLink).not.toHaveClass('text-sky-700')
+        unmountUser()
       })
     })
   })

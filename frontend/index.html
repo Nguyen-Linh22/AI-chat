@@ -8,15 +8,29 @@
     <script>
       (function() {
         try {
-          var t = localStorage.getItem('theme') || 'dark';
-          if (t === 'dark') {
-            document.documentElement.classList.add('dark');
-            document.documentElement.classList.remove('light');
+          var t = localStorage.getItem('theme');
+          var valid = t === 'light' || t === 'dark' || t === 'zyricon';
+          var theme = valid ? t : 'dark';
+
+          var path = (window.location && window.location.pathname) ? window.location.pathname : '';
+          var clean = path.split('?')[0].split('#')[0].replace(/\/+/g, '/');
+          var isWorkspace =
+            /^\/chat(?:\/[^/]+)?\/?$/.test(clean) ||
+            /^\/c\/[^/]+\/?$/.test(clean);
+
+          var effectiveTheme = (theme === 'zyricon' && !isWorkspace) ? 'dark' : theme;
+          var root = document.documentElement;
+          if (effectiveTheme === 'zyricon') {
+            root.classList.add('dark', 'zyricon');
+            root.classList.remove('light');
+          } else if (effectiveTheme === 'dark') {
+            root.classList.add('dark');
+            root.classList.remove('light', 'zyricon');
           } else {
-            document.documentElement.classList.remove('dark');
-            document.documentElement.classList.add('light');
+            root.classList.remove('dark', 'zyricon');
+            root.classList.add('light');
           }
-          document.documentElement.setAttribute('data-theme', t);
+          root.setAttribute('data-theme', effectiveTheme);
         } catch (e) {}
       })();
     </script>

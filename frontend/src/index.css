@@ -1,26 +1,27 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant zyricon (&:where([data-theme="zyricon"], [data-theme="zyricon"] *, .zyricon, .zyricon *));
 
 /* ===== Design Tokens (Premium AI Workspace) ===== */
 :root {
-  --workspace-canvas: #F8FAFC;
-  --workspace-sidebar: #FFFFFF;
+  --workspace-canvas: #FAFBFD;
+  --workspace-sidebar: #F0F3F7;
   --workspace-surface: #FFFFFF;
-  --workspace-surface-hover: #F1F5F9;
-  --workspace-surface-active: #E2E8F0;
-  --workspace-border: #E2E8F0;
-  --workspace-border-strong: #CBD5E1;
-  --workspace-border-subtle: #F1F5F9;
+  --workspace-surface-hover: #E8ECF2;
+  --workspace-surface-active: #DEE4EC;
+  --workspace-border: #E2E6EE;
+  --workspace-border-strong: #CBD3E1;
+  --workspace-border-subtle: #F1F4F9;
 
   --workspace-text-primary: #0F172A;
   --workspace-text-secondary: #475569;
   --workspace-text-muted: #64748B;
 
-  --brand-primary: #1B8F3D;
-  --brand-primary-hover: #167632;
-  --brand-primary-light: rgba(27, 143, 61, 0.08);
-  --brand-primary-ring: rgba(27, 143, 61, 0.25);
+  --brand-primary: #F59E0B;
+  --brand-primary-hover: #EA580C;
+  --brand-primary-light: rgba(245, 158, 11, 0.1);
+  --brand-primary-ring: rgba(245, 158, 11, 0.35);
 
   --brand-danger: #B91E2B;
   --brand-danger-hover: #9E1924;
@@ -45,10 +46,10 @@
   --workspace-text-secondary: #94A3B8;
   --workspace-text-muted: #94A3B8;
 
-  --brand-primary: #1B8F3D;
-  --brand-primary-hover: #22A347;
-  --brand-primary-light: rgba(27, 143, 61, 0.15);
-  --brand-primary-ring: rgba(27, 143, 61, 0.35);
+  --brand-primary: #4F46E5;
+  --brand-primary-hover: #6366F1;
+  --brand-primary-light: rgba(79, 70, 229, 0.15);
+  --brand-primary-ring: rgba(79, 70, 229, 0.35);
 
   --brand-danger: #B91E2B;
   --brand-danger-hover: #D32535;
@@ -57,6 +58,51 @@
 
   --shadow-workspace-elevated: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
   --shadow-workspace-dropdown: 0 12px 30px -4px rgba(0, 0, 0, 0.6);
+}
+
+/* ===== Zyricon Design Tokens (Futuristic Deep Violet/Black Premium AI Workspace) ===== */
+[data-theme="zyricon"],
+.zyricon {
+  --workspace-canvas: #07040B;
+  --workspace-sidebar: #0C0814;
+  --workspace-surface: #140E20;
+  --workspace-surface-hover: #1D152D;
+  --workspace-surface-active: #291E3E;
+  --workspace-border: rgba(196, 165, 184, 0.12);
+  --workspace-border-strong: rgba(196, 165, 184, 0.22);
+  --workspace-border-subtle: rgba(196, 165, 184, 0.06);
+
+  --workspace-text-primary: #F7F3F6;
+  --workspace-text-secondary: #C4A5B8;
+  --workspace-text-muted: #8F7686;
+
+  --brand-primary: #98578D;
+  --brand-primary-hover: #C27595;
+  --brand-primary-light: rgba(152, 87, 141, 0.15);
+  --brand-primary-ring: rgba(194, 117, 149, 0.35);
+
+  --brand-danger: #B91E2B;
+  --brand-danger-hover: #D32535;
+  --brand-danger-light: rgba(185, 30, 43, 0.15);
+  --brand-danger-ring: rgba(185, 30, 43, 0.35);
+
+  --shadow-workspace-elevated: 0 4px 24px -2px rgba(7, 4, 11, 0.7);
+  --shadow-workspace-dropdown: 0 12px 32px -4px rgba(7, 4, 11, 0.85);
+
+  /* Specific Zyricon Accent & Aura Tokens */
+  --zyricon-canvas: #07040B;
+  --zyricon-sidebar: #0C0814;
+  --zyricon-purple: #694788;
+  --zyricon-violet-deep: #3B2568;
+  --zyricon-orchid: #98578D;
+  --zyricon-pink: #C27595;
+  --zyricon-pink-muted: #C4A5B8;
+  --zyricon-indigo: #313498;
+  --zyricon-focus-ring: rgba(194, 117, 149, 0.4);
+  --zyricon-glow: rgba(152, 87, 141, 0.35);
+  --zyricon-glow-purple: rgba(105, 71, 136, 0.45);
+  --zyricon-glow-pink: rgba(194, 117, 149, 0.4);
+  --zyricon-glow-indigo: rgba(49, 52, 152, 0.4);
 }
 
 @theme {
@@ -129,7 +175,7 @@ input:disabled:hover {
 @keyframes typewriter-cursor {
   0%, 100% {
     opacity: 1;
-    filter: drop-shadow(0 0 5px rgba(27, 143, 61, 0.75));
+    filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.75));
   }
   50% {
     opacity: 0.15;
@@ -139,7 +185,7 @@ input:disabled:hover {
 
 .ai-cursor {
   display: inline-block;
-  color: #1B8F3D;
+  color: #F59E0B;
   animation: typewriter-cursor 0.75s ease-in-out infinite;
   font-weight: 700;
   vertical-align: baseline;
@@ -368,6 +414,229 @@ input:disabled:hover {
   --text-secondary: var(--workspace-text-secondary);
   --text-muted: var(--workspace-text-muted);
 }
+
+[data-theme="zyricon"],
+.zyricon {
+  /* Zyricon Theme Surface & Neutral Tokens mapped to single source of truth */
+  --bg-app: var(--workspace-canvas);
+  --bg-surface: var(--workspace-sidebar);
+  --bg-surface-elevated: var(--workspace-surface);
+  --bg-surface-hover: var(--workspace-surface-hover);
+  --border-subtle: var(--workspace-border-subtle);
+  --border-default: var(--workspace-border);
+  --border-strong: var(--workspace-border-strong);
+  --text-primary: var(--workspace-text-primary);
+  --text-secondary: var(--workspace-text-secondary);
+  --text-muted: var(--workspace-text-muted);
+}
+
+/* ===== Zyricon Milestone 3 Workspace & Sidebar Styling ===== */
+
+/* Scoped Sidebar Container & Border styling */
+html.zyricon #app-sidebar,
+[data-theme="zyricon"] #app-sidebar,
+.zyricon #app-sidebar {
+  border-right-color: var(--workspace-border);
+  background-color: rgba(12, 8, 20, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+html.zyricon #app-sidebar::before,
+[data-theme="zyricon"] #app-sidebar::before,
+.zyricon #app-sidebar::before {
+  background: linear-gradient(to bottom, rgba(105, 71, 136, 0.08), transparent 40%, transparent);
+}
+
+/* Sidebar Header divider line in Zyricon */
+html.zyricon #app-sidebar > div:first-child::after,
+[data-theme="zyricon"] #app-sidebar > div:first-child::after,
+.zyricon #app-sidebar > div:first-child::after {
+  background: linear-gradient(to right, transparent, rgba(152, 87, 141, 0.35), transparent);
+}
+
+/* Sidebar Footer divider line in Zyricon */
+html.zyricon #app-sidebar > div:last-child::before,
+[data-theme="zyricon"] #app-sidebar > div:last-child::before,
+.zyricon #app-sidebar > div:last-child::before {
+  background: linear-gradient(to right, transparent, rgba(152, 87, 141, 0.25), transparent);
+}
+
+/* New Chat Button in Zyricon */
+html.zyricon #app-sidebar button[aria-label="Chat mới"],
+[data-theme="zyricon"] #app-sidebar button[aria-label="Chat mới"],
+.zyricon #app-sidebar button[aria-label="Chat mới"] {
+  background-color: var(--workspace-surface);
+  border-color: rgba(105, 71, 136, 0.35);
+  box-shadow: 0 2px 10px -2px rgba(7, 4, 11, 0.6);
+}
+
+html.zyricon #app-sidebar button[aria-label="Chat mới"]:hover,
+[data-theme="zyricon"] #app-sidebar button[aria-label="Chat mới"]:hover,
+.zyricon #app-sidebar button[aria-label="Chat mới"]:hover {
+  border-color: rgba(194, 117, 149, 0.6);
+  box-shadow: 0 0 16px rgba(152, 87, 141, 0.35);
+}
+
+/* Collapsed New Chat Button in Zyricon on Hover */
+html.zyricon #app-sidebar button.new-chat-collapsed-btn:hover,
+[data-theme="zyricon"] #app-sidebar button.new-chat-collapsed-btn:hover,
+.zyricon #app-sidebar button.new-chat-collapsed-btn:hover {
+  background: linear-gradient(135deg, #694788 0%, #98578D 60%, #C27595 100%) !important;
+  color: #FFFFFF !important;
+  border-color: rgba(194, 117, 149, 0.8) !important;
+  box-shadow: 0 0 16px rgba(152, 87, 141, 0.35) !important;
+}
+
+/* Expanded New Chat Button Slider in Zyricon */
+html.zyricon #app-sidebar .new-chat-bg-slider,
+[data-theme="zyricon"] #app-sidebar .new-chat-bg-slider,
+.zyricon #app-sidebar .new-chat-bg-slider {
+  background-color: rgba(105, 71, 136, 0.3);
+}
+
+html.zyricon #app-sidebar .group:hover .new-chat-bg-slider,
+[data-theme="zyricon"] #app-sidebar .group:hover .new-chat-bg-slider,
+.zyricon #app-sidebar .group:hover .new-chat-bg-slider {
+  background: linear-gradient(135deg, #694788 0%, #98578D 60%, #C27595 100%) !important;
+}
+
+html.zyricon #app-sidebar button[aria-label="Chat mới"] > span:nth-child(2),
+[data-theme="zyricon"] #app-sidebar button[aria-label="Chat mới"] > span:nth-child(2),
+.zyricon #app-sidebar button[aria-label="Chat mới"] > span:nth-child(2) {
+  color: #C27595;
+}
+
+html.zyricon #app-sidebar .group:hover button[aria-label="Chat mới"] > span:nth-child(2),
+[data-theme="zyricon"] #app-sidebar .group:hover button[aria-label="Chat mới"] > span:nth-child(2),
+.zyricon #app-sidebar .group:hover button[aria-label="Chat mới"] > span:nth-child(2) {
+  color: #FFFFFF;
+}
+
+/* Search Chat Button in Zyricon */
+html.zyricon #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"],
+[data-theme="zyricon"] #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"],
+.zyricon #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"] {
+  background-color: var(--workspace-surface);
+  border-color: rgba(105, 71, 136, 0.3);
+  color: var(--workspace-text-secondary);
+}
+
+html.zyricon #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"]:hover,
+[data-theme="zyricon"] #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"]:hover,
+.zyricon #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"]:hover {
+  background-color: var(--workspace-surface-hover);
+  border-color: rgba(152, 87, 141, 0.45);
+  box-shadow: 0 0 12px rgba(105, 71, 136, 0.2);
+}
+
+/* Search Icon in Zyricon on Hover */
+html.zyricon #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"] svg,
+[data-theme="zyricon"] #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"] svg,
+.zyricon #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"] svg {
+  color: #C4A5B8;
+  transition: color 0.2s ease-out;
+}
+
+html.zyricon #app-sidebar .group:hover button[aria-label="Tìm kiếm cuộc trò chuyện"] svg,
+[data-theme="zyricon"] #app-sidebar .group:hover button[aria-label="Tìm kiếm cuộc trò chuyện"] svg,
+.zyricon #app-sidebar .group:hover button[aria-label="Tìm kiếm cuộc trò chuyện"] svg,
+html.zyricon #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"]:hover svg,
+[data-theme="zyricon"] #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"]:hover svg,
+.zyricon #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"]:hover svg {
+  color: #C27595 !important;
+}
+
+html.zyricon #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"] kbd,
+[data-theme="zyricon"] #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"] kbd,
+.zyricon #app-sidebar button[aria-label="Tìm kiếm cuộc trò chuyện"] kbd {
+  background-color: rgba(105, 71, 136, 0.2);
+  border-color: rgba(105, 71, 136, 0.35);
+  color: #C4A5B8;
+}
+
+/* Chat Stars Background in Zyricon */
+html.dark.zyricon .chat-stars-bg,
+html.dark[data-theme="zyricon"] .chat-stars-bg,
+html.zyricon .chat-stars-bg,
+html[data-theme="zyricon"] .chat-stars-bg,
+[data-theme="zyricon"] .chat-stars-bg,
+.zyricon .chat-stars-bg {
+  background: transparent !important;
+}
+
+html.dark.zyricon .chat-stars-bg .chat-stars-layer-1,
+html.dark.zyricon .chat-stars-bg .chat-stars-layer-2,
+html.dark.zyricon .chat-stars-bg .chat-stars-layer-3,
+html.dark[data-theme="zyricon"] .chat-stars-bg .chat-stars-layer-1,
+html.dark[data-theme="zyricon"] .chat-stars-bg .chat-stars-layer-2,
+html.dark[data-theme="zyricon"] .chat-stars-bg .chat-stars-layer-3,
+html.zyricon .chat-stars-bg .chat-stars-layer-1,
+html.zyricon .chat-stars-bg .chat-stars-layer-2,
+html.zyricon .chat-stars-bg .chat-stars-layer-3,
+[data-theme="zyricon"] .chat-stars-bg .chat-stars-layer-1,
+[data-theme="zyricon"] .chat-stars-bg .chat-stars-layer-2,
+[data-theme="zyricon"] .chat-stars-bg .chat-stars-layer-3,
+.zyricon .chat-stars-bg .chat-stars-layer-1,
+.zyricon .chat-stars-bg .chat-stars-layer-2,
+.zyricon .chat-stars-bg .chat-stars-layer-3 {
+  display: none !important;
+}
+
+/* Zyricon Scrollbars */
+html.zyricon .scrollbar-thin::-webkit-scrollbar-thumb,
+[data-theme="zyricon"] .scrollbar-thin::-webkit-scrollbar-thumb,
+.zyricon .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(105, 71, 136, 0.3);
+  border-radius: 9999px;
+}
+
+html.zyricon .scrollbar-thin::-webkit-scrollbar-thumb:hover,
+[data-theme="zyricon"] .scrollbar-thin::-webkit-scrollbar-thumb:hover,
+.zyricon .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(152, 87, 141, 0.5);
+}
+
+/* ===== Zyricon AI Orb & Welcome Experience Keyframes ===== */
+@keyframes zyricon-orb-glow {
+  0%, 100% {
+    box-shadow: 0 0 35px rgba(152, 87, 141, 0.35), 0 0 75px rgba(105, 71, 136, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.22), inset 0 -2px 6px rgba(0, 0, 0, 0.85);
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(194, 117, 149, 0.5), 0 0 95px rgba(152, 87, 141, 0.3), inset 0 2px 6px rgba(255, 255, 255, 0.3), inset 0 -2px 8px rgba(0, 0, 0, 0.9);
+    transform: translateY(-2px) scale(1.015);
+  }
+}
+
+@keyframes zyricon-halo-drift {
+  0%, 100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+}
+
+.zyricon-orb-container {
+  animation: zyricon-orb-glow 4.5s ease-in-out infinite;
+}
+
+.zyricon-orb-halo {
+  animation: zyricon-halo-drift 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zyricon-orb-container,
+  .zyricon-orb-halo {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+
 
 /* Subtle Shake Animation on Validation Error (250ms - 300ms) */
 @keyframes auth-shake {
@@ -795,4 +1064,59 @@ html.view-transition-active #theme-toggle-btn {
   .sidebar-motion {
     transition: none !important;
   }
+}
+
+
+/* ==============================================================================
+   Light Theme Harmonization: Radiant Sunburst Amber & Morning Glow
+   ============================================================================== */
+
+/* Light Theme Composer Send Button */
+:is(html:not(.dark):not(.zyricon), html.light, [data-theme='light']) .composer-send-btn:not([disabled]):not(.bg-\[\#B91E2B\]) {
+  background: linear-gradient(135deg, #F59E0B, #EA580C) !important;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.38) !important;
+  border: 1px solid rgba(254, 240, 138, 0.5) !important;
+  color: #ffffff !important;
+}
+
+:is(html:not(.dark):not(.zyricon), html.light, [data-theme='light']) .composer-send-btn:not([disabled]):not(.bg-\[\#B91E2B\]):hover {
+  background: linear-gradient(135deg, #EA580C, #F59E0B) !important;
+  box-shadow: 0 8px 24px rgba(234, 88, 12, 0.48) !important;
+  transform: translateY(-1px) scale(1.05);
+}
+
+/* Light Theme Sidebar Active Indicator */
+:is(html:not(.dark):not(.zyricon), html.light, [data-theme='light']) .sidebar-active-indicator {
+  background: linear-gradient(to bottom, #F59E0B, #EA580C) !important;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.65) !important;
+}
+
+/* Light Theme Sidebar Active Item Card */
+:is(html:not(.dark):not(.zyricon), html.light, [data-theme='light']) .sidebar-active-item {
+  background: #FFFFFF !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+:is(html:not(.dark):not(.zyricon), html.light, [data-theme='light']) .sidebar-active-item svg {
+  color: #D97706 !important;
+}
+
+/* Light Theme New Chat Button Slider */
+:is(html:not(.dark):not(.zyricon), html.light, [data-theme='light']) .new-chat-bg-slider {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+}
+
+:is(html:not(.dark):not(.zyricon), html.light, [data-theme='light']) .group:hover .new-chat-bg-slider {
+  background: linear-gradient(135deg, #F59E0B, #EA580C) !important;
+}
+
+/* Light Theme Smart Scroll Button */
+:is(html:not(.dark):not(.zyricon), html.light, [data-theme='light']) .scroll-to-bottom-btn {
+  border-color: rgba(245, 158, 11, 0.55) !important;
+  color: #92400E !important;
+}
+
+:is(html:not(.dark):not(.zyricon), html.light, [data-theme='light']) .scroll-to-bottom-btn svg {
+  color: #D97706 !important;
 }

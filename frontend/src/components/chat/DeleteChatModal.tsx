@@ -117,7 +117,7 @@ export function DeleteChatModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="fixed inset-0 bg-black/75 backdrop-blur-md animate-modal-fade"
+        className="fixed inset-0 bg-black/75 zyricon:bg-[#07040B]/85 backdrop-blur-md animate-modal-fade"
         onClick={!isDeleting ? onCancel : undefined}
         aria-hidden="true"
       />
@@ -129,7 +129,7 @@ export function DeleteChatModal({
         aria-labelledby="delete-chat-title"
         aria-describedby="delete-chat-desc"
         onClick={(e) => e.stopPropagation()}
-        className={`relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 dark:border-white/[0.12] bg-white dark:bg-[#1A2230] p-5 sm:p-6 shadow-2xl backdrop-blur-2xl animate-modal-enter outline-none ${
+        className={`relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 dark:border-white/[0.12] zyricon:border-[#694788]/35 bg-white dark:bg-[#1A2230] zyricon:bg-[#120B1C]/98 p-5 sm:p-6 shadow-2xl zyricon:shadow-[0_12px_48px_rgba(7,4,11,0.95)] backdrop-blur-2xl animate-modal-enter outline-none ${
           error ? 'animate-ui-shake' : ''
         }`}
       >
@@ -154,23 +154,23 @@ export function DeleteChatModal({
         {/* Modal Title */}
         <h2
           id="delete-chat-title"
-          className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight"
+          className="text-base sm:text-lg font-bold text-slate-900 dark:text-white zyricon:text-[#F7F3F6] tracking-tight"
         >
           Xóa đoạn chat này?
         </h2>
 
         {/* Body Text & Highlighted Chat Title */}
-        <p className="mt-1 text-xs text-slate-600 dark:text-gray-300">
+        <p className="mt-1 text-xs text-slate-600 dark:text-gray-300 zyricon:text-[#C4A5B8]">
           Bạn sắp xóa đoạn chat:
         </p>
-        <div className="my-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#131923] px-3 py-2 text-xs font-semibold text-slate-800 dark:text-[#F1F5F9] truncate shadow-2xs">
+        <div className="my-2.5 rounded-xl border border-slate-200 dark:border-white/[0.08] zyricon:border-[#694788]/30 bg-slate-50 dark:bg-[#131923] zyricon:bg-[#1A102A]/80 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-[#F1F5F9] zyricon:text-[#EBDDE9] truncate shadow-2xs">
           {chatTitle}
         </div>
 
         {/* Permanent Warning */}
         <p
           id="delete-chat-desc"
-          className="text-xs text-slate-500 dark:text-[#94A3B8] leading-relaxed"
+          className="text-xs text-slate-500 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] leading-relaxed"
         >
           Hành động này không thể hoàn tác. Toàn bộ lịch sử tin nhắn sẽ bị xóa vĩnh viễn.
         </p>
@@ -192,7 +192,7 @@ export function DeleteChatModal({
             type="button"
             disabled={isDeleting}
             onClick={onCancel}
-            className="rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-[#222C3D] px-4 py-2 text-xs font-medium text-slate-700 dark:text-[#F1F5F9] transition hover:bg-slate-200 dark:hover:bg-[#2A374C] hover:text-slate-900 dark:hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+            className="rounded-xl border border-slate-200 dark:border-white/[0.08] zyricon:border-[#694788]/35 bg-slate-100 dark:bg-[#222C3D] zyricon:bg-[#1D132D] px-4 py-2 text-xs font-medium text-slate-700 dark:text-[#F1F5F9] zyricon:text-[#C4A5B8] transition hover:bg-slate-200 dark:hover:bg-[#1E1B4B]/50 zyricon:hover:bg-[#25173D] hover:text-slate-900 dark:hover:text-indigo-200 zyricon:hover:text-[#F7F3F6] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 dark:focus-visible:ring-indigo-400/50 zyricon:focus-visible:ring-[#C27595]/50 focus-visible:outline-none"
           >
             Hủy bỏ
           </button>

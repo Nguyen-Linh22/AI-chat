@@ -736,7 +736,7 @@ describe('Sidebar', () => {
     const { container } = render(<Sidebar />)
 
     // Active indicator bar
-    const indicator = container.querySelector('.bg-\\[\\#1B8F3D\\]')
+    const indicator = container.querySelector('.sidebar-active-indicator')
     expect(indicator).toBeInTheDocument()
 
     // Active chat title

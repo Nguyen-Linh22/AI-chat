@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { useChatStore } from '../stores/chatStore'
 import { useAIStore } from '../stores/aiStore'
 import { useMessageStore } from '../stores/messageStore'
+import { useThemeStore } from '../stores/themeStore'
 import { streamMessage } from '../services/streamService'
 import { createChat } from '../services/chatService'
 import { useTypewriterQueue } from '../hooks/useTypewriterQueue'
@@ -77,6 +78,9 @@ function ChatInput() {
   const setAbortCurrentStream = useMessageStore((state) => state.setAbortCurrentStream)
   const replaceMessage = useMessageStore((state) => state.replaceMessage)
   const removeMessage = useMessageStore((state) => state.removeMessage)
+
+  const theme = useThemeStore((state) => state.theme)
+  const isZyricon = theme === 'zyricon'
 
   const [content, setContent] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -517,7 +521,13 @@ function ChatInput() {
     <div className="relative shrink-0 px-3 sm:px-6 pb-3 pt-1">
       <div className="relative mx-auto w-full max-w-4xl">
         {sendError && (
-          <p className="mb-2 rounded-xl border border-[#B91E2B]/30 bg-[#B91E2B]/10 px-3 py-1.5 text-xs sm:text-sm text-[#B91E2B]">
+          <p
+            className={`mb-2 rounded-xl border ${
+              isZyricon
+                ? 'border-[#B91E2B]/40 bg-[#B91E2B]/15 text-[#ff6b78]'
+                : 'border-[#B91E2B]/30 bg-[#B91E2B]/10 text-[#B91E2B]'
+            } px-3 py-1.5 text-xs sm:text-sm`}
+          >
             {sendError}
           </p>
         )}
@@ -527,9 +537,19 @@ function ChatInput() {
             id="attachment-popover"
             role="dialog"
             aria-label="Đính kèm tệp"
-            className="absolute bottom-full left-2 mb-3 z-30 flex flex-col gap-2 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#18202d]/95 p-3 shadow-xl dark:shadow-2xl backdrop-blur-2xl animate-dropdown-fade"
+            className={`absolute bottom-full left-2 mb-3 z-30 flex flex-col gap-2 rounded-2xl border ${
+              isZyricon
+                ? 'border-[#694788]/40 bg-[#140E20]/95 p-3 shadow-[0_12px_36px_rgba(7,4,11,0.85)] text-[#F7F3F6]'
+                : 'border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#18202d]/95 p-3 shadow-xl dark:shadow-2xl'
+            } backdrop-blur-2xl animate-dropdown-fade`}
           >
-            <span className="text-[11px] text-slate-500 dark:text-gray-400 font-medium">Đính kèm (PDF, TXT)</span>
+            <span
+              className={`text-[11px] ${
+                isZyricon ? 'text-[#C4A5B8]' : 'text-slate-500 dark:text-gray-400'
+              } font-medium`}
+            >
+              Đính kèm (PDF, TXT)
+            </span>
             <div className="flex items-center gap-2">
               {/* File - Document (PDF, TXT) */}
               <button
@@ -538,7 +558,11 @@ function ChatInput() {
                   setIsAttachmentOpen(false)
                   fileInputRef.current?.click()
                 }}
-                className="flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition shadow-2xs cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500/50"
+                className={`flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-xl ${
+                  isZyricon
+                    ? 'bg-[#694788]/20 text-[#C27595] border border-[#98578D]/35 hover:bg-[#98578D]/35'
+                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25'
+                } transition shadow-2xs cursor-pointer focus-visible:ring-2 focus-visible:ring-[#C27595]/50`}
                 title="Tài liệu (PDF, TXT)"
                 aria-label="Tài liệu (PDF, TXT)"
               >
@@ -554,7 +578,11 @@ function ChatInput() {
                   setIsAttachmentOpen(false)
                   setContent((prev) => (prev ? `${prev}\n\`\`\`\n\n\`\`\`` : '```\n\n```'))
                 }}
-                className="flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition shadow-2xs font-mono text-xs font-bold cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500/50"
+                className={`flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-xl ${
+                  isZyricon
+                    ? 'bg-[#313498]/25 text-[#C4A5B8] border border-[#313498]/40 hover:bg-[#313498]/40'
+                    : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-500/25'
+                } transition shadow-2xs font-mono text-xs font-bold cursor-pointer focus-visible:ring-2 focus-visible:ring-[#C27595]/50`}
                 title="Mã nguồn"
                 aria-label="Mã nguồn"
               >
@@ -574,17 +602,29 @@ function ChatInput() {
             data-testid="composer-drop-zone"
             className={`relative flex flex-col rounded-2xl border ${
               isDragging
-                ? 'border-dashed border-[#1B8F3D] dark:border-emerald-500 ring-2 ring-[#1B8F3D]/25'
+                ? isZyricon
+                  ? 'border-dashed border-[#C27595] ring-2 ring-[#C27595]/30'
+                  : 'border-dashed border-amber-500 dark:border-indigo-500 ring-2 ring-amber-500/30 dark:ring-indigo-500/30'
+                : isZyricon
+                ? 'border-[#694788]/35 hover:border-[#98578D]/50'
                 : 'border-slate-200/90 dark:border-white/10'
-            } bg-white/95 dark:bg-[#131924]/90 p-1.5 sm:p-2 shadow-lg dark:shadow-xl backdrop-blur-xl transition-all duration-200 focus-within:border-[#1B8F3D]/50 focus-within:ring-2 focus-within:ring-[#1B8F3D]/20`}
+            } ${
+              isZyricon
+                ? 'bg-[#140E20]/95 p-2.5 sm:p-3 shadow-xl backdrop-blur-xl transition-all duration-200 focus-within:border-[#C27595]/70 focus-within:ring-2 focus-within:ring-[#C27595]/20 focus-within:shadow-[0_0_24px_rgba(152,87,141,0.28)]'
+                : 'bg-white/95 dark:bg-[#131924]/90 p-1.5 sm:p-2 shadow-lg dark:shadow-xl backdrop-blur-xl transition-all duration-200 focus-within:border-amber-500/60 dark:focus-within:border-indigo-500/60 focus-within:ring-2 focus-within:ring-amber-500/25 focus-within:shadow-[0_0_24px_rgba(245,158,11,0.2)] dark:focus-within:ring-indigo-500/25 dark:focus-within:shadow-[0_0_24px_rgba(79,70,229,0.22)]'
+            }`}
           >
             {/* Drag-and-Drop Dropzone Overlay */}
             {isDragging && (
               <div
                 data-testid="drop-zone-overlay"
-                className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#1B8F3D] dark:border-emerald-500 bg-white/95 dark:bg-[#131924]/95 backdrop-blur-md pointer-events-none p-3 select-none"
+                className={`absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed ${
+                  isZyricon
+                    ? 'border-[#C27595] bg-[#140E20]/95 text-[#C27595]'
+                    : 'border-amber-500 dark:border-indigo-500 bg-white/95 dark:bg-[#131924]/95 text-amber-700 dark:text-indigo-300'
+                } backdrop-blur-md pointer-events-none p-3 select-none`}
               >
-                <div className="flex items-center gap-2 text-[#1B8F3D] dark:text-emerald-400 font-semibold text-xs sm:text-sm">
+                <div className="flex items-center gap-2 font-semibold text-xs sm:text-sm">
                   <svg
                     className="h-5 w-5 animate-bounce motion-reduce:animate-none"
                     fill="none"
@@ -601,7 +641,7 @@ function ChatInput() {
                   </svg>
                   <span>Thả file PDF hoặc TXT vào đây</span>
                 </div>
-                <span className="text-[11px] text-slate-500 dark:text-gray-400 mt-0.5">
+                <span className={`text-[11px] ${isZyricon ? 'text-[#8F7686]' : 'text-slate-500 dark:text-gray-400'} mt-0.5`}>
                   Tối đa 10 MB • 1 file duy nhất
                 </span>
               </div>
@@ -610,7 +650,11 @@ function ChatInput() {
             {selectedFile && (
               <div className="flex flex-wrap items-center gap-2 px-1 pt-0.5 pb-1.5 max-h-28 overflow-y-auto scrollbar-thin">
                 <div
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200/90 dark:border-white/10 bg-slate-100/90 dark:bg-white/[0.06] px-2.5 py-1 text-xs text-slate-700 dark:text-gray-200 shadow-2xs max-w-full transition-all"
+                  className={`inline-flex items-center gap-2 rounded-xl border ${
+                    isZyricon
+                      ? 'border-[#694788]/35 bg-[#1D152D] text-[#F7F3F6] shadow-xs'
+                      : 'border-slate-200/90 dark:border-white/10 bg-slate-100/90 dark:bg-white/[0.06] text-slate-700 dark:text-gray-200 shadow-2xs'
+                  } px-2.5 py-1 text-xs max-w-full transition-all`}
                   data-testid="attachment-pill"
                   aria-label={`Tệp đính kèm: ${selectedFile.name}, kích thước: ${formatFileSize(selectedFile.size)}`}
                   title={`${selectedFile.name} (${formatFileSize(selectedFile.size)})`}
@@ -619,7 +663,11 @@ function ChatInput() {
                     data-testid="attachment-type-badge"
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
                       selectedFile.name.toLowerCase().endsWith('.pdf') || selectedFile.type === 'application/pdf'
-                        ? 'bg-rose-500/15 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'
+                        ? isZyricon
+                          ? 'bg-rose-500/20 text-rose-300'
+                          : 'bg-rose-500/15 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'
+                        : isZyricon
+                        ? 'bg-purple-500/20 text-[#C27595]'
                         : 'bg-sky-500/15 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400'
                     } text-[11px] select-none`}
                     aria-hidden="true"
@@ -633,12 +681,12 @@ function ChatInput() {
                     {selectedFile.name}
                   </span>
 
-                  <span className="text-[10px] font-mono text-slate-600 dark:text-gray-400 shrink-0 select-none">
+                  <span className={`text-[10px] font-mono ${isZyricon ? 'text-[#8F7686]' : 'text-slate-600 dark:text-gray-400'} shrink-0 select-none`}>
                     {formatFileSize(selectedFile.size)}
                   </span>
 
                   {isActive ? (
-                    <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-medium shrink-0 ml-0.5 select-none">
+                    <span className={`flex items-center gap-1 text-[10px] ${isZyricon ? 'text-[#C27595]' : 'text-amber-600 dark:text-amber-400'} font-medium shrink-0 ml-0.5 select-none`}>
                       <svg
                         className="animate-spin h-3 w-3"
                         xmlns="http://www.w3.org/2000/svg"
@@ -667,7 +715,11 @@ function ChatInput() {
                       type="button"
                       onClick={() => setSelectedFile(null)}
                       disabled={isActive}
-                      className="ml-1 -my-1 flex h-7 w-7 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/80 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors cursor-pointer text-xs disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none"
+                      className={`ml-1 -my-1 flex h-7 w-7 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full ${
+                        isZyricon
+                          ? 'text-[#C4A5B8] hover:text-white hover:bg-[#694788]/30'
+                          : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200/80 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10'
+                      } transition-colors cursor-pointer text-xs disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none`}
                       title={`Xóa file ${selectedFile.name}`}
                       aria-label={`Xóa file ${selectedFile.name}`}
                     >
@@ -680,136 +732,274 @@ function ChatInput() {
               </div>
             )}
 
-            {/* Input & Action buttons row */}
-            <div className="flex items-end gap-1.5 sm:gap-2">
-              {/* Attachment Button */}
-              <button
-                ref={attachmentButtonRef}
-                type="button"
-                onClick={() => setIsAttachmentOpen((prev) => !prev)}
-                disabled={isActive}
-                aria-expanded={isAttachmentOpen}
-                aria-haspopup="dialog"
-                aria-controls="attachment-popover"
-                className="flex h-9 w-9 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-[#1B8F3D]/15 dark:bg-[#1B8F3D]/25 text-[#1B8F3D] dark:text-emerald-400 font-bold text-base shadow-2xs transition hover:bg-[#1B8F3D] hover:text-white active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 mb-0.5 focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
-                title="Đính kèm file"
-                aria-label="Đính kèm file"
-              >
-                <svg className="h-4 w-4 sm:h-3.5 sm:w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
+            {isZyricon ? (
+              /* ZYRICON COMPOSER: Full-width Textarea top with clear separation to dedicated toolbar bottom */
+              <div className="flex flex-col gap-1">
+                {/* Upper Tier: Textarea */}
+                <div className="w-full">
+                  <textarea
+                    ref={textareaRef}
+                    rows={1}
+                    value={content}
+                    onChange={(event) => {
+                      setContent(event.target.value)
+                      setSendError(null)
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        if (event.shiftKey) {
+                          return
+                        }
+                        event.preventDefault()
+                        if (!isActive && !isDisabled && content.trim()) {
+                          handleSendMessage()
+                        }
+                      }
+                    }}
+                    disabled={isActive}
+                    placeholder="Nhập tin nhắn..."
+                    aria-label="Nội dung tin nhắn"
+                    className="min-w-0 w-full resize-none bg-transparent px-2.5 py-1 text-xs sm:text-sm text-[#F7F3F6] outline-none placeholder:text-[#8F7686] disabled:cursor-not-allowed disabled:opacity-50 scrollbar-thin font-sans leading-relaxed"
+                  />
+                </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.txt,application/pdf,text/plain"
-                onChange={handleSelectFile}
-                className="hidden"
-              />
+                {/* Lower Tier: Distinct Toolbar with clear separation */}
+                <div className="flex items-center justify-between pt-1.5 border-t border-[#694788]/20">
+                  {/* Left Toolbar Controls */}
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <button
+                      ref={attachmentButtonRef}
+                      type="button"
+                      onClick={() => setIsAttachmentOpen((prev) => !prev)}
+                      disabled={isActive}
+                      aria-expanded={isAttachmentOpen}
+                      aria-haspopup="dialog"
+                      aria-controls="attachment-popover"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#1D152D] border border-[#694788]/30 text-[#C27595] font-bold text-base shadow-2xs transition-all hover:bg-[#98578D] hover:text-white hover:border-[#C27595]/50 active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-[#C27595] focus-visible:outline-none"
+                      title="Đính kèm file"
+                      aria-label="Đính kèm file"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
 
-              {/* M6.1: Integrated Model Indicator in Control Island */}
-              {selectedModel?.name && (
-                <div
-                  data-testid="model-indicator"
-                  aria-label={`Mô hình AI: ${selectedModel.name}`}
-                  className="flex items-center gap-1 rounded-md border border-slate-200/80 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.05] px-1.5 sm:px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-gray-300 sm:max-w-[160px] select-none shrink-0 mb-0.5"
-                  title={`Mô hình AI: ${selectedModel.name}`}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.txt,application/pdf,text/plain"
+                      onChange={handleSelectFile}
+                      className="hidden"
+                    />
+
+                    {selectedModel?.name && (
+                      <div
+                        data-testid="model-indicator"
+                        aria-label={`Mô hình AI: ${selectedModel.name}`}
+                        className="flex items-center gap-1.5 rounded-lg border border-[#694788]/30 bg-[#1D152D] px-2 sm:px-2.5 py-1 text-[11px] font-medium text-[#E4D7EE] sm:max-w-[170px] select-none shrink-0 shadow-2xs"
+                        title={`Mô hình AI: ${selectedModel.name}`}
+                      >
+                        <svg
+                          className="h-3 w-3 shrink-0 text-[#C27595]"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+                          />
+                        </svg>
+                        <span className="hidden sm:inline truncate">{selectedModel.name}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Toolbar Controls */}
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsExpanded(true)}
+                      disabled={isActive}
+                      aria-label="Mở rộng trình soạn thảo"
+                      title="Mở rộng trình soạn thảo"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#C4A5B8] hover:text-[#F7F3F6] hover:bg-[#1D152D] hover:border hover:border-[#694788]/30 transition-all duration-150 active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-[#C27595] focus-visible:outline-none"
+                    >
+                      <svg
+                        className="h-3.5 w-3.5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2.2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <polyline points="15 3 21 3 21 9" />
+                        <polyline points="9 21 3 21 3 15" />
+                        <line x1="21" y1="3" x2="14" y2="10" />
+                        <line x1="3" y1="21" x2="10" y2="14" />
+                      </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={isActive ? handleStopAction : handleSendMessage}
+                      disabled={!isActive && (isDisabled || !content.trim())}
+                      aria-label={isActive ? 'Dừng' : 'Gửi'}
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-white transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.95] focus-visible:ring-2 focus-visible:outline-none ${
+                        isActive
+                          ? 'bg-[#B91E2B] hover:bg-[#9E1924] shadow-md shadow-[#B91E2B]/40 focus-visible:ring-[#B91E2B]/50'
+                          : 'bg-gradient-to-r from-[#98578D] to-[#C27595] hover:from-[#A8629D] hover:to-[#D285A5] hover:scale-105 shadow-md shadow-[0_0_15px_rgba(152,87,141,0.35)] focus-visible:ring-[#C27595]'
+                      }`}
+                    >
+                      <span className="sr-only">{isActive ? 'Dừng' : 'Gửi'}</span>
+                      {isActive ? (
+                        <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                          <rect x="4" y="4" width="16" height="16" rx="2" />
+                        </svg>
+                      ) : (
+                        <svg className="h-4 w-4 sm:h-3.5 sm:w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* LIGHT & DARK BASELINE: Preserved single-row layout */
+              <div className="flex items-end gap-1.5 sm:gap-2">
+                {/* Attachment Button */}
+                <button
+                  ref={attachmentButtonRef}
+                  type="button"
+                  onClick={() => setIsAttachmentOpen((prev) => !prev)}
+                  disabled={isActive}
+                  aria-expanded={isAttachmentOpen}
+                  aria-haspopup="dialog"
+                  aria-controls="attachment-popover"
+                  className="flex h-9 w-9 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-amber-100/70 dark:bg-indigo-950/60 text-amber-800 dark:text-indigo-300 border border-amber-300/60 dark:border-indigo-500/30 font-bold text-base shadow-2xs transition hover:bg-gradient-to-r hover:from-[#F59E0B] hover:to-[#EA580C] dark:hover:bg-gradient-to-r dark:hover:from-[#4F46E5] dark:hover:to-[#7C3AED] hover:text-white dark:hover:text-white dark:hover:border-indigo-400/50 dark:hover:shadow-[0_0_12px_rgba(99,102,241,0.4)] active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 mb-0.5 focus-visible:ring-2 focus-visible:ring-amber-600 dark:focus-visible:ring-indigo-400/50 focus-visible:outline-none"
+                  title="Đính kèm file"
+                  aria-label="Đính kèm file"
+                >
+                  <svg className="h-4 w-4 sm:h-3.5 sm:w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.txt,application/pdf,text/plain"
+                  onChange={handleSelectFile}
+                  className="hidden"
+                />
+
+                {/* M6.1: Integrated Model Indicator in Control Island */}
+                {selectedModel?.name && (
+                  <div
+                    data-testid="model-indicator"
+                    aria-label={`Mô hình AI: ${selectedModel.name}`}
+                    className="flex items-center gap-1 rounded-md border border-slate-200/80 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.05] px-1.5 sm:px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-gray-300 sm:max-w-[160px] select-none shrink-0 mb-0.5"
+                    title={`Mô hình AI: ${selectedModel.name}`}
+                  >
+                    <svg
+                      className="h-3 w-3 shrink-0 text-amber-600 dark:text-indigo-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+                      />
+                    </svg>
+                    <span className="hidden sm:inline truncate">{selectedModel.name}</span>
+                  </div>
+                )}
+
+                {/* Message Input: Auto-expanding Textarea */}
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
+                  value={content}
+                  onChange={(event) => {
+                    setContent(event.target.value)
+                    setSendError(null)
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      if (event.shiftKey) {
+                        return
+                      }
+                      event.preventDefault()
+                      if (!isActive && !isDisabled && content.trim()) {
+                        handleSendMessage()
+                      }
+                    }
+                  }}
+                  disabled={isActive}
+                  placeholder="Nhập tin nhắn..."
+                  aria-label="Nội dung tin nhắn"
+                  className="min-w-0 flex-1 resize-none bg-transparent px-2.5 py-1.5 text-xs sm:text-sm text-slate-800 dark:text-gray-100 outline-none placeholder:text-slate-500 dark:placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-50 scrollbar-thin font-sans leading-relaxed"
+                />
+
+                {/* Expand Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(true)}
+                  disabled={isActive}
+                  aria-label="Mở rộng trình soạn thảo"
+                  title="Mở rộng trình soạn thảo"
+                  className="flex h-9 w-9 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full text-slate-500 hover:text-amber-800 hover:bg-amber-50 hover:border hover:border-amber-300/40 dark:text-gray-400 dark:hover:text-indigo-200 dark:hover:bg-[#1E1B4B]/50 dark:hover:border dark:hover:border-indigo-500/30 transition-all duration-150 active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 mb-0.5 focus-visible:ring-2 focus-visible:ring-amber-600 dark:focus-visible:ring-indigo-400/50 focus-visible:outline-none"
                 >
                   <svg
-                    className="h-3 w-3 shrink-0 text-[#1B8F3D] dark:text-emerald-400"
-                    fill="none"
+                    className="h-3.5 w-3.5"
                     viewBox="0 0 24 24"
+                    fill="none"
                     stroke="currentColor"
-                    strokeWidth={2}
+                    strokeWidth={2.2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     aria-hidden="true"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
-                    />
+                    <polyline points="15 3 21 3 21 9" />
+                    <polyline points="9 21 3 21 3 15" />
+                    <line x1="21" y1="3" x2="14" y2="10" />
+                    <line x1="3" y1="21" x2="10" y2="14" />
                   </svg>
-                  <span className="hidden sm:inline truncate">{selectedModel.name}</span>
-                </div>
-              )}
+                </button>
 
-              {/* Message Input: Auto-expanding Textarea */}
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                value={content}
-                onChange={(event) => {
-                  setContent(event.target.value)
-                  setSendError(null)
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    if (event.shiftKey) {
-                      // Shift + Enter -> Allow newline
-                      return
-                    }
-                    // Enter -> Submit message
-                    event.preventDefault()
-                    if (!isActive && !isDisabled && content.trim()) {
-                      handleSendMessage()
-                    }
-                  }
-                }}
-                disabled={isActive}
-                placeholder="Nhập tin nhắn..."
-                aria-label="Nội dung tin nhắn"
-                className="min-w-0 flex-1 resize-none bg-transparent px-2.5 py-1.5 text-xs sm:text-sm text-slate-800 dark:text-gray-100 outline-none placeholder:text-slate-500 dark:placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-50 scrollbar-thin font-sans leading-relaxed"
-              />
-
-              {/* Expand Button */}
-              <button
-                type="button"
-                onClick={() => setIsExpanded(true)}
-                disabled={isActive}
-                aria-label="Mở rộng trình soạn thảo"
-                title="Mở rộng trình soạn thảo"
-                className="flex h-9 w-9 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 transition-all duration-150 active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 mb-0.5 focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
-              >
-                <svg
-                  className="h-3.5 w-3.5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2.2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
+                <button
+                  type="button"
+                  onClick={isActive ? handleStopAction : handleSendMessage}
+                  disabled={!isActive && (isDisabled || !content.trim())}
+                  aria-label={isActive ? 'Dừng' : 'Gửi'}
+                  className={`composer-send-btn flex h-9 w-9 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full text-white transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.95] mb-0.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-amber-600 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#131923] dark:focus-visible:ring-indigo-400/50 focus-visible:outline-none ${isActive
+                      ? 'bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/30 focus-visible:ring-rose-500'
+                      : 'bg-gradient-to-r from-[#D97706] to-[#C2410C] hover:from-[#B45309] hover:to-[#9A3412] dark:bg-gradient-to-r dark:from-[#4F46E5] dark:to-[#7C3AED] dark:hover:from-[#7C3AED] dark:hover:to-[#4F46E5] hover:scale-105 shadow-md shadow-amber-600/25 dark:shadow-[0_4px_16px_rgba(79,70,229,0.4)] dark:hover:shadow-[0_8px_24px_rgba(124,58,237,0.55)]'
+                    }`}
                 >
-                  <polyline points="15 3 21 3 21 9" />
-                  <polyline points="9 21 3 21 3 15" />
-                  <line x1="21" y1="3" x2="14" y2="10" />
-                  <line x1="3" y1="21" x2="10" y2="14" />
-                </svg>
-              </button>
-
-              <button
-                type="button"
-                onClick={isActive ? handleStopAction : handleSendMessage}
-                disabled={!isActive && (isDisabled || !content.trim())}
-                aria-label={isActive ? 'Dừng' : 'Gửi'}
-                className={`flex h-9 w-9 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full text-white transition-all duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.95] mb-0.5 focus-visible:ring-2 focus-visible:outline-none ${isActive
-                    ? 'bg-[#B91E2B] hover:bg-[#9E1924] shadow-md shadow-[#B91E2B]/30 focus-visible:ring-[#B91E2B]/50'
-                    : 'bg-[#1B8F3D] hover:bg-[#167632] hover:scale-105 shadow-md shadow-[#1B8F3D]/30 focus-visible:ring-[#1B8F3D]/50'
-                  }`}
-              >
-                <span className="sr-only">{isActive ? 'Dừng' : 'Gửi'}</span>
-                {isActive ? (
-                  <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="4" y="4" width="16" height="16" rx="2" />
-                  </svg>
-                ) : (
-                  <svg className="h-4 w-4 sm:h-3.5 sm:w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                  </svg>
-                )}
-              </button>
-            </div>
+                  <span className="sr-only">{isActive ? 'Dừng' : 'Gửi'}</span>
+                  {isActive ? (
+                    <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="4" y="4" width="16" height="16" rx="2" />
+                    </svg>
+                  ) : (
+                    <svg className="h-4 w-4 sm:h-3.5 sm:w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

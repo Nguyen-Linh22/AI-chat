@@ -334,7 +334,7 @@ function Sidebar({
     <>
       {/* Mobile Backdrop Overlay */}
       <div
-        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-xs transition-opacity duration-200 ease-out md:hidden motion-reduce:transition-none ${
+        className={`fixed inset-0 z-40 bg-black/60 zyricon:bg-black/75 backdrop-blur-xs zyricon:backdrop-blur-sm transition-opacity duration-200 ease-out md:hidden motion-reduce:transition-none ${
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
@@ -348,7 +348,7 @@ function Sidebar({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="group/logo relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#0F172A] dark:bg-[#0B0F17] select-none shadow-xs border border-emerald-500/35 ring-1 ring-emerald-500/15 hover:border-emerald-400/70 hover:shadow-md hover:shadow-emerald-500/20 active:scale-95 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:outline-none"
+              className="group/logo relative flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#0F172A] dark:bg-[#0B0F17] zyricon:bg-[#140E20] select-none shadow-xs border border-amber-500/35 dark:border-indigo-500/35 zyricon:border-[#98578D]/40 ring-1 ring-amber-500/15 dark:ring-indigo-500/15 zyricon:ring-[#98578D]/20 hover:border-amber-400/70 dark:hover:border-indigo-400/70 zyricon:hover:border-[#C27595]/80 hover:shadow-md hover:shadow-amber-500/20 dark:hover:shadow-indigo-500/25 zyricon:hover:shadow-[0_0_15px_rgba(152,87,141,0.35)] active:scale-95 transition-all duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500/50 dark:focus-visible:ring-indigo-400/50 zyricon:focus-visible:ring-[#C27595] focus-visible:outline-none"
               title={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
               aria-label={isCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'}
               aria-expanded={!isCollapsed}
@@ -363,7 +363,7 @@ function Sidebar({
                 }`}
               />
               {/* Status Dot */}
-              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#131923]" aria-hidden="true" />
+              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 dark:bg-indigo-400 zyricon:bg-[#C27595] ring-2 ring-white dark:ring-[#131923] zyricon:ring-[#0C0814] zyricon:shadow-[0_0_6px_rgba(194,117,149,0.8)]" aria-hidden="true" />
             </button>
 
             {/* Title & subtitle container */}
@@ -374,11 +374,11 @@ function Sidebar({
                   : 'max-w-[140px] opacity-100'
               }`}
             >
-              <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white leading-none truncate">
+              <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white zyricon:text-[#F7F3F6] leading-none truncate">
                 AI Chat
               </h1>
-              <span className="text-[10px] text-slate-500 dark:text-[#94A3B8] font-medium mt-1 flex items-center gap-1 truncate">
-                <span className="inline-block h-1 w-1 rounded-full bg-emerald-500/70 shrink-0" />
+              <span className="text-[10px] text-slate-500 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] font-medium mt-1 flex items-center gap-1 truncate">
+                <span className="inline-block h-1 w-1 rounded-full bg-amber-500/70 dark:bg-indigo-400/70 zyricon:bg-[#C27595] shrink-0" />
                 Workspace
               </span>
             </div>
@@ -388,7 +388,7 @@ function Sidebar({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-[#94A3B8] dark:hover:bg-[#1A2230] dark:hover:text-[#F1F5F9] md:hidden cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none ml-auto shrink-0"
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] zyricon:border-[#694788]/30 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-[#94A3B8] dark:hover:bg-[#1A2230] dark:hover:text-[#F1F5F9] zyricon:text-[#C4A5B8] zyricon:hover:bg-[#1D152D] zyricon:hover:text-[#F7F3F6] zyricon:hover:border-[#98578D]/50 md:hidden cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500/50 dark:focus-visible:ring-indigo-400/50 zyricon:focus-visible:ring-[#C27595] focus-visible:outline-none ml-auto shrink-0"
             aria-label="Đóng thanh bên"
             title="Đóng thanh bên"
           >
@@ -417,7 +417,7 @@ function Sidebar({
           {chats.length === 0 ? (
             isCollapsed ? (
               <div
-                className="my-auto flex flex-col items-center justify-center py-6 text-slate-400 dark:text-gray-500 opacity-60"
+                className="my-auto flex flex-col items-center justify-center py-6 text-slate-400 dark:text-gray-500 zyricon:text-[#8F7686] opacity-60"
                 title="Chưa có cuộc trò chuyện"
                 aria-label="Chưa có cuộc trò chuyện"
               >
@@ -428,15 +428,15 @@ function Sidebar({
               </div>
             ) : (
               <div className="my-auto flex flex-col items-center justify-center px-3 py-8 text-center text-slate-400 dark:text-gray-500 select-none">
-                <div className="relative mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-100 to-slate-200/50 dark:from-white/[0.06] dark:to-white/[0.02] text-slate-500 dark:text-emerald-400/80 ring-1 ring-slate-200/80 dark:ring-white/[0.08] shadow-xs">
+                <div className="relative mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-b from-slate-100 to-slate-200/50 dark:from-white/[0.06] dark:to-white/[0.02] zyricon:from-[#1D152D] zyricon:to-[#140E20] text-slate-500 dark:text-indigo-400/80 zyricon:text-[#C27595] ring-1 ring-slate-200/80 dark:ring-white/[0.08] zyricon:ring-[#694788]/30 shadow-xs zyricon:shadow-[0_0_15px_rgba(105,71,136,0.2)]">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </div>
-                <p className="text-xs font-semibold text-slate-700 dark:text-gray-400">
+                <p className="text-xs font-semibold text-slate-700 dark:text-gray-400 zyricon:text-[#E4D7EE]">
                   Chưa có cuộc trò chuyện
                 </p>
-                <p className="mt-1 text-[11px] text-slate-600 dark:text-[#94A3B8] max-w-[170px] leading-tight">
+                <p className="mt-1 text-[11px] text-slate-600 dark:text-[#94A3B8] zyricon:text-[#8F7686] max-w-[170px] leading-tight">
                   Nhấn "Chat mới" để bắt đầu cuộc trò chuyện
                 </p>
               </div>
@@ -466,8 +466,8 @@ function Sidebar({
                       aria-label={chat.title}
                       className={`relative flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-150 ${
                         isActive
-                          ? 'border-emerald-500/50 bg-[#E2E8F0] dark:bg-[#2A374C] text-[#1B8F3D] dark:text-emerald-400 shadow-xs ring-1 ring-[#1B8F3D]'
-                          : 'border-transparent bg-transparent hover:bg-slate-100/80 dark:hover:bg-[#222C3D]/80 text-slate-600 dark:text-[#94A3B8] hover:border-slate-300 dark:hover:border-white/[0.08] hover:text-slate-900 dark:hover:text-white'
+                          ? 'border-amber-500/50 dark:border-indigo-500/50 zyricon:border-[#98578D]/60 bg-amber-50 dark:bg-[#1E1B4B]/60 zyricon:bg-[rgba(105,71,136,0.35)] text-amber-700 dark:text-indigo-300 zyricon:text-[#C27595] shadow-xs ring-1 ring-amber-500/50 dark:ring-indigo-500/50 zyricon:ring-[#C27595]/50 zyricon:shadow-[0_0_12px_rgba(152,87,141,0.3)]'
+                          : 'border-transparent bg-transparent hover:bg-amber-50/60 dark:hover:bg-[#1E1B4B]/30 hover:border-amber-200/50 zyricon:hover:bg-[rgba(105,71,136,0.18)] text-slate-600 dark:text-[#94A3B8] zyricon:text-[#8F7686] hover:border-slate-300 dark:hover:border-indigo-500/20 zyricon:hover:border-[#694788]/40 hover:text-slate-900 dark:hover:text-white zyricon:hover:text-[#F7F3F6]'
                       }`}
                     >
                       <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
@@ -475,7 +475,7 @@ function Sidebar({
                       </svg>
                       {isActive && (
                         <div
-                          className="absolute -left-1 top-2 bottom-2 w-1 rounded-r-full bg-[#1B8F3D] shadow-[0_0_6px_rgba(27,143,61,0.6)]"
+                          className="sidebar-active-indicator absolute -left-1 top-2 bottom-2 w-1 rounded-r-full bg-gradient-to-b from-[#F59E0B] to-[#EA580C] dark:from-[#6366F1] dark:to-[#4F46E5] zyricon:bg-[#C27595] shadow-[0_0_6px_rgba(245,158,11,0.6)] dark:shadow-[0_0_8px_rgba(99,102,241,0.8)] zyricon:shadow-[0_0_6px_rgba(194,117,149,0.8)]"
                           aria-hidden="true"
                         />
                       )}
@@ -510,14 +510,14 @@ function Sidebar({
                         }}
                         className={`relative rounded-xl border p-2.5 pl-3 transition-all duration-150 overflow-hidden ${
                           isActive
-                            ? 'border-slate-300/80 dark:border-white/[0.14] bg-[#E2E8F0]/90 dark:bg-[#2A374C] shadow-xs'
-                            : 'border-transparent hover:border-slate-200 dark:hover:border-white/[0.08] bg-transparent hover:bg-slate-100/80 dark:hover:bg-[#222C3D]/80'
+                            ? 'sidebar-active-item border-amber-300/80 dark:border-indigo-500/35 zyricon:border-[#98578D]/50 bg-white/95 dark:bg-gradient-to-r dark:from-[rgba(49,46,129,0.35)] dark:to-[rgba(30,27,75,0.25)] zyricon:bg-gradient-to-r zyricon:from-[rgba(105,71,136,0.35)] zyricon:to-[rgba(194,117,149,0.18)] shadow-xs dark:shadow-[0_2px_12px_rgba(0,0,0,0.5)] zyricon:shadow-[0_2px_12px_rgba(7,4,11,0.7)]'
+                            : 'border-transparent hover:border-slate-200 dark:hover:border-indigo-500/20 zyricon:hover:border-[#694788]/30 bg-transparent hover:bg-slate-100/80 dark:hover:bg-[#1E1B4B]/30 zyricon:hover:bg-[rgba(105,71,136,0.15)]'
                         }`}
                       >
                         {/* Active Indicator Bar */}
                         {isActive && (
                           <div
-                            className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[#1B8F3D] shadow-[0_0_8px_rgba(27,143,61,0.5)]"
+                            className="sidebar-active-indicator absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-gradient-to-b from-[#F59E0B] to-[#EA580C] dark:from-[#6366F1] dark:to-[#4F46E5] zyricon:bg-gradient-to-b zyricon:from-[#C27595] zyricon:to-[#98578D] shadow-[0_0_8px_rgba(245,158,11,0.5)] dark:shadow-[0_0_8px_rgba(99,102,241,0.8)] zyricon:shadow-[0_0_8px_rgba(194,117,149,0.8)]"
                             aria-hidden="true"
                           />
                         )}
@@ -528,7 +528,7 @@ function Sidebar({
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex items-center gap-1.5">
-                              <svg className="h-4 w-4 shrink-0 text-[#1B8F3D]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                              <svg className="h-4 w-4 shrink-0 text-amber-600 dark:text-indigo-400 zyricon:text-[#C27595]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                               </svg>
                               <input
@@ -551,7 +551,7 @@ function Sidebar({
                                     handleCancelRename()
                                   }
                                 }}
-                                className="w-full rounded-lg border border-[#1B8F3D] bg-white dark:bg-[#0B0F17] px-2 py-1 text-xs font-semibold text-slate-900 dark:text-white outline-none shadow-xs focus:ring-1 focus:ring-[#1B8F3D]"
+                                className="w-full rounded-lg border border-amber-500 dark:border-indigo-500 zyricon:border-[#98578D] bg-white dark:bg-[#0B0F17] zyricon:bg-[#140E20] px-2 py-1 text-xs font-semibold text-slate-900 dark:text-white zyricon:text-[#F7F3F6] outline-none shadow-xs focus:ring-1 focus:ring-amber-500 dark:focus:ring-indigo-400 zyricon:focus:ring-[#C27595]"
                                 aria-label="Tên cuộc trò chuyện mới"
                                 aria-invalid={renameError ? 'true' : undefined}
                                 aria-describedby={renameError ? 'rename-chat-error' : undefined}
@@ -560,7 +560,7 @@ function Sidebar({
                                 type="button"
                                 onClick={() => handleRenameSubmit(chat.id, chat.title)}
                                 disabled={renameLoading}
-                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#1B8F3D] text-xs font-bold text-white hover:bg-[#167632] transition cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:outline-none"
+                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-r from-[#F59E0B] to-[#EA580C] hover:from-[#EA580C] hover:to-[#F59E0B] dark:from-[#4F46E5] dark:to-[#7C3AED] dark:hover:from-[#7C3AED] dark:hover:to-[#4F46E5] zyricon:bg-[#98578D] zyricon:hover:bg-[#C27595] text-xs font-bold text-white transition cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-amber-500/50 dark:focus-visible:ring-indigo-400/50 zyricon:focus-visible:ring-[#C27595] focus-visible:outline-none"
                                 title="Lưu tên"
                                 aria-label="Lưu tên"
                               >
@@ -572,7 +572,7 @@ function Sidebar({
                                 type="button"
                                 onClick={handleCancelRename}
                                 disabled={renameLoading}
-                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/40 focus-visible:outline-none"
+                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-200 dark:border-white/10 zyricon:border-[#694788]/30 bg-slate-100 dark:bg-white/5 zyricon:bg-[#140E20] text-slate-600 dark:text-gray-400 zyricon:text-[#C4A5B8] hover:text-slate-900 dark:hover:text-white zyricon:hover:text-white transition cursor-pointer disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/40 zyricon:focus-visible:ring-[#C27595] focus-visible:outline-none"
                                 title="Hủy"
                                 aria-label="Hủy đổi tên"
                               >
@@ -583,7 +583,7 @@ function Sidebar({
                             </div>
 
                             <div className="mt-1 flex items-center justify-between text-[11px] pl-5">
-                              <span className="text-slate-600 dark:text-gray-400">
+                              <span className="text-slate-600 dark:text-gray-400 zyricon:text-[#8F7686]">
                                 {renameTitle.length}/50
                               </span>
                               {renameError && (
@@ -605,8 +605,8 @@ function Sidebar({
                                 <svg
                                   className={`h-4 w-4 shrink-0 transition-colors duration-150 ${
                                     isActive
-                                      ? 'text-[#1B8F3D] dark:text-emerald-400'
-                                      : 'text-slate-400 dark:text-gray-400 group-hover:text-slate-600 dark:group-hover:text-gray-300'
+                                      ? 'text-amber-600 dark:text-indigo-400 zyricon:text-[#C27595]'
+                                      : 'text-slate-400 dark:text-gray-400 zyricon:text-[#8F7686] group-hover:text-slate-600 dark:group-hover:text-gray-300 zyricon:group-hover:text-[#C4A5B8]'
                                   }`}
                                   fill="none"
                                   viewBox="0 0 24 24"
@@ -619,8 +619,8 @@ function Sidebar({
                                 <p
                                   className={`truncate text-xs ${
                                     isActive
-                                      ? 'font-semibold text-slate-900 dark:text-white'
-                                      : 'font-medium text-slate-700 text-gray-300 group-hover:text-slate-900 dark:group-hover:text-white'
+                                      ? 'font-semibold text-slate-900 dark:text-white zyricon:text-[#F7F3F6]'
+                                      : 'font-medium text-slate-700 text-gray-300 zyricon:text-[#E4D7EE] group-hover:text-slate-900 dark:group-hover:text-white zyricon:group-hover:text-white'
                                   }`}
                                 >
                                   {chat.title}
@@ -630,15 +630,15 @@ function Sidebar({
                                 <span
                                   className={`truncate text-[11px] ${
                                     isActive
-                                      ? 'text-emerald-700/80 dark:text-emerald-300/80 font-medium'
-                                      : 'text-slate-500 dark:text-[#94A3B8]'
+                                      ? 'text-amber-800/80 dark:text-indigo-300 zyricon:text-[#C27595] font-medium'
+                                      : 'text-slate-500 dark:text-[#94A3B8] zyricon:text-[#8F7686]'
                                   }`}
                                 >
                                   Cuộc trò chuyện
                                 </span>
                                 <span
                                   className={`text-[11px] shrink-0 font-mono tracking-tight ${
-                                    isActive ? 'text-slate-600 dark:text-gray-300' : 'text-slate-500 dark:text-[#94A3B8]'
+                                    isActive ? 'text-slate-600 dark:text-gray-300 zyricon:text-[#C4A5B8]' : 'text-slate-500 dark:text-[#94A3B8] zyricon:text-[#8F7686]'
                                   }`}
                                 >
                                   {timeAgo}
@@ -672,7 +672,7 @@ function Sidebar({
                                 aria-haspopup="menu"
                                 aria-expanded={isMenuOpen}
                               >
-                                <svg className="h-3.5 w-3.5 text-slate-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <svg className="h-3.5 w-3.5 text-slate-500 dark:text-gray-400 zyricon:text-[#C4A5B8]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                   <circle cx="12" cy="5" r="1.75" />
                                   <circle cx="12" cy="12" r="1.75" />
                                   <circle cx="12" cy="19" r="1.75" />
@@ -695,18 +695,18 @@ function Sidebar({
           {isCollapsed ? (
             <div className="flex flex-col items-center gap-2">
               <div
-                className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-gradient-to-br dark:from-[#1E2837] dark:to-[#131923] text-slate-700 dark:text-[#F1F5F9] ring-1 ring-slate-200 dark:ring-white/[0.1] select-none cursor-pointer hover:ring-emerald-500/40 transition"
+                className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-gradient-to-br dark:from-[#1E2837] dark:to-[#131923] zyricon:from-[#221838] zyricon:to-[#140E20] text-slate-700 dark:text-[#F1F5F9] zyricon:text-[#F7F3F6] ring-1 ring-slate-200 dark:ring-white/[0.1] zyricon:ring-[#694788]/40 select-none cursor-pointer hover:ring-amber-400/50 dark:hover:ring-indigo-400/50 zyricon:hover:ring-[#C27595]/50 transition"
                 title={(user as { name?: string } | null)?.name || (user?.email ? user.email : 'Tài khoản')}
               >
-                <svg className="h-4 w-4 text-slate-600 dark:text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                <svg className="h-4 w-4 text-slate-600 dark:text-[#94A3B8] zyricon:text-[#C4A5B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-1.5 ring-white dark:ring-[#131923]" aria-hidden="true" />
+                <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-amber-500 dark:bg-indigo-400 zyricon:bg-[#C27595] ring-1.5 ring-white dark:ring-[#131923] zyricon:ring-[#0C0814]" aria-hidden="true" />
               </div>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-slate-100/70 dark:bg-[#1A2230] text-slate-600 hover:text-[#B91E2B] dark:text-[#94A3B8] dark:hover:text-[#ff6b78] hover:bg-[#B91E2B]/10 dark:hover:bg-[#B91E2B]/15 hover:border-[#B91E2B]/30 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none"
+                className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] zyricon:border-[#694788]/30 bg-slate-100/70 dark:bg-[#1A2230] zyricon:bg-[#140E20] text-slate-600 hover:text-[#B91E2B] dark:text-[#94A3B8] dark:hover:text-[#ff6b78] zyricon:text-[#C4A5B8] zyricon:hover:text-[#ff6b78] hover:bg-[#B91E2B]/10 dark:hover:bg-[#B91E2B]/15 zyricon:hover:bg-[#B91E2B]/20 hover:border-[#B91E2B]/30 zyricon:hover:border-[#B91E2B]/50 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none"
                 aria-label="Đăng xuất"
                 title="Đăng xuất"
               >
@@ -718,18 +718,18 @@ function Sidebar({
           ) : (
             <>
               <div className="flex items-center gap-2.5 px-1 mb-2.5">
-                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-gradient-to-br dark:from-[#1E2837] dark:to-[#131923] text-slate-700 dark:text-[#F1F5F9] ring-1 ring-slate-200 dark:ring-white/[0.1] select-none">
-                  <svg className="h-4 w-4 text-slate-500 dark:text-[#94A3B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-gradient-to-br dark:from-[#1E2837] dark:to-[#131923] zyricon:from-[#221838] zyricon:to-[#140E20] text-slate-700 dark:text-[#F1F5F9] zyricon:text-[#F7F3F6] ring-1 ring-slate-200 dark:ring-white/[0.1] zyricon:ring-[#694788]/40 select-none">
+                  <svg className="h-4 w-4 text-slate-500 dark:text-[#94A3B8] zyricon:text-[#C4A5B8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-1.5 ring-white dark:ring-[#131923]" aria-hidden="true" />
+                  <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-amber-500 dark:bg-indigo-400 zyricon:bg-[#C27595] ring-1.5 ring-white dark:ring-[#131923] zyricon:ring-[#0C0814]" aria-hidden="true" />
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-semibold text-slate-800 dark:text-[#F1F5F9]">
+                  <p className="truncate text-xs font-semibold text-slate-800 dark:text-[#F1F5F9] zyricon:text-[#F7F3F6]">
                     {(user as { name?: string } | null)?.name || (user?.email ? user.email.split('@')[0] : 'Test User 2')}
                   </p>
-                  <p className="truncate text-[11px] text-slate-500 dark:text-[#94A3B8]">
+                  <p className="truncate text-[11px] text-slate-500 dark:text-[#94A3B8] zyricon:text-[#8F7686]">
                     {user?.email ?? 'testuser2@ai.com'}
                   </p>
                 </div>
@@ -739,7 +739,7 @@ function Sidebar({
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="flex-1 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-100/70 dark:bg-[#1A2230] py-1.5 text-xs font-medium text-slate-700 dark:text-[#94A3B8] transition-all hover:bg-[#B91E2B]/10 dark:hover:bg-[#B91E2B]/20 hover:border-[#B91E2B]/40 hover:text-[#B91E2B] dark:hover:text-[#ff6b78] text-center cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none"
+                  className="flex-1 rounded-xl border border-slate-200 dark:border-white/[0.08] zyricon:border-[#694788]/30 bg-slate-100/70 dark:bg-[#1A2230] zyricon:bg-[#140E20] py-1.5 text-xs font-medium text-slate-700 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] transition-all hover:bg-[#B91E2B]/10 dark:hover:bg-[#B91E2B]/20 zyricon:hover:bg-[#B91E2B]/20 hover:border-[#B91E2B]/40 zyricon:hover:border-[#B91E2B]/50 hover:text-[#B91E2B] dark:hover:text-[#ff6b78] zyricon:hover:text-[#ff6b78] text-center cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-[#B91E2B]/50 focus-visible:outline-none"
                   aria-label="Đăng xuất"
                   title="Đăng xuất"
                 >
@@ -748,7 +748,7 @@ function Sidebar({
 
                 <button
                   type="button"
-                  className="group flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-100/70 dark:bg-[#1A2230] text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F1F5F9] hover:bg-slate-200/80 dark:hover:bg-[#222C3D] hover:border-slate-300 dark:hover:border-white/[0.14] transition-all cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+                  className="group flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-slate-200 dark:border-white/[0.08] zyricon:border-[#694788]/30 bg-slate-100/70 dark:bg-[#1A2230] zyricon:bg-[#140E20] text-slate-600 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] hover:text-slate-900 dark:hover:text-[#F1F5F9] zyricon:hover:text-white hover:bg-slate-200/80 dark:hover:bg-[#222C3D] zyricon:hover:bg-[#1D152D] hover:border-slate-300 dark:hover:border-white/[0.14] zyricon:hover:border-[#98578D]/40 transition-all cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-amber-500/50 dark:focus-visible:ring-indigo-400/50 zyricon:focus-visible:ring-[#C27595] focus-visible:outline-none"
                   title="Cài đặt"
                   aria-label="Cài đặt"
                 >

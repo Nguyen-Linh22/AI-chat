@@ -1,5 +1,7 @@
 import React from 'react'
 import { SidebarContext, useSidebar } from './sidebarContext'
+import { useThemeStore } from '../../stores/themeStore'
+import { CelestialSidebarBackground } from '../../theme/celestial/CelestialSidebarBackground'
 
 export interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   isOpen?: boolean
@@ -9,6 +11,8 @@ export interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
 
 export const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
   ({ isOpen = false, isCollapsed = false, className = '', children, ...props }, ref) => {
+    const theme = useThemeStore((state) => state.theme)
+
     return (
       <SidebarContext.Provider value={{ isCollapsed, isOpen }}>
         <aside
@@ -16,7 +20,7 @@ export const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
           aria-label="Thanh bên cuộc trò chuyện"
           ref={ref}
           data-collapsed={isCollapsed ? 'true' : 'false'}
-          className={`sidebar-motion fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col overflow-hidden border-r border-slate-200 dark:border-white/[0.06] bg-workspace-sidebar md:static md:translate-x-0 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:opacity-0 dark:before:opacity-100 before:bg-gradient-to-b before:from-emerald-500/[0.03] before:via-transparent before:to-transparent before:rounded-[inherit] ${
+          className={`sidebar-motion fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col overflow-hidden border-r border-slate-200 dark:border-white/[0.06] bg-workspace-sidebar md:static md:translate-x-0 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:opacity-0 dark:before:opacity-100 before:bg-gradient-to-b before:from-amber-500/[0.04] dark:before:from-indigo-500/[0.04] before:via-transparent before:to-transparent before:rounded-[inherit] ${
             isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0 md:shadow-none'
           } ${
             isCollapsed
@@ -25,6 +29,7 @@ export const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
           } ${className}`}
           {...props}
         >
+          {theme === 'light' && <CelestialSidebarBackground />}
           {children}
         </aside>
       </SidebarContext.Provider>
@@ -42,7 +47,7 @@ export const SidebarHeader = React.forwardRef<HTMLDivElement, SidebarHeaderProps
     return (
       <div
         ref={ref}
-        className={`relative shrink-0 flex items-center justify-between mb-3 pb-1 px-1 after:absolute after:bottom-0 after:left-2 after:right-2 after:h-px after:bg-gradient-to-r after:from-transparent after:via-emerald-500/20 after:to-transparent ${className}`}
+        className={`relative shrink-0 flex items-center justify-between mb-3 pb-1 px-1 after:absolute after:bottom-0 after:left-2 after:right-2 after:h-px after:bg-gradient-to-r after:from-transparent after:via-amber-500/25 dark:after:via-indigo-500/25 after:to-transparent ${className}`}
         {...props}
       >
         {children}
@@ -61,7 +66,7 @@ export const SidebarContent = React.forwardRef<HTMLDivElement, SidebarContentPro
     return (
       <div
         ref={ref}
-        className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden space-y-3 pr-0.5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/10 hover:scrollbar-thumb-slate-400 dark:hover:scrollbar-thumb-white/20 [mask-image:linear-gradient(to_bottom,transparent,black_12px,black_calc(100%-12px),transparent)] ${className}`}
+        className={`relative z-10 flex-1 min-h-0 overflow-y-auto overflow-x-hidden space-y-3 pr-0.5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/10 hover:scrollbar-thumb-slate-400 dark:hover:scrollbar-thumb-white/20 [mask-image:linear-gradient(to_bottom,transparent,black_12px,black_calc(100%-12px),transparent)] ${className}`}
         {...props}
       >
         {children}
@@ -104,7 +109,7 @@ export const SidebarGroupLabel = React.forwardRef<HTMLDivElement, SidebarGroupLa
     return (
       <div
         ref={ref}
-        className={`px-2.5 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-[#94A3B8] select-none before:inline-block before:w-0 dark:before:w-1.5 before:h-px dark:before:h-px before:bg-emerald-500/40 before:mr-0 dark:before:mr-1.5 before:align-middle before:rounded-full before:transition-all before:duration-200 ${className}`}
+        className={`px-2.5 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 dark:text-[#94A3B8] select-none before:inline-block before:w-0 dark:before:w-1.5 before:h-px dark:before:h-px before:bg-amber-500/60 dark:before:bg-indigo-400/50 before:mr-0 dark:before:mr-1.5 before:align-middle before:rounded-full before:transition-all before:duration-200 ${className}`}
         {...props}
       >
         {children}
@@ -159,7 +164,7 @@ export const SidebarMenuButton = React.forwardRef<HTMLButtonElement, SidebarMenu
         data-active={isActive ? 'true' : 'false'}
         aria-current={isActive ? 'page' : undefined}
         title={tooltip}
-        className={`relative w-full text-left transition-all duration-150 cursor-pointer focus:outline-none hover:bg-slate-100/70 dark:hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent focus-visible:outline-none rounded-lg ${className}`}
+        className={`relative w-full text-left transition-all duration-150 cursor-pointer focus:outline-none hover:bg-slate-100/70 dark:hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-amber-500/30 dark:focus-visible:ring-indigo-400/40 focus-visible:ring-offset-1 focus-visible:ring-offset-transparent focus-visible:outline-none rounded-lg ${className}`}
         {...props}
       >
         {children}
@@ -180,7 +185,7 @@ export const SidebarMenuAction = React.forwardRef<HTMLButtonElement, SidebarMenu
       <button
         ref={ref}
         type="button"
-        className={`flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white/95 dark:bg-[#1A2230]/80 backdrop-blur-sm text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F1F5F9] hover:bg-slate-100 dark:hover:bg-[#222C3D] hover:border-slate-300 dark:hover:border-white/[0.14] hover:scale-110 transition-all duration-150 active:scale-95 cursor-pointer text-xs focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:outline-none ${
+        className={`flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 dark:border-white/[0.08] bg-white/95 dark:bg-[#1A2230]/80 backdrop-blur-sm text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F1F5F9] hover:bg-slate-100 dark:hover:bg-[#222C3D] hover:border-slate-300 dark:hover:border-white/[0.14] hover:scale-110 transition-all duration-150 active:scale-95 cursor-pointer text-xs focus-visible:ring-2 focus-visible:ring-amber-500/30 dark:focus-visible:ring-indigo-400/40 focus-visible:outline-none ${
           show ? 'opacity-100 ring-1 ring-slate-300 dark:ring-white/20' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
         } ${className}`}
         {...props}
@@ -201,7 +206,7 @@ export const SidebarFooter = React.forwardRef<HTMLDivElement, SidebarFooterProps
     return (
       <div
         ref={ref}
-        className={`relative shrink-0 border-t border-transparent pt-3 mt-2 before:absolute before:top-0 before:left-2 before:right-2 before:h-px before:bg-gradient-to-r before:from-transparent before:via-slate-300 before:to-transparent dark:before:via-white/[0.08] ${className}`}
+        className={`relative z-10 shrink-0 border-t border-transparent pt-3 mt-2 before:absolute before:top-0 before:left-2 before:right-2 before:h-px before:bg-gradient-to-r before:from-transparent before:via-slate-300 before:to-transparent dark:before:via-white/[0.08] ${className}`}
         {...props}
       >
         {children}

@@ -1,8 +1,9 @@
 /* ==============================================================================
- * AI Chat Clone - Premium Animated Model Selector (Inspired by Share Tooltip)
+ * AI Chat Clone - Premium Animated Model Selector (Harmonized with Theme Selector)
  * ============================================================================== */
 
-/* Trigger Capsule Button with Vibrant Gradient (Matching Share Tooltip) */
+/* Base Capsule Trigger Button: Light Theme Warm Sunrise Golden Amber (Harmonized with Theme Selector) */
+:is(html:not(.dark):not(.zyricon), html.light, [data-theme='light']) .model-selector-trigger,
 .model-selector-trigger {
   position: relative;
   display: inline-flex;
@@ -12,8 +13,9 @@
   cursor: pointer;
   user-select: none;
   color: #ffffff !important;
-  background: linear-gradient(135deg, #6e8efb, #a777e3) !important;
-  box-shadow: 0 4px 15px rgba(110, 142, 251, 0.35);
+  background: linear-gradient(135deg, #F59E0B, #EA580C) !important;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+  border-color: rgba(254, 240, 138, 0.4);
   transition:
     background 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
     transform 0.3s ease,
@@ -21,12 +23,13 @@
   z-index: 10;
 }
 
-/* Glow underlay blur (reproducing button-content::before) */
+/* Glow underlay blur (reproducing sample button-content::before) */
+:is(html:not(.dark):not(.zyricon), html.light, [data-theme='light']) .model-selector-glow,
 .model-selector-glow {
   position: absolute;
   inset: -1px;
   border-radius: 9999px;
-  background: linear-gradient(135deg, rgba(110, 142, 251, 0.5), rgba(167, 119, 227, 0.5));
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.55), rgba(234, 88, 12, 0.55));
   filter: blur(10px);
   opacity: 0;
   transition: opacity 0.4s ease;
@@ -39,16 +42,17 @@
   opacity: 1;
 }
 
-/* Hover effect: inverted gradient, subtle elevation & enhanced glow shadow */
+/* Hover effect: inverted amber gradient, subtle elevation & enhanced glow shadow */
+:is(html:not(.dark):not(.zyricon), html.light, [data-theme='light']) .model-selector-trigger:hover,
 .model-selector-trigger:hover {
-  background: linear-gradient(135deg, #a777e3, #6e8efb) !important;
-  box-shadow: 0 8px 22px rgba(167, 119, 227, 0.45);
+  background: linear-gradient(135deg, #EA580C, #F59E0B) !important;
+  box-shadow: 0 8px 22px rgba(234, 88, 12, 0.45);
   transform: translateY(-2px) scale(1.02);
 }
 
 .model-selector-trigger:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 3px 10px rgba(110, 142, 251, 0.25);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
 }
 
 /* Letter spacing animation on hover (from sample code) */
@@ -96,6 +100,62 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: -2px -2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark Theme Support for Model Selector (Synchronized with Theme Selector) */
+:is(.dark:not(.zyricon), [data-theme='dark']:not([data-theme='zyricon'])) .model-selector-trigger {
+  background: linear-gradient(135deg, #4F46E5, #7C3AED) !important;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.35);
+  border-color: rgba(199, 210, 254, 0.3);
+}
+
+:is(.dark:not(.zyricon), [data-theme='dark']:not([data-theme='zyricon'])) .model-selector-trigger:hover {
+  background: linear-gradient(135deg, #7C3AED, #4F46E5) !important;
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.5);
+}
+
+:is(.dark:not(.zyricon), [data-theme='dark']:not([data-theme='zyricon'])) .model-selector-glow {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.6), rgba(124, 58, 237, 0.6));
+}
+
+:is(.dark:not(.zyricon), [data-theme='dark']:not([data-theme='zyricon'])) .model-selector-popover::before {
+  background: #131923;
+  border-top: 1px solid rgba(99, 102, 241, 0.35);
+  border-left: 1px solid rgba(99, 102, 241, 0.35);
+  box-shadow: -2px -2px 4px rgba(0, 0, 0, 0.4);
+}
+
+:is(.dark:not(.zyricon), [data-theme='dark']:not([data-theme='zyricon'])) .model-card:hover:not(:disabled) {
+  border-color: rgba(99, 102, 241, 0.35);
+  background-color: rgba(30, 27, 75, 0.35);
+}
+
+:is(.dark:not(.zyricon), [data-theme='dark']:not([data-theme='zyricon'])) .model-card[aria-selected="true"] {
+  border-color: rgba(129, 140, 248, 0.5);
+  background: linear-gradient(to right, rgba(49, 46, 129, 0.45), rgba(67, 56, 202, 0.25), transparent);
+}
+
+/* Zyricon Theme Support for Model Selector */
+:is(.zyricon, [data-theme='zyricon']) .model-selector-trigger {
+  background: linear-gradient(135deg, #694788, #C27595) !important;
+  box-shadow: 0 4px 16px rgba(194, 117, 149, 0.35);
+  border-color: rgba(194, 117, 149, 0.35);
+}
+
+:is(.zyricon, [data-theme='zyricon']) .model-selector-trigger:hover {
+  background: linear-gradient(135deg, #C27595, #694788) !important;
+  box-shadow: 0 8px 24px rgba(194, 117, 149, 0.5);
+}
+
+:is(.zyricon, [data-theme='zyricon']) .model-selector-glow {
+  background: linear-gradient(135deg, rgba(105, 71, 136, 0.6), rgba(194, 117, 149, 0.6));
+}
+
+:is(.zyricon, [data-theme='zyricon']) .model-selector-popover::before {
+  background: #120B1C;
+  border-top: 1px solid rgba(105, 71, 136, 0.35);
+  border-left: 1px solid rgba(105, 71, 136, 0.35);
+  box-shadow: -2px -2px 4px rgba(7, 4, 11, 0.6);
 }
 
 /* Popover Glassmorphism */

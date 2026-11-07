@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Celestial Daylight — Standalone Visual Preview</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0F172A;
+      color: #0F172A;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Outer preview workbench container */
+    .preview-header {
+      background: #1E293B;
+      color: #F8FAFC;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #334155;
+      z-index: 50;
+    }
+
+    .preview-title {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      background: rgba(132, 194, 245, 0.2);
+      color: #84C2F5;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-weight: 500;
+      border: 1px solid rgba(132, 194, 245, 0.3);
+    }
+
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      background: #334155;
+      color: #F8FAFC;
+      border: 1px solid #475569;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: #475569;
+      border-color: #64748B;
+    }
+
+    .btn.active {
+      background: #0284C7;
+      border-color: #38BDF8;
+      color: #FFFFFF;
+    }
+
+    .viewport-selector {
+      background: #1E293B;
+      color: #F8FAFC;
+      border: 1px solid #475569;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    /* Main viewport stage */
+    .stage-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: #0B0F17;
+      overflow: auto;
+    }
+
+    /* Simulated ChatArea frame */
+    .viewport-frame {
+      position: relative;
+      width: 1440px;
+      height: 900px;
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      transition: width 0.3s ease, height 0.3s ease;
+      background-color: #C8E8FC;
+    }
+
+    /* -----------------------------------------------------------------------
+       CELESTIAL DAYLIGHT BACKGROUND ARCHITECTURE
+       ----------------------------------------------------------------------- */
+
+    .celestial-background-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* 1. Base Sky Atmosphere */
+    .celestial-sky-atmosphere {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #C8E8FC;
+      background-image: 
+        radial-gradient(
+          circle at 82% 14%,
+          rgba(255, 255, 240, 0.45) 0%,
+          rgba(200, 232, 252, 0.15) 38%,
+          transparent 70%
+        ),
+        linear-gradient(
+          180deg,
+          #84C2F5 0%,
+          #98CEF8 14%,
+          #A6D7FA 26%,
+          #B9E0FB 42%,
+          #C8E8FC 58%,
+          #D7EEFD 74%,
+          #E5F4FD 86%,
+          #F4FAFF 100%
+        );
+      transition: background 0.3s ease;
+    }
+
+    /* Diagnostic Backgrounds for Alpha Testing */
+    .bg-checkerboard {
+      background-color: #FFFFFF !important;
+      background-image: 
+        linear-gradient(45deg, #E2E8F0 25%, transparent 25%),
+        linear-gradient(-45deg, #E2E8F0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #E2E8F0 75%),
+        linear-gradient(-45deg, transparent 75%, #E2E8F0 75%) !important;
+      background-size: 20px 20px !important;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px !important;
+    }
+
+    .bg-dark-test {
+      background: #0F172A !important;
+    }
+
+    .bg-magenta-test {
+      background: #FF00FF !important;
+    }
+
+    /* 2. Cinematic Sun Container */
+    .cinematic-sun-container {
+      position: absolute;
+      top: 14%;
+      left: 82%;
+      width: 560px;
+      height: 560px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .sun-corona-aura {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      animation: sun-corona-breathe 16s ease-in-out infinite;
+    }
+
+    @keyframes sun-corona-breathe {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.90;
+      }
+      50% {
+        transform: scale(1.03);
+        opacity: 1.0;
+      }
+    }
+
+    .sun-volumetric-rays {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 800px;
+      height: 600px;
+      transform: translate(-90%, -10%);
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.85;
+    }
+
+    /* 3. Three-Tier Cloud Canopy */
+    .cloud-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    /* Duplicated 200% width strip for seamless looping */
+    .cloud-strip-200 {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 200%;
+      height: 100%;
+      display: flex;
+      will-change: transform;
+      animation: celestial-drift-horizontal 120s linear infinite;
+    }
+
+    .cloud-segment {
+      width: 50%;
+      height: 100%;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .cloud-segment img {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      display: block;
+    }
+
+    @keyframes celestial-drift-horizontal {
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+      100% {
+        transform: translate3d(-50%, 0, 0);
+      }
+    }
+
+    /* Layer 1: High Cirrus (10%-40% Y) */
+    .layer-cirrus {
+      z-index: 3;
+    }
+    .layer-cirrus .cloud-strip-200 {
+      height: 45%;
+      top: 5%;
+      animation-duration: 160s;
+      animation-delay: 0s;
+      opacity: 0.38;
+    }
+
+    /* Layer 2: Midground Cumulus (25%-75% Y) */
+    .layer-cumulus {
+      z-index: 4;
+    }
+    .layer-cumulus .cloud-strip-200 {
+      height: 68%;
+      top: 20%;
+      animation-duration: 110s;
+      animation-delay: -35s;
+      opacity: 0.62;
+    }
+
+    /* Layer 3: Low Stratus Horizon Mist (60%-100% Y) */
+    .layer-stratus {
+      z-index: 5;
+    }
+    .layer-stratus .cloud-strip-200 {
+      height: 42%;
+      top: 58%;
+      animation-duration: 135s;
+      animation-delay: -70s;
+      opacity: 0.42;
+    }
+
+    /* Paused Animations State */
+    .animations-paused .cloud-strip-200,
+    .animations-paused .sun-corona-aura {
+      animation-play-state: paused !important;
+    }
+
+    /* Reduced Motion Simulation */
+    .reduced-motion-active .cloud-strip-200 {
+      animation: none !important;
+      transform: translate3d(0, 0, 0) !important;
+    }
+    .reduced-motion-active .sun-corona-aura {
+      animation: none !important;
+      transform: scale(1) !important;
+      opacity: 0.95 !important;
+    }
+
+    /* Seam Inspector Line at X = 50% of the 200% strip (which is the loop junction) */
+    .seam-marker {
+      display: none;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 2px;
+      background: #EF4444;
+      box-shadow: 0 0 8px #EF4444;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .show-seam .seam-marker {
+      display: block;
+    }
+
+    /* -----------------------------------------------------------------------
+       SIMULATED CHAT UI OVERLAY
+       ----------------------------------------------------------------------- */
+    .simulated-ui-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      pointer-events: auto;
+      padding: 24px 32px;
+    }
+
+    .sim-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .sim-breadcrumbs {
+      font-size: 13px;
+      font-weight: 500;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sim-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sim-header-pill {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #0F172A;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .sim-content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      max-width: 820px;
+      margin: 0 auto;
+      width: 100%;
+      gap: 24px;
+    }
+
+    .sim-hero-card {
+      background: rgba(255, 255, 255, 0.90);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+      width: 100%;
+    }
+
+    .sim-hero-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .sim-hero-desc {
+      font-size: 14px;
+      color: #475569;
+      line-height: 1.5;
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    .sim-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      width: 100%;
+    }
+
+    .sim-subcard {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+    }
+
+    .sim-subcard-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #0F172A;
+      margin-bottom: 6px;
+    }
+
+    .sim-subcard-text {
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.4;
+    }
+
+    .sim-composer {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08);
+      width: 100%;
+      margin-top: auto;
+    }
+
+    .sim-composer-input {
+      color: #1E293B;
+      font-size: 14px;
+      font-weight: 400;
+    }
+
+    .sim-composer-btn {
+      background: #0284C7;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Diagnostics HUD */
+    .hud-panel {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #E2E8F0;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: monospace;
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      z-index: 60;
+      display: flex;
+      gap: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .hud-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .hud-label {
+      color: #94A3B8;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .hud-value {
+      font-weight: 700;
+      color: #38BDF8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Control Bar -->
+  <header class="preview-header">
+    <div class="preview-title">
+      <span>Celestial Daylight</span>
+      <span class="badge">Phase 3 Core Implementation Preview</span>
+    </div>
+
+    <div class="preview-toolbar">
+      <!-- Viewport & Container Presets -->
+      <select id="viewport-select" class="viewport-selector" onchange="changeViewport(this.value)">
+        <optgroup label="Standard Viewports">
+          <option value="1440x900">Desktop (1440 × 900)</option>
+          <option value="1280x800">Laptop (1280 × 800)</option>
+          <option value="768x1024">Tablet (768 × 1024)</option>
+          <option value="390x844">Mobile (390 × 844)</option>
+          <option value="360x800">Narrow Mobile (360 × 800)</option>
+          <option value="100%">Fill Screen (100%)</option>
+        </optgroup>
+        <optgroup label="Container Dimensions (Sidebar Transitions)">
+          <option value="1200x900">Desktop ChatArea (Sidebar Open: 1200 × 900)</option>
+          <option value="1376x900">Desktop ChatArea (Sidebar Collapsed: 1376 × 900)</option>
+          <option value="1040x800">Laptop ChatArea (Sidebar Open: 1040 × 800)</option>
+          <option value="1216x800">Laptop ChatArea (Sidebar Collapsed: 1216 × 800)</option>
+          <option value="528x1024">Tablet ChatArea (Sidebar Open: 528 × 1024)</option>
+          <option value="704x1024">Tablet ChatArea (Sidebar Collapsed: 704 × 1024)</option>
+        </optgroup>
+      </select>
+
+      <!-- Animation Controls -->
+      <button id="btn-toggle-anim" class="btn" onclick="toggleAnimation()">Pause Motion</button>
+      <button id="btn-reduced-motion" class="btn" onclick="toggleReducedMotion()">Reduced Motion: Off</button>
+
+      <!-- Loop Seam Inspection -->
+      <button id="btn-show-seam" class="btn" onclick="toggleSeamMarker()">Seam Line: Off</button>
+      <button class="btn" onclick="jumpToSeam(0)">Jump t=0%</button>
+      <button class="btn" onclick="jumpToSeam(50)">Jump t=50%</button>
+
+      <!-- Alpha Diagnostic Backgrounds -->
+      <select id="bg-select" class="viewport-selector" onchange="changeBackgroundMode(this.value)">
+        <option value="sky">Background: Daylight Sky</option>
+        <option value="checkerboard">Background: Checkerboard (Alpha)</option>
+        <option value="dark">Background: Slate-900 (Dark)</option>
+        <option value="magenta">Background: Magenta (Fringe Check)</option>
+      </select>
+
+      <!-- UI Overlay Toggle -->
+      <button id="btn-toggle-ui" class="btn active" onclick="toggleUIOverlay()">UI Overlay: On</button>
+    </div>
+  </header>
+
+  <!-- Interactive Stage -->
+  <main class="stage-wrapper">
+    <div id="viewport-frame" class="viewport-frame">
+      
+      <!-- Celestial Background Container -->
+      <div id="celestial-bg" class="celestial-background-container">
+        
+        <!-- Sky Atmosphere -->
+        <div id="sky-atmosphere" class="celestial-sky-atmosphere"></div>
+
+        <!-- Cinematic Sun with Volumetric Rays -->
+        <div class="cinematic-sun-container">
+          <div class="sun-volumetric-rays">
+            <img src="./assets/celestial/sun/volumetric-rays.svg" alt="" width="800" height="600" />
+          </div>
+          <div class="sun-corona-aura">
+            <img src="./assets/celestial/sun/sun-corona.svg" alt="" width="560" height="560" />
+          </div>
+        </div>
+
+        <!-- Layer 1: Cirrus High (160s loop) -->
+        <div class="cloud-layer layer-cirrus">
+          <div class="cloud-strip-200" id="strip-cirrus">
+            <div class="cloud-segment">
+              <img src="./assets/celestial/clouds/cirrus-high.webp" alt="" />
+              <div class="seam-marker"></div>
+            </div>
+            <div class="cloud-segment">
+              <img src="./assets/celestial/clouds/cirrus-high.webp" alt="" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Layer 2: Cumulus Mid (110s loop) -->
+        <div class="cloud-layer layer-cumulus">
+          <div class="cloud-strip-200" id="strip-cumulus">
+            <div class="cloud-segment">
+              <img src="./assets/celestial/clouds/cumulus-mid.webp" alt="" />
+              <div class="seam-marker"></div>
+            </div>
+            <div class="cloud-segment">
+              <img src="./assets/celestial/clouds/cumulus-mid.webp" alt="" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Layer 3: Stratus Low Horizon Mist (135s loop) -->
+        <div class="cloud-layer layer-stratus">
+          <div class="cloud-strip-200" id="strip-stratus">
+            <div class="cloud-segment">
+              <img src="./assets/celestial/clouds/stratus-low.webp" alt="" />
+              <div class="seam-marker"></div>
+            </div>
+            <div class="cloud-segment">
+              <img src="./assets/celestial/clouds/stratus-low.webp" alt="" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Simulated Chat UI Overlay -->
+      <div id="sim-ui" class="simulated-ui-overlay">
+        <!-- Header -->
+        <div class="sim-header">
+          <div class="sim-breadcrumbs">
+            <span>Workspace</span>
+            <span style="opacity:0.4;">›</span>
+            <span>Celestial Daylight</span>
+          </div>
+          <div class="sim-header-actions">
+            <div class="sim-header-pill">GPT-4o Mini</div>
+            <div class="sim-header-pill" style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;">☀️</div>
+          </div>
+        </div>
+
+        <!-- Content Area with Central Safe Corridor -->
+        <div class="sim-content-area">
+          <div class="sim-hero-card">
+            <h1 class="sim-hero-title">A brighter space to think, create and explore.</h1>
+            <p class="sim-hero-desc">Experience a serene daylight workspace with natural sunlight, volumetric rays, and soft drifting clouds that elevate focus and calm.</p>
+          </div>
+
+          <div class="sim-cards-grid">
+            <div class="sim-subcard">
+              <div class="sim-subcard-title">✨ Pure Ambient Sky</div>
+              <div class="sim-subcard-text">Multi-stop gradient derived from Rayleigh scattering with subtle solar bloom.</div>
+            </div>
+            <div class="sim-subcard">
+              <div class="sim-subcard-title">☁️ 3-Tier Canopy</div>
+              <div class="sim-subcard-text">Mathematical Fourier periodic clouds with 100% seamless duplicated looping.</div>
+            </div>
+            <div class="sim-subcard">
+              <div class="sim-subcard-title">🎯 Safe Corridor</div>
+              <div class="sim-subcard-text">Flank-focused cloud mass preserves WCAG contrast in central reading zones.</div>
+            </div>
+          </div>
+
+          <!-- Bottom Composer -->
+          <div class="sim-composer">
+            <span class="sim-composer-input">Ask anything or start creating...</span>
+            <button class="sim-composer-btn">Send</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Live Diagnostics HUD -->
+  <footer class="hud-panel">
+    <div class="hud-item">
+      <span class="hud-label">Total Assets Payload</span>
+      <span class="hud-value" id="hud-payload">257.53 KB / 350 KB (PASS)</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Active Viewport</span>
+      <span class="hud-value" id="hud-viewport">1440 × 900</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">FPS Target</span>
+      <span class="hud-value">60 FPS (Composited)</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">WebGL / Three.js</span>
+      <span class="hud-value" style="color:#10B981;">0 Instances (Clean 2D)</span>
+    </div>
+  </footer>
+
+  <script>
+    const frame = document.getElementById('viewport-frame');
+    const bgContainer = document.getElementById('celestial-bg');
+    const skyAtmosphere = document.getElementById('sky-atmosphere');
+    const simUI = document.getElementById('sim-ui');
+    const hudViewport = document.getElementById('hud-viewport');
+
+    function changeViewport(val) {
+      if (val === '100%') {
+        frame.style.width = '100%';
+        frame.style.height = '100%';
+        hudViewport.textContent = '100% Window';
+      } else {
+        const [w, h] = val.split('x');
+        frame.style.width = w + 'px';
+        frame.style.height = h + 'px';
+        hudViewport.textContent = `${w} × ${h}`;
+      }
+    }
+
+    let isPaused = false;
+    function toggleAnimation() {
+      isPaused = !isPaused;
+      document.body.classList.toggle('animations-paused', isPaused);
+      document.getElementById('btn-toggle-anim').textContent = isPaused ? 'Resume Motion' : 'Pause Motion';
+      document.getElementById('btn-toggle-anim').classList.toggle('active', isPaused);
+    }
+
+    let isReducedMotion = false;
+    function toggleReducedMotion() {
+      isReducedMotion = !isReducedMotion;
+      document.body.classList.toggle('reduced-motion-active', isReducedMotion);
+      document.getElementById('btn-reduced-motion').textContent = isReducedMotion ? 'Reduced Motion: ON' : 'Reduced Motion: Off';
+      document.getElementById('btn-reduced-motion').classList.toggle('active', isReducedMotion);
+    }
+
+    let isSeamShown = false;
+    function toggleSeamMarker() {
+      isSeamShown = !isSeamShown;
+      document.body.classList.toggle('show-seam', isSeamShown);
+      document.getElementById('btn-show-seam').textContent = isSeamShown ? 'Seam Line: ON' : 'Seam Line: Off';
+      document.getElementById('btn-show-seam').classList.toggle('active', isSeamShown);
+    }
+
+    function jumpToSeam(percent) {
+      // Pause animation and set translation directly
+      if (!isPaused) toggleAnimation();
+      const strips = document.querySelectorAll('.cloud-strip-200');
+      strips.forEach(strip => {
+        strip.style.transform = `translate3d(-${percent}%, 0, 0)`;
+      });
+    }
+
+    function changeBackgroundMode(mode) {
+      skyAtmosphere.className = 'celestial-sky-atmosphere';
+      if (mode === 'checkerboard') skyAtmosphere.classList.add('bg-checkerboard');
+      if (mode === 'dark') skyAtmosphere.classList.add('bg-dark-test');
+      if (mode === 'magenta') skyAtmosphere.classList.add('bg-magenta-test');
+    }
+
+    let isUIShown = true;
+    function toggleUIOverlay() {
+      isUIShown = !isUIShown;
+      simUI.style.display = isUIShown ? 'flex' : 'none';
+      document.getElementById('btn-toggle-ui').textContent = isUIShown ? 'UI Overlay: On' : 'UI Overlay: Off';
+      document.getElementById('btn-toggle-ui').classList.toggle('active', isUIShown);
+    }
+  </script>
+</body>
+</html>
+
