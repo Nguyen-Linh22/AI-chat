@@ -25,7 +25,8 @@ interface CodeBlockProps {
 function CodeBlock({ language, content, hasCursor }: CodeBlockProps) {
   const [copied, setCopied] = useState(false)
   const theme = useThemeStore((state) => state.theme)
-  const isDark = theme === 'dark'
+  const isDark = theme === 'dark' || theme === 'zyricon'
+  const isZyricon = theme === 'zyricon'
 
   const handleCopy = async () => {
     try {
@@ -46,12 +47,24 @@ function CodeBlock({ language, content, hasCursor }: CodeBlockProps) {
     <div
       data-testid="code-block"
       data-theme={theme}
-      className="relative my-3 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-xs bg-[#fafafa] dark:bg-[#282c34]"
+      className={`relative my-3 rounded-xl overflow-hidden border shadow-xs ${
+        isZyricon
+          ? 'border-[#694788]/35 bg-[#0C0615] shadow-[0_4px_24px_rgba(7,4,11,0.6)]'
+          : 'border-slate-200 dark:border-white/10 bg-[#fafafa] dark:bg-[#282c34]'
+      }`}
     >
-      <div className="flex items-center justify-between px-3.5 py-1.5 bg-slate-100/90 dark:bg-[#21252b] border-b border-slate-200 dark:border-white/10 text-xs text-slate-600 dark:text-gray-300 select-none">
+      <div
+        className={`flex items-center justify-between px-3.5 py-1.5 border-b text-xs select-none ${
+          isZyricon
+            ? 'bg-[#180E27]/90 border-[#694788]/25 text-[#C4A5B8]'
+            : 'bg-slate-100/90 dark:bg-[#21252b] border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300'
+        }`}
+      >
         <span
           data-testid="code-language-badge"
-          className="font-mono font-medium text-[11px] tracking-wide text-slate-600 dark:text-gray-300"
+          className={`font-mono font-medium text-[11px] tracking-wide ${
+            isZyricon ? 'text-[#C4A5B8]' : 'text-slate-600 dark:text-gray-300'
+          }`}
         >
           {displayLang}
         </span>
@@ -59,14 +72,33 @@ function CodeBlock({ language, content, hasCursor }: CodeBlockProps) {
           type="button"
           onClick={handleCopy}
           title="Sao chép mã"
-          className="flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/10 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+          className={`flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg transition-colors cursor-pointer focus-visible:ring-1 focus-visible:outline-none ${
+            isZyricon
+              ? 'text-[#C4A5B8] hover:text-[#F7F3F6] hover:bg-[#694788]/25 focus-visible:ring-[#C27595]/50'
+              : 'text-slate-600 dark:text-gray-300 hover:text-amber-800 dark:hover:text-indigo-200 hover:bg-amber-50 dark:hover:bg-[#1E1B4B]/40 focus-visible:ring-amber-600 dark:focus-visible:ring-indigo-400/50'
+          }`}
         >
           {copied ? (
             <>
-              <svg className="h-3.5 w-3.5 text-[#1B8F3D] dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+              <svg
+                className={`h-3.5 w-3.5 ${
+                  isZyricon ? 'text-[#C27595]' : 'text-emerald-600 dark:text-emerald-400'
+                }`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
-              <span className="text-[#1B8F3D] dark:text-emerald-400 font-medium">Copied</span>
+              <span
+                className={`${
+                  isZyricon ? 'text-[#C27595]' : 'text-emerald-600 dark:text-emerald-400'
+                } font-medium`}
+              >
+                Copied
+              </span>
             </>
           ) : (
             <>
@@ -100,7 +132,11 @@ function CodeBlock({ language, content, hasCursor }: CodeBlockProps) {
       </div>
 
       {hasCursor && (
-        <span className="ai-cursor absolute bottom-2 right-3 text-[#1B8F3D] select-none text-sm">
+        <span
+          className={`ai-cursor absolute bottom-2 right-3 ${
+            isZyricon ? 'text-[#C27595]' : 'text-amber-500 dark:text-indigo-400'
+          } select-none text-sm`}
+        >
           ▌
         </span>
       )}
@@ -112,7 +148,7 @@ function CodeBlock({ language, content, hasCursor }: CodeBlockProps) {
  * Đệ quy thay thế ký tự '▌' bằng component con trỏ nhấp nháy <span className="ai-cursor">
  * Giữ nguyên cấu trúc AST Markdown, không làm vỡ styling in đậm, nghiêng, code inline...
  */
-function renderChildrenWithCursor(children: React.ReactNode): React.ReactNode {
+function renderChildrenWithCursor(children: React.ReactNode, isZyricon = false): React.ReactNode {
   if (typeof children === 'string') {
     if (!children.includes('▌')) return children
 
@@ -124,7 +160,9 @@ function renderChildrenWithCursor(children: React.ReactNode): React.ReactNode {
             {part}
             {index < parts.length - 1 && (
               <span
-                className="ai-cursor inline-block ml-0.5 text-[#1B8F3D] select-none align-baseline"
+                className={`ai-cursor inline-block ml-0.5 ${
+                  isZyricon ? 'text-[#C27595]' : 'text-amber-500 dark:text-indigo-400'
+                } select-none align-baseline`}
                 aria-hidden="true"
               >
                 ▌
@@ -139,7 +177,7 @@ function renderChildrenWithCursor(children: React.ReactNode): React.ReactNode {
   if (Array.isArray(children)) {
     return children.map((child, index) => (
       <React.Fragment key={index}>
-        {renderChildrenWithCursor(child)}
+        {renderChildrenWithCursor(child, isZyricon)}
       </React.Fragment>
     ))
   }
@@ -150,7 +188,7 @@ function renderChildrenWithCursor(children: React.ReactNode): React.ReactNode {
       return React.cloneElement(
         element,
         undefined,
-        renderChildrenWithCursor(element.props.children)
+        renderChildrenWithCursor(element.props.children, isZyricon)
       )
     }
   }
@@ -165,6 +203,8 @@ function MarkdownCode({
 }: React.ComponentPropsWithoutRef<'code'>) {
   const isBlock = useContext(PreContext)
   const match = /language-(\w+)/.exec(className || '')
+  const theme = useThemeStore((state) => state.theme)
+  const isZyricon = theme === 'zyricon'
 
   if (isBlock || match) {
     const contentStr = String(children).replace(/\n$/, '')
@@ -182,10 +222,14 @@ function MarkdownCode({
 
   return (
     <code
-      className="rounded-md bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 text-xs font-mono font-medium text-emerald-700 dark:text-emerald-300 border border-slate-200/80 dark:border-white/10 break-words"
+      className={`rounded-md px-1.5 py-0.5 text-xs font-mono font-medium border break-words ${
+        isZyricon
+          ? 'bg-[#1D132D] text-[#E4A9C4] border-[#694788]/40'
+          : 'bg-amber-50/80 dark:bg-white/10 text-amber-900 dark:text-indigo-200 border-amber-200/60 dark:border-white/10'
+      }`}
       {...props}
     >
-      {renderChildrenWithCursor(children)}
+      {renderChildrenWithCursor(children, isZyricon)}
     </code>
   )
 }
@@ -198,6 +242,8 @@ function MessageBubble({
   onRegenerate,
 }: MessageBubbleProps) {
   const [isCopied, setIsCopied] = useState(false)
+  const theme = useThemeStore((state) => state.theme)
+  const isZyricon = theme === 'zyricon'
 
   const handleCopy = async () => {
     try {
@@ -225,41 +271,85 @@ function MessageBubble({
       <div
         className={`rounded-2xl px-4 py-3 shadow-xs transition-colors duration-150 ${
           isUser
-            ? 'max-w-[85%] sm:max-w-[75%] rounded-br-sm bg-slate-900 dark:bg-[#1A2436] border border-slate-800 dark:border-white/10 text-white shadow-xs'
-            : 'w-full rounded-bl-sm bg-white dark:bg-[#121824]/90 border border-slate-200/90 dark:border-white/[0.08] text-slate-800 dark:text-gray-100 shadow-xs'
+            ? isZyricon
+              ? 'max-w-[85%] sm:max-w-[75%] rounded-br-sm bg-gradient-to-br from-[#3B2568]/80 via-[#2D1B4E]/90 to-[#20103A]/95 border border-[#694788]/40 text-[#F7F3F6] shadow-[0_4px_24px_rgba(35,16,56,0.45)]'
+              : 'max-w-[85%] sm:max-w-[75%] rounded-br-sm bg-slate-900 dark:bg-[#1A2436] border border-slate-800 dark:border-white/10 text-white shadow-xs'
+            : isZyricon
+            ? 'w-full rounded-bl-sm bg-[#120B1C]/92 border border-[#694788]/25 text-[#EBDDE9] shadow-[0_4px_28px_rgba(7,4,11,0.55)] backdrop-blur-xl'
+            : 'w-full rounded-bl-sm bg-white dark:bg-[#121824]/90 border border-slate-200/90 dark:border-white/[0.08] text-slate-800 dark:text-gray-100 shadow-[0_4px_20px_-4px_rgba(132,194,245,0.25)] dark:shadow-none'
         }`}
       >
         {!isUser ? (
-          <div className="mb-2.5 pb-2 flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06]">
+          <div
+            className={`mb-2.5 pb-2 flex items-center justify-between border-b ${
+              isZyricon ? 'border-[#694788]/20' : 'border-slate-100 dark:border-white/[0.06]'
+            }`}
+          >
             <div className="flex items-center gap-2">
               <div
                 data-testid="ai-avatar"
                 aria-label="AI Avatar"
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-[#1B8F3D] dark:text-emerald-400 border border-emerald-500/20 shadow-2xs select-none"
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg ${
+                  isZyricon
+                    ? 'bg-[#3B2568]/40 text-[#C27595] border border-[#694788]/40 shadow-[0_0_12px_rgba(194,117,149,0.25)]'
+                    : 'bg-amber-100/70 text-amber-800 dark:bg-indigo-500/15 dark:text-indigo-300 border border-amber-300/50 dark:border-indigo-500/30 shadow-2xs'
+                } select-none`}
               >
                 <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
                 </svg>
               </div>
-              <span className="text-xs font-semibold text-slate-700 dark:text-gray-300">AI</span>
+              <span
+                className={`text-xs font-semibold ${
+                  isZyricon ? 'text-[#C4A5B8]' : 'text-slate-700 dark:text-gray-300'
+                }`}
+              >
+                AI
+              </span>
             </div>
             {isStreaming && (
-              <span className="flex items-center gap-1.5 text-[11px] font-medium text-[#1B8F3D] dark:text-emerald-400">
+              <span
+                className={`flex items-center gap-1.5 text-[11px] font-medium ${
+                  isZyricon ? 'text-[#C27595]' : 'text-amber-500 dark:text-indigo-400'
+                }`}
+              >
                 <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping motion-reduce:hidden rounded-full bg-[#1B8F3D] opacity-75"></span>
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#1B8F3D]"></span>
+                  <span
+                    className={`absolute inline-flex h-full w-full animate-ping motion-reduce:hidden rounded-full ${
+                      isZyricon ? 'bg-[#C27595]' : 'bg-amber-500 dark:bg-indigo-400'
+                    } opacity-75`}
+                  ></span>
+                  <span
+                    className={`relative inline-flex h-2 w-2 rounded-full ${
+                      isZyricon ? 'bg-[#C27595]' : 'bg-amber-500 dark:bg-indigo-400'
+                    }`}
+                  ></span>
                 </span>
                 <span>AI đang trả lời...</span>
               </span>
             )}
           </div>
         ) : (
-          <div className="mb-2.5 pb-2 flex items-center justify-end gap-2 border-b border-white/10">
-            <span className="text-xs font-semibold text-slate-200">Bạn</span>
+          <div
+            className={`mb-2.5 pb-2 flex items-center justify-end gap-2 border-b ${
+              isZyricon ? 'border-[#694788]/25' : 'border-white/10'
+            }`}
+          >
+            <span
+              className={`text-xs font-semibold ${
+                isZyricon ? 'text-[#C4A5B8]' : 'text-slate-200'
+              }`}
+            >
+              Bạn
+            </span>
             <div
               data-testid="user-avatar"
               aria-label="User Avatar"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/90 border border-white/15 shadow-2xs select-none"
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg ${
+                isZyricon
+                  ? 'bg-[#3B2568]/50 text-[#F7F3F6] border border-[#694788]/40 shadow-[0_0_10px_rgba(105,71,136,0.3)]'
+                  : 'bg-white/10 text-white/90 border border-white/15 shadow-2xs'
+              } select-none`}
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -276,9 +366,22 @@ function MessageBubble({
                 href={attachment.fileUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-800 dark:text-gray-200 px-3 py-2 text-xs font-medium hover:bg-slate-200 dark:hover:bg-white/10 transition border border-slate-200/80 dark:border-white/10"
+                className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium transition border ${
+                  isZyricon
+                    ? 'bg-[#1A102A]/80 text-[#EBDDE9] border-[#694788]/30 hover:bg-[#25173D]/90 hover:border-[#98578D]/50 shadow-xs'
+                    : 'bg-slate-100 dark:bg-white/[0.06] text-slate-800 dark:text-gray-200 border-slate-200/80 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10'
+                }`}
               >
-                <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                <svg
+                  className={`h-4 w-4 ${
+                    isZyricon ? 'text-[#C27595]' : 'text-emerald-600 dark:text-indigo-400'
+                  } shrink-0`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                 </svg>
 
@@ -292,7 +395,11 @@ function MessageBubble({
 
         <div className={`text-sm leading-6 ${isStreaming ? 'ai-typewriter-container' : ''}`}>
           {isStreaming && !content && (
-            <span className="ai-cursor text-sm text-[#1B8F3D] select-none">
+            <span
+              className={`ai-cursor text-sm ${
+                isZyricon ? 'text-[#C27595]' : 'text-amber-500 dark:text-indigo-400'
+              } select-none`}
+            >
               ▌
             </span>
           )}
@@ -317,7 +424,11 @@ function MessageBubble({
                       loading="lazy"
                       decoding="async"
                       referrerPolicy="no-referrer"
-                      className="max-h-96 max-w-full rounded-xl border border-slate-200 object-contain shadow-xs dark:border-gray-800"
+                      className={`max-h-96 max-w-full rounded-xl border object-contain shadow-xs ${
+                        isZyricon
+                          ? 'border-[#694788]/30 shadow-[0_4px_20px_rgba(7,4,11,0.5)]'
+                          : 'border-slate-200 dark:border-gray-800'
+                      }`}
                     />
                   </span>
                 )
@@ -328,73 +439,106 @@ function MessageBubble({
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-emerald-600 dark:text-emerald-400 underline underline-offset-2 hover:opacity-85"
+                    className={`underline underline-offset-2 ${
+                      isZyricon
+                        ? 'text-[#C27595] hover:text-[#D98BA9]'
+                        : isUser
+                        ? 'text-sky-300 font-medium'
+                        : 'text-sky-700 dark:text-indigo-400 font-medium'
+                    }`}
                     {...props}
                   >
-                    {renderChildrenWithCursor(children)}
+                    {renderChildrenWithCursor(children, isZyricon)}
                   </a>
                 )
               },
               p({ children, ...props }) {
                 return (
                   <p className="mb-2.5 last:mb-0 leading-relaxed text-sm" {...props}>
-                    {renderChildrenWithCursor(children)}
+                    {renderChildrenWithCursor(children, isZyricon)}
                   </p>
                 )
               },
               ul({ children, ...props }) {
                 return (
                   <ul className="my-2 ml-5 list-disc space-y-1 text-sm leading-relaxed" {...props}>
-                    {renderChildrenWithCursor(children)}
+                    {renderChildrenWithCursor(children, isZyricon)}
                   </ul>
                 )
               },
               ol({ children, ...props }) {
                 return (
                   <ol className="my-2 ml-5 list-decimal space-y-1 text-sm leading-relaxed" {...props}>
-                    {renderChildrenWithCursor(children)}
+                    {renderChildrenWithCursor(children, isZyricon)}
                   </ol>
                 )
               },
               li({ children, ...props }) {
                 return (
                   <li className="pl-0.5 leading-relaxed" {...props}>
-                    {renderChildrenWithCursor(children)}
+                    {renderChildrenWithCursor(children, isZyricon)}
                   </li>
                 )
               },
               h1({ children, ...props }) {
                 return (
-                  <h1 className="text-xl sm:text-2xl font-bold mt-4 mb-2 tracking-tight leading-snug" {...props}>
-                    {renderChildrenWithCursor(children)}
+                  <h1
+                    className={`text-xl sm:text-2xl font-bold mt-4 mb-2 tracking-tight leading-snug ${
+                      isZyricon ? 'text-[#F7F3F6]' : ''
+                    }`}
+                    {...props}
+                  >
+                    {renderChildrenWithCursor(children, isZyricon)}
                   </h1>
                 )
               },
               h2({ children, ...props }) {
                 return (
-                  <h2 className="text-lg sm:text-xl font-bold mt-3.5 mb-1.5 tracking-tight leading-snug" {...props}>
-                    {renderChildrenWithCursor(children)}
+                  <h2
+                    className={`text-lg sm:text-xl font-bold mt-3.5 mb-1.5 tracking-tight leading-snug ${
+                      isZyricon ? 'text-[#F7F3F6]' : ''
+                    }`}
+                    {...props}
+                  >
+                    {renderChildrenWithCursor(children, isZyricon)}
                   </h2>
                 )
               },
               h3({ children, ...props }) {
                 return (
-                  <h3 className="text-base sm:text-lg font-semibold mt-3 mb-1 tracking-tight leading-snug" {...props}>
-                    {renderChildrenWithCursor(children)}
+                  <h3
+                    className={`text-base sm:text-lg font-semibold mt-3 mb-1 tracking-tight leading-snug ${
+                      isZyricon ? 'text-[#F7F3F6]' : ''
+                    }`}
+                    {...props}
+                  >
+                    {renderChildrenWithCursor(children, isZyricon)}
                   </h3>
                 )
               },
               h4({ children, ...props }) {
                 return (
-                  <h4 className="text-sm sm:text-base font-semibold mt-2.5 mb-1 tracking-tight leading-snug" {...props}>
-                    {renderChildrenWithCursor(children)}
+                  <h4
+                    className={`text-sm sm:text-base font-semibold mt-2.5 mb-1 tracking-tight leading-snug ${
+                      isZyricon ? 'text-[#F7F3F6]' : ''
+                    }`}
+                    {...props}
+                  >
+                    {renderChildrenWithCursor(children, isZyricon)}
                   </h4>
                 )
               },
               blockquote({ children, ...props }) {
                 return (
-                  <blockquote className="my-2.5 border-l-3 border-[#1B8F3D]/60 dark:border-emerald-500/60 pl-3.5 italic text-slate-600 dark:text-gray-400 bg-slate-50/50 dark:bg-white/[0.02] py-1 rounded-r-lg" {...props}>
-                    {renderChildrenWithCursor(children)}
+                  <blockquote
+                    className={`my-2.5 border-l-3 pl-3.5 italic py-1 rounded-r-lg ${
+                      isZyricon
+                        ? 'border-[#98578D] bg-[#180F26]/60 text-[#C4A5B8]'
+                        : 'border-amber-500/70 dark:border-indigo-500/60 text-slate-700 dark:text-gray-400 bg-amber-50/40 dark:bg-white/[0.02]'
+                    }`}
+                    {...props}
+                  >
+                    {renderChildrenWithCursor(children, isZyricon)}
                   </blockquote>
                 )
               },
@@ -405,7 +549,11 @@ function MessageBubble({
                     tabIndex={0}
                     role="region"
                     aria-label="Bảng dữ liệu"
-                    className="my-3.5 w-full max-w-full overflow-x-auto rounded-xl border border-slate-200/90 dark:border-white/10 shadow-2xs focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+                    className={`my-3.5 w-full max-w-full overflow-x-auto rounded-xl border shadow-2xs focus-visible:ring-2 focus-visible:outline-none ${
+                      isZyricon
+                        ? 'border-[#694788]/30 bg-[#120B1C]/60 focus-visible:ring-[#C27595]/50'
+                        : 'border-slate-200/90 dark:border-white/10 focus-visible:ring-amber-600 dark:focus-visible:ring-indigo-400/50'
+                    }`}
                   >
                     <table className="w-full min-w-full border-collapse text-left text-sm" {...props}>
                       {children}
@@ -415,36 +563,68 @@ function MessageBubble({
               },
               thead({ children, ...props }) {
                 return (
-                  <thead className="bg-slate-50 dark:bg-white/[0.04] border-b border-slate-200/90 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-gray-200 uppercase tracking-wider" {...props}>
+                  <thead
+                    className={`border-b text-xs font-semibold uppercase tracking-wider ${
+                      isZyricon
+                        ? 'bg-[#1C122C]/90 border-[#694788]/30 text-[#C4A5B8]'
+                        : 'bg-slate-50 dark:bg-white/[0.04] border-slate-200/90 dark:border-white/10 text-slate-700 dark:text-gray-200'
+                    }`}
+                    {...props}
+                  >
                     {children}
                   </thead>
                 )
               },
               tbody({ children, ...props }) {
                 return (
-                  <tbody className="divide-y divide-slate-200/70 dark:divide-white/[0.06] bg-white/40 dark:bg-transparent" {...props}>
+                  <tbody
+                    className={`divide-y ${
+                      isZyricon
+                        ? 'divide-[#694788]/20 bg-transparent'
+                        : 'divide-slate-200/70 dark:divide-white/[0.06] bg-white/40 dark:bg-transparent'
+                    }`}
+                    {...props}
+                  >
                     {children}
                   </tbody>
                 )
               },
               tr({ children, ...props }) {
                 return (
-                  <tr className="transition-colors hover:bg-slate-50/70 dark:hover:bg-white/[0.02]" {...props}>
+                  <tr
+                    className={`transition-colors ${
+                      isZyricon
+                        ? 'hover:bg-[#25173D]/40'
+                        : 'hover:bg-slate-50/70 dark:hover:bg-white/[0.02]'
+                    }`}
+                    {...props}
+                  >
                     {children}
                   </tr>
                 )
               },
               th({ children, ...props }) {
                 return (
-                  <th scope="col" className="px-3.5 py-2.5 text-xs font-semibold tracking-wider text-slate-700 dark:text-gray-200" {...props}>
-                    {renderChildrenWithCursor(children)}
+                  <th
+                    scope="col"
+                    className={`px-3.5 py-2.5 text-xs font-semibold tracking-wider ${
+                      isZyricon ? 'text-[#C4A5B8]' : 'text-slate-700 dark:text-gray-200'
+                    }`}
+                    {...props}
+                  >
+                    {renderChildrenWithCursor(children, isZyricon)}
                   </th>
                 )
               },
               td({ children, ...props }) {
                 return (
-                  <td className="px-3.5 py-2.5 text-sm text-slate-700 dark:text-gray-300 align-middle leading-relaxed" {...props}>
-                    {renderChildrenWithCursor(children)}
+                  <td
+                    className={`px-3.5 py-2.5 text-sm align-middle leading-relaxed ${
+                      isZyricon ? 'text-[#EBDDE9]' : 'text-slate-700 dark:text-gray-300'
+                    }`}
+                    {...props}
+                  >
+                    {renderChildrenWithCursor(children, isZyricon)}
                   </td>
                 )
               },
@@ -459,19 +639,40 @@ function MessageBubble({
         </div>
 
         {!isUser && !isStreaming && (
-          <div className="mt-3 flex items-center gap-2 border-t border-slate-200/80 dark:border-white/[0.08] pt-2 opacity-90 transition-opacity duration-150 group-hover:opacity-100">
+          <div
+            className={`mt-3 flex items-center gap-2 border-t pt-2 opacity-90 transition-opacity duration-150 group-hover:opacity-100 ${
+              isZyricon
+                ? 'border-[#694788]/20'
+                : 'border-slate-200/80 dark:border-white/[0.08]'
+            }`}
+          >
             <button
               type="button"
               onClick={handleCopy}
               title="Sao chép nội dung"
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs text-slate-500 dark:text-gray-400 transition-all duration-150 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-800 dark:hover:text-gray-200 active:scale-95 cursor-pointer focus-visible:ring-1 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-all duration-150 active:scale-95 cursor-pointer focus-visible:ring-1 focus-visible:outline-none ${
+                isZyricon
+                  ? 'text-[#C4A5B8] hover:bg-[#694788]/25 hover:text-[#F7F3F6] focus-visible:ring-[#C27595]/50'
+                  : 'text-slate-500 dark:text-gray-400 hover:bg-amber-50/80 dark:hover:bg-[#1E1B4B]/40 hover:text-amber-800 dark:hover:text-indigo-200 focus-visible:ring-amber-600 dark:focus-visible:ring-indigo-400/50'
+              }`}
             >
               {isCopied ? (
                 <>
-                  <svg className="h-3.5 w-3.5 text-[#1B8F3D]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                  <svg
+                    className={`h-3.5 w-3.5 ${isZyricon ? 'text-[#C27595]' : 'text-amber-600 dark:text-indigo-400'}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                    aria-hidden="true"
+                  >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span className="text-[#1B8F3D] font-medium">Đã copy</span>
+                  <span
+                    className={`${isZyricon ? 'text-[#C27595]' : 'text-amber-600 dark:text-indigo-400'} font-medium`}
+                  >
+                    Đã copy
+                  </span>
                 </>
               ) : (
                 <>
@@ -491,7 +692,11 @@ function MessageBubble({
                 type="button"
                 onClick={onRegenerate}
                 title="Tạo lại câu trả lời"
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs text-slate-500 dark:text-gray-400 transition-all duration-150 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-[#1B8F3D] active:scale-95 cursor-pointer focus-visible:ring-1 focus-visible:ring-[#1B8F3D]/50 focus-visible:outline-none"
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs transition-all duration-150 active:scale-95 cursor-pointer focus-visible:ring-1 focus-visible:outline-none ${
+                  isZyricon
+                    ? 'text-[#C4A5B8] hover:bg-[#694788]/25 hover:text-[#C27595] focus-visible:ring-[#C27595]/50'
+                    : 'text-slate-500 dark:text-gray-400 hover:bg-amber-50/80 dark:hover:bg-[#1E1B4B]/40 hover:text-amber-700 dark:hover:text-indigo-300 focus-visible:ring-amber-600 dark:focus-visible:ring-indigo-400/50'
+                }`}
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

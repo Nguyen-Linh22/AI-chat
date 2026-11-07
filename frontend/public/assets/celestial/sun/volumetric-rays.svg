@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%" fill="none" aria-hidden="true">
+  <defs>
+    <!-- Beam A Linear Gradient: -35 degrees -->
+    <linearGradient id="ray-grad-a" x1="100%" y1="0%" x2="0%" y2="70%">
+      <stop offset="0%" stop-color="#FFF6D6" stop-opacity="0.22"/>
+      <stop offset="25%" stop-color="#FFEBB0" stop-opacity="0.14"/>
+      <stop offset="60%" stop-color="#FFE08A" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#FFE08A" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Beam B Linear Gradient: -44 degrees (Main central beam) -->
+    <linearGradient id="ray-grad-b" x1="95%" y1="0%" x2="5%" y2="90%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.28"/>
+      <stop offset="20%" stop-color="#FFF4CE" stop-opacity="0.18"/>
+      <stop offset="55%" stop-color="#FFE79E" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#FFE79E" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Beam C Linear Gradient: -54 degrees -->
+    <linearGradient id="ray-grad-c" x1="90%" y1="0%" x2="15%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2BF" stop-opacity="0.18"/>
+      <stop offset="30%" stop-color="#FFEAA3" stop-opacity="0.12"/>
+      <stop offset="65%" stop-color="#FFE08A" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#FFE08A" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g style="mix-blend-mode: screen;">
+    <!-- Beam A: Narrower, shallower angle (-35 deg), reach ~ 580px -->
+    <polygon points="710,45 745,55 310,480 240,460" fill="url(#ray-grad-a)"/>
+
+    <!-- Beam B: Broad central shaft (-44 deg), reach ~ 680px -->
+    <polygon points="700,50 755,70 200,600 90,565" fill="url(#ray-grad-b)"/>
+
+    <!-- Beam C: Steeper angle (-54 deg), reach ~ 540px -->
+    <polygon points="685,60 725,80 340,600 270,590" fill="url(#ray-grad-c)"/>
+  </g>
+</svg>

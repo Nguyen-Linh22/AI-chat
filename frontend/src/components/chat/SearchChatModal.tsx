@@ -37,7 +37,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   return (
     <>
       {before}
-      <mark className="rounded bg-emerald-500/25 px-0.5 font-bold text-emerald-900 dark:bg-emerald-500/35 dark:text-emerald-200">
+      <mark className="rounded bg-amber-200/90 dark:bg-indigo-500/35 dark:text-indigo-200 zyricon:bg-[#98578D]/40 px-0.5 font-bold text-amber-950 zyricon:text-[#F7F3F6]">
         {match}
       </mark>
       <HighlightMatch text={after} query={query} />
@@ -157,7 +157,7 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[10vh] sm:pt-[15vh] bg-black/60 dark:bg-black/75 backdrop-blur-md transition-opacity animate-modal-fade"
+      className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[10vh] sm:pt-[15vh] bg-black/60 dark:bg-black/75 zyricon:bg-[#07040B]/85 backdrop-blur-md transition-opacity animate-modal-fade"
       onClick={onClose}
     >
       <div
@@ -165,7 +165,7 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label="Tìm kiếm cuộc trò chuyện"
-        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/[0.12] bg-white/95 dark:bg-[#151D2A]/95 shadow-2xl backdrop-blur-2xl ring-1 ring-black/5 dark:ring-white/[0.04] animate-modal-enter flex flex-col"
+        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/[0.12] zyricon:border-[#694788]/35 bg-white/95 dark:bg-[#151D2A]/95 zyricon:bg-[#120B1C]/96 shadow-2xl zyricon:shadow-[0_12px_48px_rgba(7,4,11,0.95)] backdrop-blur-2xl ring-1 ring-black/5 dark:ring-white/[0.04] zyricon:ring-[#694788]/20 animate-modal-enter flex flex-col"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
         onMouseMove={() => {
@@ -174,20 +174,20 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
           }
         }}
       >
-        {/* Subtle top ambient emerald glow border */}
+        {/* Subtle top ambient glow border */}
         <div
           aria-hidden="true"
-          className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/50 dark:via-emerald-400/60 to-transparent pointer-events-none"
+          className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/50 dark:via-indigo-500/60 zyricon:via-[#C27595]/70 to-transparent pointer-events-none"
         />
 
         {/* Search Bar Input Header */}
-        <div className="relative flex items-center px-4 py-3.5 border-b border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02]">
+        <div className="relative flex items-center px-4 py-3.5 border-b border-slate-100 dark:border-white/[0.06] zyricon:border-[#694788]/25 bg-slate-50/50 dark:bg-white/[0.02] zyricon:bg-[#180F26]/50">
           <div
             aria-hidden="true"
             className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${
               cleanQuery
-                ? 'text-[#1B8F3D] dark:text-emerald-400 bg-emerald-500/10'
-                : 'text-slate-400 dark:text-[#94A3B8] bg-slate-100 dark:bg-white/[0.04]'
+                ? 'text-amber-800 dark:text-indigo-300 zyricon:text-[#C27595] bg-amber-100/70 dark:bg-indigo-950/60 border border-amber-300/60 dark:border-indigo-500/30 zyricon:bg-[#3B2568]/40'
+                : 'text-slate-400 dark:text-[#94A3B8] zyricon:text-[#8F7686] bg-slate-100 dark:bg-white/[0.04] zyricon:bg-[#1A102A]/60'
             }`}
           >
             <svg
@@ -212,7 +212,7 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Tìm kiếm theo tiêu đề cuộc trò chuyện..."
             aria-label="Tìm kiếm cuộc trò chuyện"
-            className="w-full bg-transparent pl-3 pr-2 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-[#94A3B8] outline-none"
+            className="w-full bg-transparent pl-3 pr-2 text-sm font-medium text-slate-900 dark:text-white zyricon:text-[#F7F3F6] placeholder:text-slate-400 dark:placeholder:text-[#94A3B8] zyricon:placeholder:text-[#8F7686] outline-none"
           />
 
           {query && (
@@ -222,7 +222,7 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
                 setQuery('')
                 inputRef.current?.focus()
               }}
-              className="mr-1.5 flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:outline-none"
+              className="mr-1.5 flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 hover:bg-amber-100/60 hover:text-amber-900 dark:hover:bg-[#1E1B4B]/50 dark:hover:text-indigo-200 zyricon:text-[#C4A5B8] zyricon:hover:bg-[#3B2568]/50 zyricon:hover:text-[#F7F3F6] transition-all cursor-pointer active:scale-90 focus-visible:ring-2 focus-visible:ring-emerald-500/50 dark:focus-visible:ring-indigo-400/50 zyricon:focus-visible:ring-[#C27595]/50 focus-visible:outline-none"
               title="Xóa tìm kiếm"
               aria-label="Xóa nội dung tìm kiếm"
             >
@@ -247,9 +247,9 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
             onClick={onClose}
             aria-label="Đóng tìm kiếm"
             title="Đóng (Esc)"
-            className="flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:outline-none rounded-md"
+            className="flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-indigo-200 dark:hover:bg-[#1E1B4B]/50 zyricon:text-[#C4A5B8] zyricon:hover:text-[#F7F3F6] transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500/50 dark:focus-visible:ring-indigo-400/50 zyricon:focus-visible:ring-[#C27595]/50 focus-visible:outline-none rounded-md"
           >
-            <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-600 dark:text-gray-400 bg-slate-100 dark:bg-white/[0.06] rounded-md border border-slate-200 dark:border-white/10 select-none hover:border-slate-300 dark:hover:border-white/20 transition-colors">
+            <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-600 dark:text-gray-400 zyricon:text-[#C4A5B8] bg-slate-100 dark:bg-white/[0.06] zyricon:bg-[#1D132D] rounded-md border border-slate-200 dark:border-white/10 zyricon:border-[#694788]/30 select-none hover:border-slate-300 dark:hover:border-white/20 zyricon:hover:border-[#694788]/50 transition-colors">
               ESC
             </kbd>
           </button>
@@ -267,7 +267,7 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
           {chats.length === 0 ? (
             /* Empty state: No chats in history */
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center select-none">
-              <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-gray-400">
+              <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/[0.06] zyricon:bg-[#1A102A] text-slate-400 dark:text-gray-400 zyricon:text-[#8F7686]">
                 <svg
                   className="h-5 w-5"
                   fill="none"
@@ -282,17 +282,17 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
                   />
                 </svg>
               </div>
-              <p className="text-xs font-semibold text-slate-700 dark:text-gray-300">
+              <p className="text-xs font-semibold text-slate-700 dark:text-gray-300 zyricon:text-[#F7F3F6]">
                 Chưa có cuộc trò chuyện nào để tìm kiếm
               </p>
-              <p className="mt-1 text-[11px] text-slate-600 dark:text-[#94A3B8]">
+              <p className="mt-1 text-[11px] text-slate-600 dark:text-[#94A3B8] zyricon:text-[#C4A5B8]">
                 Bắt đầu một đoạn chat mới để có thể tìm kiếm tại đây.
               </p>
             </div>
           ) : cleanQuery && displayedChats.length === 0 ? (
             /* Empty state: Search query returned 0 matches */
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center select-none">
-              <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20">
+              <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/10 zyricon:bg-[#3B2568]/40 text-amber-600 dark:text-amber-400 zyricon:text-[#C27595] ring-1 ring-amber-500/20 zyricon:ring-[#694788]/40">
                 <svg
                   className="h-5 w-5"
                   fill="none"
@@ -307,10 +307,10 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
                   />
                 </svg>
               </div>
-              <p className="text-xs font-semibold text-slate-700 dark:text-gray-300">
+              <p className="text-xs font-semibold text-slate-700 dark:text-gray-300 zyricon:text-[#F7F3F6]">
                 Không tìm thấy cuộc trò chuyện nào
               </p>
-              <p className="mt-1 text-[11px] text-slate-600 dark:text-[#94A3B8] max-w-xs truncate">
+              <p className="mt-1 text-[11px] text-slate-600 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] max-w-xs truncate">
                 Không có kết quả nào khớp với "{cleanQuery}"
               </p>
               <button
@@ -319,7 +319,7 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
                   setQuery('')
                   inputRef.current?.focus()
                 }}
-                className="mt-3 inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:border-emerald-500/40 hover:text-[#1B8F3D] dark:hover:text-emerald-400 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:outline-none"
+                className="mt-3 inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-white/10 zyricon:border-[#694788]/30 bg-slate-50 dark:bg-white/[0.04] zyricon:bg-[#1D132D] px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 zyricon:text-[#C4A5B8] hover:border-amber-500/40 dark:hover:border-indigo-500/40 zyricon:hover:border-[#C27595]/50 hover:text-amber-700 dark:hover:text-indigo-300 zyricon:hover:text-[#F7F3F6] transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-500/50 dark:focus-visible:ring-indigo-400/50 zyricon:focus-visible:ring-[#C27595]/50 focus-visible:outline-none"
               >
                 <span>Xóa tìm kiếm</span>
               </button>
@@ -328,12 +328,12 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
             /* Matching or Recent List */
             <div className="space-y-1">
               <div className="flex items-center justify-between px-2.5 py-1 select-none">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94A3B8]">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 dark:text-[#94A3B8] zyricon:text-[#C4A5B8]">
                   {cleanQuery
                     ? `Kết quả tìm kiếm (${displayedChats.length})`
                     : `Gần đây (${displayedChats.length})`}
                 </span>
-                <span className="text-[10px] text-slate-600 dark:text-[#94A3B8] font-normal">
+                <span className="text-[10px] text-slate-600 dark:text-[#94A3B8] zyricon:text-[#8F7686] font-normal">
                   {cleanQuery ? 'Khớp theo tiêu đề' : 'Mới nhất'}
                 </span>
               </div>
@@ -357,15 +357,15 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
                     onMouseEnter={() => setSelectedIndex(index)}
                     className={`group/item flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-colors cursor-pointer outline-none ${
                       isKeyboardSelected
-                        ? 'border border-emerald-500/50 bg-[#E2E8F0] dark:bg-[#2A374C] text-[#1B8F3D] dark:text-emerald-400 shadow-2xs ring-1 ring-[#1B8F3D]/20'
-                        : 'border border-transparent bg-transparent hover:border-emerald-500/40 hover:bg-slate-100/80 dark:hover:bg-[#222C3D] text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white'
+                        ? 'border border-amber-500/60 dark:border-indigo-500/50 zyricon:border-[#C27595]/60 bg-amber-50 dark:bg-gradient-to-r dark:from-[rgba(49,46,129,0.45)] dark:to-[rgba(30,27,75,0.3)] zyricon:bg-[#25173D]/90 text-amber-900 dark:text-indigo-300 zyricon:text-[#C27595] shadow-2xs ring-1 ring-amber-500/30 dark:ring-indigo-500/30 zyricon:ring-[#C27595]/30'
+                        : 'border border-transparent bg-transparent hover:border-amber-400/50 dark:hover:border-indigo-500/30 zyricon:hover:border-[#694788]/50 hover:bg-amber-50/50 dark:hover:bg-[#1E1B4B]/35 zyricon:hover:bg-[#1D132D]/70 text-slate-700 dark:text-gray-300 zyricon:text-[#EBDDE9] hover:text-slate-900 dark:hover:text-white zyricon:hover:text-[#F7F3F6]'
                     }`}
                   >
                     <div
                       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg transition-colors ${
                         isCurrent || isKeyboardSelected
-                          ? 'bg-emerald-500/15 text-[#1B8F3D] dark:text-emerald-400 ring-1 ring-emerald-500/30'
-                          : 'bg-slate-100 dark:bg-white/[0.04] text-slate-400 dark:text-gray-400 group-hover/item:text-[#1B8F3D] dark:group-hover/item:text-emerald-400 group-hover/item:bg-emerald-500/10'
+                          ? 'bg-amber-100/70 dark:bg-indigo-950/60 text-amber-800 dark:text-indigo-300 zyricon:bg-[#3B2568]/50 zyricon:text-[#C27595] ring-1 ring-amber-400/40 dark:ring-indigo-500/40 zyricon:ring-[#694788]/40'
+                          : 'bg-slate-100 dark:bg-white/[0.04] zyricon:bg-[#180F26] text-slate-400 dark:text-gray-400 zyricon:text-[#C4A5B8] group-hover/item:text-amber-700 dark:group-hover/item:text-indigo-300 zyricon:group-hover/item:text-[#C27595] group-hover/item:bg-amber-100/60 dark:group-hover/item:bg-indigo-950/40 zyricon:group-hover/item:bg-[#3B2568]/40'
                       }`}
                     >
                       <svg
@@ -387,34 +387,34 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
                       <p
                         className={`truncate text-xs font-semibold ${
                           isKeyboardSelected
-                            ? 'text-slate-900 dark:text-white'
-                            : 'text-slate-800 dark:text-[#F1F5F9] group-hover/item:text-slate-900 dark:group-hover/item:text-white'
+                            ? 'text-slate-900 dark:text-white zyricon:text-[#F7F3F6]'
+                            : 'text-slate-800 dark:text-[#F1F5F9] zyricon:text-[#EBDDE9] group-hover/item:text-slate-900 dark:group-hover/item:text-white zyricon:group-hover/item:text-[#F7F3F6]'
                         }`}
                       >
                         <HighlightMatch text={chat.title} query={cleanQuery} />
                       </p>
-                      <p className="truncate text-[10px] text-slate-600 dark:text-[#94A3B8] mt-0.5">
+                      <p className="truncate text-[10px] text-slate-600 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] mt-0.5">
                         {relativeTime}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       {isCurrent && (
-                        <span className="shrink-0 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 select-none">
+                        <span className="shrink-0 rounded-md border border-emerald-500/30 dark:border-indigo-500/30 zyricon:border-[#694788]/40 bg-emerald-500/10 dark:bg-indigo-950/60 zyricon:bg-[#3B2568]/40 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-indigo-300 zyricon:text-[#C27595] select-none">
                           Đang mở
                         </span>
                       )}
                       {isKeyboardSelected ? (
                         <span
                           aria-hidden="true"
-                          className="hidden sm:inline-flex items-center rounded border border-emerald-500/25 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-mono text-[#1B8F3D] dark:text-emerald-300 select-none"
+                          className="hidden sm:inline-flex items-center rounded border border-emerald-500/25 dark:border-indigo-500/30 zyricon:border-[#694788]/40 bg-emerald-500/10 dark:bg-indigo-950/40 zyricon:bg-[#3B2568]/30 px-1.5 py-0.5 text-[10px] font-mono text-[#1B8F3D] dark:text-indigo-300 zyricon:text-[#C27595] select-none"
                         >
                           ↵
                         </span>
                       ) : (
                         <span
                           aria-hidden="true"
-                          className="hidden sm:group-hover/item:inline-flex items-center rounded border border-emerald-500/25 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-mono text-[#1B8F3D] dark:text-emerald-300 select-none"
+                          className="hidden sm:group-hover/item:inline-flex items-center rounded border border-emerald-500/25 dark:border-indigo-500/30 zyricon:border-[#694788]/40 bg-emerald-500/10 dark:bg-indigo-950/40 zyricon:bg-[#3B2568]/30 px-1.5 py-0.5 text-[10px] font-mono text-[#1B8F3D] dark:text-indigo-300 zyricon:text-[#C27595] select-none"
                         >
                           ↵
                         </span>
@@ -428,20 +428,20 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
         </div>
 
         {/* Dialog Footer Shortcuts Bar */}
-        <div className="flex items-center justify-between border-t border-slate-100 dark:border-white/[0.06] bg-slate-50/70 dark:bg-[#131923]/60 px-3.5 py-2 text-[11px] text-slate-500 dark:text-[#94A3B8] select-none">
+        <div className="flex items-center justify-between border-t border-slate-100 dark:border-white/[0.06] zyricon:border-[#694788]/25 bg-slate-50/70 dark:bg-[#131923]/60 zyricon:bg-[#180F26]/70 px-3.5 py-2 text-[11px] text-slate-500 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] select-none">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <kbd className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1A2230] px-1 py-0.5 text-[10px] font-mono">
+              <kbd className="rounded border border-slate-200 dark:border-white/10 zyricon:border-[#694788]/30 bg-white dark:bg-[#1A2230] zyricon:bg-[#1D132D] px-1 py-0.5 text-[10px] font-mono text-slate-700 dark:text-gray-300 zyricon:text-[#EBDDE9]">
                 ↑
               </kbd>
-              <kbd className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1A2230] px-1 py-0.5 text-[10px] font-mono">
+              <kbd className="rounded border border-slate-200 dark:border-white/10 zyricon:border-[#694788]/30 bg-white dark:bg-[#1A2230] zyricon:bg-[#1D132D] px-1 py-0.5 text-[10px] font-mono text-slate-700 dark:text-gray-300 zyricon:text-[#EBDDE9]">
                 ↓
               </kbd>
               <span className="text-[10px] ml-0.5">Di chuyển</span>
             </span>
 
             <span className="flex items-center gap-1">
-              <kbd className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1A2230] px-1.5 py-0.5 text-[10px] font-mono">
+              <kbd className="rounded border border-slate-200 dark:border-white/10 zyricon:border-[#694788]/30 bg-white dark:bg-[#1A2230] zyricon:bg-[#1D132D] px-1.5 py-0.5 text-[10px] font-mono text-slate-700 dark:text-gray-300 zyricon:text-[#EBDDE9]">
                 ↵
               </kbd>
               <span className="text-[10px]">Mở chat</span>
@@ -449,7 +449,7 @@ export const SearchChatModal: React.FC<SearchChatModalProps> = ({
           </div>
 
           <span className="flex items-center gap-1 text-[10px]">
-            <kbd className="rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1A2230] px-1.5 py-0.5 text-[10px] font-mono">
+            <kbd className="rounded border border-slate-200 dark:border-white/10 zyricon:border-[#694788]/30 bg-white dark:bg-[#1A2230] zyricon:bg-[#1D132D] px-1.5 py-0.5 text-[10px] font-mono text-slate-700 dark:text-gray-300 zyricon:text-[#EBDDE9]">
               Esc
             </kbd>
             <span>Đóng</span>

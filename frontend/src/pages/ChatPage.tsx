@@ -10,7 +10,8 @@ function ChatPage() {
   return (
     <ChatLayout>
       <div
-        className="flex h-full w-full overflow-hidden relative transition-colors duration-200 motion-reduce:transition-none bg-workspace-canvas"
+        data-sidebar-collapsed={isSidebarCollapsed ? 'true' : 'false'}
+        className="flex h-full w-full overflow-hidden relative transition-colors duration-200 motion-reduce:transition-none bg-workspace-canvas text-slate-900 dark:text-white zyricon:text-[#F7F3F6]"
       >
         <Sidebar
           isOpen={isMobileSidebarOpen}

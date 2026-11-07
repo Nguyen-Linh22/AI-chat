@@ -1,9 +1,14 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { WelcomeScreen } from './WelcomeScreen'
+import { useThemeStore } from '../../stores/themeStore'
 
-describe('WelcomeScreen', () => {
+describe('WelcomeScreen (Light & Dark baseline)', () => {
+  beforeEach(() => {
+    useThemeStore.setState({ theme: 'dark' })
+  })
+
   it('renders greeting with user name and workspace subtitle', () => {
     render(<WelcomeScreen userName="Linh" onSelectPrompt={vi.fn()} />)
 
@@ -105,5 +110,147 @@ describe('WelcomeScreen', () => {
     expect(onSelectPrompt).toHaveBeenCalledWith(
       expect.stringContaining('Hãy giúp tôi soạn thảo một văn bản chuyên nghiệp')
     )
+  })
+})
+
+describe('WelcomeScreen (Zyricon Theme M4: Dragon Emblem AI Orb & Welcome Experience)', () => {
+  beforeEach(() => {
+    useThemeStore.setState({ theme: 'zyricon' })
+  })
+
+  it('renders Zyricon AI Orb with Dragon Emblem and subtle purple neon glow', () => {
+    render(<WelcomeScreen userName="Zyricon User" onSelectPrompt={vi.fn()} />)
+
+    const orb = screen.getByTestId('zyricon-ai-orb')
+    expect(orb).toBeInTheDocument()
+    expect(orb).toHaveAttribute('aria-label', 'Zyricon AI Dragon Orb')
+
+    // Contains Dragon Emblem image
+    const img = orb.querySelector('img')
+    expect(img).toBeInTheDocument()
+    expect(img?.getAttribute('src')).toBeTruthy()
+  })
+
+  it('renders Zyricon welcome heading "Ready to Create Something New?"', () => {
+    render(<WelcomeScreen userName="Zyricon User" onSelectPrompt={vi.fn()} />)
+
+    const heading = screen.getByRole('heading', {
+      level: 2,
+      name: /Ready to Create Something New\?/i,
+    })
+    expect(heading).toBeInTheDocument()
+  })
+
+  it('renders Zyricon supporting description with personalized user name', () => {
+    render(<WelcomeScreen userName="Alex" onSelectPrompt={vi.fn()} />)
+
+    expect(
+      screen.getByText(/Chào mừng, Alex! Hãy khám phá ý tưởng mới/i)
+    ).toBeInTheDocument()
+  })
+
+  it('renders exactly 3 reference-inspired action chips: Create Image, Brainstorm, Make a Plan', () => {
+    render(<WelcomeScreen userName="Test" onSelectPrompt={vi.fn()} />)
+
+    const chips = screen.getAllByRole('button', { name: /^Gợi ý hành động:/i })
+    expect(chips).toHaveLength(3)
+
+    expect(screen.getByRole('button', { name: /Gợi ý hành động: Create Image/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Gợi ý hành động: Brainstorm/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Gợi ý hành động: Make a Plan/i })).toBeInTheDocument()
+  })
+
+  it('renders exactly 3 feature cards: Image Generator, AI Presentation, Dev Assistant', () => {
+    render(<WelcomeScreen userName="Test" onSelectPrompt={vi.fn()} />)
+
+    const featureCards = screen.getAllByRole('button', { name: /^Khám phá:/i })
+    expect(featureCards).toHaveLength(3)
+
+    expect(screen.getByRole('button', { name: /Khám phá: Image Generator/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Khám phá: AI Presentation/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Khám phá: Dev Assistant/i })).toBeInTheDocument()
+  })
+
+  it('dispatches prompt when an action chip is clicked', async () => {
+    const user = userEvent.setup()
+    const onSelectPrompt = vi.fn()
+
+    render(<WelcomeScreen userName="Test" onSelectPrompt={onSelectPrompt} />)
+
+    const createImgChip = screen.getByRole('button', { name: /Gợi ý hành động: Create Image/i })
+    await user.click(createImgChip)
+
+    expect(onSelectPrompt).toHaveBeenCalledTimes(1)
+    expect(onSelectPrompt).toHaveBeenCalledWith(
+      expect.stringContaining('Hãy tạo ý tưởng hình ảnh và viết prompt chi tiết')
+    )
+
+    const brainstormChip = screen.getByRole('button', { name: /Gợi ý hành động: Brainstorm/i })
+    await user.click(brainstormChip)
+
+    expect(onSelectPrompt).toHaveBeenCalledTimes(2)
+    expect(onSelectPrompt).toHaveBeenCalledWith(
+      expect.stringContaining('Hãy cùng tôi brainstorm các ý tưởng sáng tạo')
+    )
+
+    const planChip = screen.getByRole('button', { name: /Gợi ý hành động: Make a Plan/i })
+    await user.click(planChip)
+
+    expect(onSelectPrompt).toHaveBeenCalledTimes(3)
+    expect(onSelectPrompt).toHaveBeenCalledWith(
+      expect.stringContaining('Hãy giúp tôi lập kế hoạch hành động từng bước')
+    )
+  })
+
+  it('dispatches prompt when a feature card is clicked', async () => {
+    const user = userEvent.setup()
+    const onSelectPrompt = vi.fn()
+
+    render(<WelcomeScreen userName="Test" onSelectPrompt={onSelectPrompt} />)
+
+    const devCard = screen.getByRole('button', { name: /Khám phá: Dev Assistant/i })
+    await user.click(devCard)
+
+    expect(onSelectPrompt).toHaveBeenCalledTimes(1)
+    expect(onSelectPrompt).toHaveBeenCalledWith(
+      expect.stringContaining('Hãy đóng vai trò Dev Assistant chuyên nghiệp')
+    )
+
+    const presentationCard = screen.getByRole('button', { name: /Khám phá: AI Presentation/i })
+    await user.click(presentationCard)
+
+    expect(onSelectPrompt).toHaveBeenCalledTimes(2)
+    expect(onSelectPrompt).toHaveBeenCalledWith(
+      expect.stringContaining('Hãy giúp tôi xây dựng cấu trúc bài thuyết trình chuyên nghiệp')
+    )
+  })
+
+  it('supports keyboard navigation on Zyricon action chips and feature cards', async () => {
+    const user = userEvent.setup()
+    const onSelectPrompt = vi.fn()
+
+    render(<WelcomeScreen userName="Test" onSelectPrompt={onSelectPrompt} />)
+
+    const chip = screen.getByRole('button', { name: /Gợi ý hành động: Brainstorm/i })
+    chip.focus()
+    expect(chip).toHaveFocus()
+
+    await user.keyboard('{Enter}')
+    expect(onSelectPrompt).toHaveBeenCalledTimes(1)
+
+    const card = screen.getByRole('button', { name: /Khám phá: Image Generator/i })
+    card.focus()
+    expect(card).toHaveFocus()
+
+    await user.keyboard(' ')
+    expect(onSelectPrompt).toHaveBeenCalledTimes(2)
+  })
+
+  it('preserves accessible sr-only empty state text in Zyricon theme', () => {
+    render(<WelcomeScreen userName="Test" onSelectPrompt={vi.fn()} />)
+
+    expect(
+      screen.getByText('Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!')
+    ).toBeInTheDocument()
   })
 })

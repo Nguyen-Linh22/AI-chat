@@ -137,7 +137,7 @@ function resolveModelMeta(model?: { id?: string; name?: string; provider?: strin
   return {
     subtitle: model.provider ? `${model.provider} · ${model.model || model.name}` : 'Mô hình AI',
     iconBg: 'bg-white dark:bg-white/95 border border-slate-200/80 dark:border-white/15',
-    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    iconColor: 'text-amber-600 dark:text-indigo-400 zyricon:text-[#C27595]',
     icon: '✦',
   }
 }
@@ -399,7 +399,7 @@ function ModelSelector() {
         aria-label={`Mô hình AI hiện tại: ${selectedModel?.name ?? 'Chọn model'}`}
         onClick={() => setIsOpen((prev) => !prev)}
         onKeyDown={handleTriggerKeyDown}
-        className="model-selector-trigger group relative flex h-9 items-center gap-1.5 sm:gap-2 rounded-full border border-white/20 dark:border-white/15 px-2.5 sm:px-3.5 py-1.5 text-xs font-medium text-white shadow-xs hover:shadow-[0_8px_22px_rgba(167,119,227,0.45)] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#15803D] dark:focus-visible:ring-emerald-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#131923] focus-visible:outline-none select-none bg-gradient-to-r"
+        className="model-selector-trigger group relative flex h-9 items-center gap-1.5 sm:gap-2 rounded-full border border-white/20 dark:border-white/15 px-2.5 sm:px-3.5 py-1.5 text-xs font-medium text-white shadow-xs hover:shadow-md hover:shadow-amber-500/25 dark:hover:shadow-indigo-500/30 zyricon:hover:shadow-[rgba(194,117,149,0.35)] cursor-pointer focus-visible:ring-2 focus-visible:ring-[#15803D] dark:focus-visible:ring-emerald-400 zyricon:focus-visible:ring-[#C27595] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#131923] zyricon:focus-visible:ring-offset-[#07040B] focus-visible:outline-none select-none bg-gradient-to-r"
       >
         {/* Glow underlay blur (reproducing sample button-content::before) */}
         <span
@@ -491,15 +491,15 @@ function ModelSelector() {
           tabIndex={-1}
           aria-labelledby="model-selector-btn"
           onKeyDown={handleDropdownKeyDown}
-          className="model-selector-popover absolute right-0 top-full mt-2.5 z-50 w-72 max-w-[calc(100vw-4.5rem)] sm:w-80 sm:max-w-none rounded-2xl border border-slate-200/90 dark:border-white/[0.08] bg-white/95 dark:bg-[#131923]/96 p-2 shadow-2xl shadow-slate-900/15 dark:shadow-black/80 backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/5 animate-dropdown-fade space-y-1 focus:outline-none origin-top-right"
+          className="model-selector-popover absolute right-0 top-full mt-2.5 z-50 w-72 max-w-[calc(100vw-4.5rem)] sm:w-80 sm:max-w-none rounded-2xl border border-slate-200/90 dark:border-white/[0.08] zyricon:border-[#694788]/35 bg-white/95 dark:bg-[#131923]/96 zyricon:bg-[#120B1C]/96 p-2 shadow-2xl shadow-slate-900/15 dark:shadow-black/80 zyricon:shadow-[0_12px_40px_rgba(7,4,11,0.9)] backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/5 zyricon:ring-[#694788]/20 animate-dropdown-fade space-y-1 focus:outline-none origin-top-right"
         >
           {/* Header Bar */}
-          <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-slate-100 dark:border-white/[0.06] mb-1 select-none">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94A3B8] flex items-center gap-1.5">
-              <span className="text-[#15803D] dark:text-emerald-400 text-xs" aria-hidden="true">✦</span>
+          <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-slate-100 dark:border-white/[0.06] zyricon:border-[#694788]/25 mb-1 select-none">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] flex items-center gap-1.5">
+              <span className="text-amber-500 dark:text-indigo-400 zyricon:text-[#C27595] text-xs" aria-hidden="true">✦</span>
               Mô hình AI
             </span>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-[#15803D] dark:text-emerald-400 border border-emerald-500/25 shadow-xs">
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100/70 text-amber-800 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-500/30 zyricon:bg-[#3B2568]/40 zyricon:text-[#C27595] border border-amber-300/60 dark:border-indigo-500/30 zyricon:border-[#694788]/30 shadow-xs">
               {models.filter((m) => m.available !== false).length} khả dụng
             </span>
           </div>
@@ -540,14 +540,14 @@ function ModelSelector() {
                       handleSelectModel(model.id, e)
                     }
                   }}
-                  className={`model-card w-full rounded-xl p-2.5 text-left transition-all duration-150 flex items-center justify-between gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#15803D] dark:focus-visible:ring-emerald-400 ${
+                  className={`model-card w-full rounded-xl p-2.5 text-left transition-all duration-150 flex items-center justify-between gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#15803D] dark:focus-visible:ring-emerald-400 zyricon:focus-visible:ring-[#C27595] ${
                     !isAvailable
                       ? 'opacity-40 cursor-not-allowed border border-transparent select-none'
                       : isSelected
-                      ? 'border border-emerald-500/50 bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-teal-500/10 dark:from-emerald-500/20 dark:via-emerald-500/10 dark:to-transparent shadow-xs cursor-pointer'
+                      ? 'border border-amber-400/60 dark:border-indigo-500/40 zyricon:border-[#C27595]/50 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-orange-500/10 dark:from-indigo-950/40 dark:via-indigo-900/30 dark:to-transparent zyricon:from-[#3B2568]/50 zyricon:via-[#2D1B4E]/60 zyricon:to-[#20103A]/70 shadow-xs cursor-pointer'
                       : isKeyboardFocused
-                      ? 'border border-slate-300 dark:border-white/15 bg-slate-100 dark:bg-[#222C3D] cursor-pointer'
-                      : 'border border-transparent hover:border-slate-200 dark:hover:border-white/10 hover:bg-slate-100/80 dark:hover:bg-[#222C3D]/60 hover:translate-x-0.5 cursor-pointer'
+                      ? 'border border-slate-300 dark:border-indigo-500/40 zyricon:border-[#694788]/50 bg-slate-100 dark:bg-[#1E1B4B]/50 zyricon:bg-[#1D132D] cursor-pointer'
+                      : 'border border-transparent hover:border-amber-300/70 dark:hover:border-indigo-500/30 zyricon:hover:border-[#694788]/40 hover:bg-amber-50/70 dark:hover:bg-[#1E1B4B]/35 zyricon:hover:bg-[#1D132D]/70 hover:translate-x-0.5 cursor-pointer'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -584,17 +584,17 @@ function ModelSelector() {
                         <span
                           className={`truncate text-xs font-semibold tracking-tight ${
                             !isAvailable
-                              ? 'text-slate-400 dark:text-[#64748B]'
+                              ? 'text-slate-400 dark:text-[#64748B] zyricon:text-[#8F7686]'
                               : isSelected
-                              ? 'text-[#15803D] dark:text-emerald-300'
-                              : 'text-slate-900 dark:text-[#F1F5F9]'
+                              ? 'text-amber-800 dark:text-indigo-300 zyricon:text-[#C27595]'
+                              : 'text-slate-900 dark:text-[#F1F5F9] zyricon:text-[#F7F3F6]'
                           }`}
                         >
                           {model.name}
                         </span>
 
                         {!isAvailable ? (
-                          <span className="rounded-md px-1.5 py-0.5 text-[10px] font-medium bg-slate-200/90 dark:bg-[#131923] text-slate-700 dark:text-[#94A3B8] border border-slate-300/40 dark:border-white/[0.08]">
+                          <span className="rounded-md px-1.5 py-0.5 text-[10px] font-medium bg-slate-200/90 dark:bg-[#131923] zyricon:bg-[#1A102A] text-slate-700 dark:text-[#94A3B8] zyricon:text-[#8F7686] border border-slate-300/40 dark:border-white/[0.08] zyricon:border-[#694788]/25">
                             {model.disabledReason || 'Không khả dụng'}
                           </span>
                         ) : meta.badgeText ? (
@@ -608,7 +608,7 @@ function ModelSelector() {
                         ) : null}
                       </div>
 
-                      <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] truncate mt-0.5">
+                      <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] truncate mt-0.5">
                         {meta.subtitle}
                       </p>
                     </div>
@@ -617,10 +617,10 @@ function ModelSelector() {
                   {/* Active Selected Checkmark */}
                   {isSelected && (
                     <div className="flex items-center gap-1 shrink-0">
-                      <span className="hidden sm:inline-block text-[10px] font-semibold text-[#15803D] dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/20 px-1.5 py-0.5 rounded-full border border-emerald-500/20">
+                      <span className="hidden sm:inline-block text-[10px] font-semibold text-amber-800 dark:text-indigo-300 zyricon:text-[#C27595] bg-amber-100/70 dark:bg-indigo-950/60 zyricon:bg-[#3B2568]/40 px-1.5 py-0.5 rounded-full border border-amber-300/50 dark:border-indigo-500/30 zyricon:border-[#694788]/30">
                         Đang chọn
                       </span>
-                      <svg className="h-4 w-4 text-[#15803D] dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                      <svg className="h-4 w-4 text-amber-600 dark:text-indigo-400 zyricon:text-[#C27595]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>

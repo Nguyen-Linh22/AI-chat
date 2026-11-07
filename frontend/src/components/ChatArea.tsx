@@ -13,7 +13,7 @@ import { useTypewriterQueue } from '../hooks/useTypewriterQueue'
 import MessageBubble from './MessageBubble'
 import ChatInput from './ChatInput'
 import ModelSelector from './ModelSelector'
-import ThemeToggle from './ThemeToggle'
+import ThemeSelector from './ThemeSelector'
 import ChatBackground from './chat/ChatBackground'
 import WelcomeScreen from './chat/WelcomeScreen'
 
@@ -422,6 +422,14 @@ function ChatArea({
   ])
 
   useEffect(() => {
+    if (messages.length === 0) {
+      prevMessagesLengthRef.current = 0
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0
+      }
+      return
+    }
+
     const lastMsg = messages[messages.length - 1]
 
     if (lastMsg && lastMsg.role === 'user') {
@@ -474,19 +482,22 @@ function ChatArea({
   }
 
   return (
-    <main className="relative flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden h-full">
+    <main className="relative flex min-w-0 min-h-0 flex-1 flex-col overflow-hidden h-full bg-workspace-canvas">
       {/* Background Star Effect Layer */}
       <ChatBackground />
 
       {/* Docked Top Header: 56px (h-14) Premium AI Workspace Header */}
-      <header className="relative z-40 flex h-14 shrink-0 items-center justify-between border-b bg-transparent backdrop-blur-[1px] px-3.5 sm:px-6 transition-colors duration-200 border-indigo-200/25 dark:border-white/[0.06] shadow-[0_4px_20px_-4px_rgba(110,142,251,0.05)]">
+      <header
+        data-chat-header="true"
+        className="chat-area-header relative z-40 flex h-14 shrink-0 items-center justify-between border-b bg-transparent backdrop-blur-[1px] px-3.5 sm:px-6 transition-colors duration-200 border-indigo-200/25 dark:border-white/[0.06] zyricon:border-[rgba(196,165,184,0.1)] zyricon:bg-[#07040B]/70 zyricon:backdrop-blur-md shadow-[0_4px_20px_-4px_rgba(110,142,251,0.05)] zyricon:shadow-[0_4px_20px_-4px_rgba(7,4,11,0.7)]"
+      >
         {/* Left: Mobile Navigation, Workspace Status & Breadcrumb Title */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-3 sm:mr-4">
           {onOpenMobileSidebar && (
             <button
               type="button"
               onClick={onOpenMobileSidebar}
-              className="md:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-200/40 dark:border-white/10 bg-white/40 dark:bg-white/[0.05] text-slate-700 dark:text-[#94A3B8] hover:text-indigo-600 dark:hover:text-[#F1F5F9] hover:bg-indigo-50/60 dark:hover:bg-indigo-950/40 hover:border-indigo-400/40 transition active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#6e8efb] dark:focus-visible:ring-indigo-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#131923] focus-visible:outline-none backdrop-blur-xs"
+              className="md:hidden flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-indigo-200/40 dark:border-white/10 zyricon:border-[#694788]/35 bg-white/40 dark:bg-white/[0.05] zyricon:bg-[#140E20]/80 text-slate-700 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] hover:text-amber-700 dark:hover:text-[#F1F5F9] zyricon:hover:text-[#F7F3F6] hover:bg-amber-50/70 dark:hover:bg-indigo-950/40 zyricon:hover:bg-[#1D152D] hover:border-amber-400/40 zyricon:hover:border-[#98578D]/50 transition active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#6e8efb] dark:focus-visible:ring-indigo-400 zyricon:focus-visible:ring-[#C27595] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#131923] zyricon:focus-visible:ring-offset-[#07040B] focus-visible:outline-none backdrop-blur-xs"
               aria-label="Mở menu danh sách đoạn chat"
               title="Mở menu"
             >
@@ -513,28 +524,28 @@ function ChatArea({
           </div>
 
           {/* Workspace Status Badge */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/40 dark:bg-white/[0.06] border border-indigo-200/50 dark:border-indigo-400/20 text-[11px] font-semibold text-slate-700 dark:text-slate-200 shrink-0 select-none backdrop-blur-xs shadow-[0_0_12px_rgba(110,142,251,0.08)]">
-            <span className="h-2 w-2 rounded-full bg-gradient-to-r from-[#6e8efb] to-[#a777e3] shadow-[0_0_8px_rgba(167,119,227,0.7)]" aria-hidden="true" />
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/40 dark:bg-white/[0.06] zyricon:bg-[#140E20]/70 border border-amber-200/70 dark:border-indigo-400/20 zyricon:border-[#694788]/35 text-[11px] font-semibold text-slate-700 dark:text-slate-200 zyricon:text-[#F7F3F6] shrink-0 select-none backdrop-blur-xs shadow-[0_0_12px_rgba(245,158,11,0.08)] dark:shadow-[0_0_12px_rgba(110,142,251,0.08)] zyricon:shadow-[0_0_12px_rgba(105,71,136,0.2)]">
+            <span className="h-2 w-2 rounded-full bg-gradient-to-r from-[#F59E0B] to-[#EA580C] dark:from-[#6e8efb] dark:to-[#a777e3] zyricon:from-[#694788] zyricon:to-[#C27595] shadow-[0_0_8px_rgba(245,158,11,0.65)] dark:shadow-[0_0_8px_rgba(167,119,227,0.7)] zyricon:shadow-[0_0_8px_rgba(194,117,149,0.8)]" aria-hidden="true" />
             <span>AI Workspace</span>
           </div>
 
-          <span className="hidden sm:inline shrink-0 text-indigo-300 dark:text-indigo-400/50 font-light select-none text-sm" aria-hidden="true">›</span>
+          <span className="hidden sm:inline shrink-0 text-amber-400/70 dark:text-indigo-400/50 zyricon:text-[#8F7686] font-light select-none text-sm" aria-hidden="true">›</span>
 
           {/* Workspace Breadcrumbs Hierarchy */}
           <div
             className="flex items-center gap-1.5 min-w-0 text-xs sm:text-sm"
             title={currentChat ? `AI Chat / ${currentChat.title}` : 'AI Chat'}
           >
-            <span className="sm:hidden shrink-0 font-bold text-slate-700 dark:text-[#94A3B8] tracking-tight">AI Chat</span>
+            <span className="sm:hidden shrink-0 font-bold text-slate-700 dark:text-[#94A3B8] zyricon:text-[#C4A5B8] tracking-tight">AI Chat</span>
             {currentChat ? (
               <>
-                <span className="sm:hidden shrink-0 text-slate-400 dark:text-[#64748B] font-normal select-none" aria-hidden="true">/</span>
-                <h1 className="truncate font-semibold text-slate-900 dark:text-[#F1F5F9]">
+                <span className="sm:hidden shrink-0 text-slate-400 dark:text-[#64748B] zyricon:text-[#8F7686] font-normal select-none" aria-hidden="true">/</span>
+                <h1 className="truncate font-semibold text-slate-900 dark:text-[#F1F5F9] zyricon:text-[#F7F3F6]">
                   {currentChat.title}
                 </h1>
               </>
             ) : (
-              <span className="text-slate-500 dark:text-[#94A3B8] text-xs font-normal">Đoạn chat mới</span>
+              <span className="text-slate-600 dark:text-[#94A3B8] zyricon:text-[#8F7686] text-xs font-normal">Đoạn chat mới</span>
             )}
           </div>
         </div>
@@ -543,7 +554,7 @@ function ChatArea({
         <div className="flex items-center gap-2 shrink-0">
           <ModelSelector />
 
-          <ThemeToggle />
+          <ThemeSelector />
         </div>
       </header>
 
@@ -558,14 +569,14 @@ function ChatArea({
             /* Skeleton Loading */
             <div className="flex flex-col gap-6 py-4">
               <div className="flex justify-end">
-                <div className="w-[60%] sm:w-[45%] rounded-2xl bg-slate-200/70 dark:bg-gray-800/80 p-4 space-y-2.5 border border-slate-200/80 dark:border-white/10 shadow-md">
+                <div className="w-[60%] sm:w-[45%] rounded-2xl bg-slate-200/70 dark:bg-gray-800/80 zyricon:bg-[#140E20]/80 p-4 space-y-2.5 border border-slate-200/80 dark:border-white/10 zyricon:border-[#694788]/30 shadow-md">
                   <div className="h-3 w-1/4 rounded skeleton-shimmer" />
                   <div className="h-3.5 w-full rounded skeleton-shimmer" />
                   <div className="h-3.5 w-3/4 rounded skeleton-shimmer" />
                 </div>
               </div>
               <div className="flex justify-start">
-                <div className="w-[85%] sm:w-[70%] rounded-2xl bg-slate-200/70 dark:bg-gray-800/80 p-4 space-y-3 border border-slate-200/80 dark:border-white/10 shadow-md">
+                <div className="w-[85%] sm:w-[70%] rounded-2xl bg-slate-200/70 dark:bg-gray-800/80 zyricon:bg-[#140E20]/80 p-4 space-y-3 border border-slate-200/80 dark:border-white/10 zyricon:border-[#694788]/30 shadow-md">
                   <div className="h-3 w-1/5 rounded skeleton-shimmer" />
                   <div className="h-3.5 w-full rounded skeleton-shimmer" />
                   <div className="h-3.5 w-11/12 rounded skeleton-shimmer" />
@@ -593,13 +604,14 @@ function ChatArea({
               {/* Older Messages Loading / Error Indicator */}
               {loadingOlder && (
                 <div
-                  className="flex items-center justify-center py-2 text-xs text-slate-500 dark:text-gray-400 gap-2 select-none"
+                  className="flex items-center justify-center py-2 text-xs text-slate-500 dark:text-gray-400 zyricon:text-[#8F7686] gap-2 select-none"
                   aria-live="polite"
                 >
                   <span className="inline-block animate-spin text-sm">◌</span>
                   <span>Đang tải tin nhắn cũ...</span>
                 </div>
               )}
+
               {olderError && (
                 <div
                   className="flex items-center justify-center py-2 gap-2 text-xs"
@@ -609,7 +621,7 @@ function ChatArea({
                   <button
                     type="button"
                     onClick={() => loadOlderMessages()}
-                    className="text-[#1B8F3D] dark:text-emerald-400 hover:underline font-semibold cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 dark:focus-visible:ring-emerald-400/50 focus-visible:outline-none rounded px-1.5 py-0.5 transition-all"
+                    className="text-[#1B8F3D] dark:text-indigo-400 zyricon:text-[#C27595] hover:underline font-semibold cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 dark:focus-visible:ring-indigo-400/50 zyricon:focus-visible:ring-[#C27595]/50 focus-visible:outline-none rounded px-1.5 py-0.5 transition-all"
                   >
                     Thử lại
                   </button>
@@ -646,7 +658,7 @@ function ChatArea({
       </div>
 
       {/* Smart Scroll: Nút cuộn xuống dưới */}
-      {showScrollToBottom && (
+      {messages.length > 0 && showScrollToBottom && (
         <div className="pointer-events-none absolute bottom-24 left-0 right-0 z-20 flex justify-center animate-dropdown-fade">
           <button
             type="button"
@@ -654,21 +666,21 @@ function ChatArea({
               scrollToBottom(true)
               setHasNewMessagesWhileScrolled(false)
             }}
-            className={`pointer-events-auto scroll-to-bottom-btn flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold shadow-xl backdrop-blur-md transition-all active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 ${hasNewMessagesWhileScrolled
-                ? 'border-[#1B8F3D]/60 bg-white/95 dark:bg-[#161d28]/95 text-slate-900 dark:text-white shadow-[0_0_15px_rgba(27,143,61,0.25)]'
-                : 'border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-[#161d28]/90 text-slate-700 dark:text-gray-200 hover:border-[#1B8F3D]/50 hover:text-slate-900 dark:hover:text-white'
+            className={`pointer-events-auto scroll-to-bottom-btn flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold shadow-xl backdrop-blur-md transition-all active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#1B8F3D]/50 dark:focus-visible:ring-indigo-400/50 zyricon:focus-visible:ring-[#C27595] ${hasNewMessagesWhileScrolled
+                ? 'border-amber-400/70 dark:border-indigo-500/60 zyricon:border-[#C27595]/60 bg-white/95 dark:bg-[#161d28]/95 zyricon:bg-[#140E20]/95 text-slate-900 dark:text-white zyricon:text-[#F7F3F6] shadow-[0_0_15px_rgba(245,158,11,0.25)] dark:shadow-[0_0_15px_rgba(99,102,241,0.35)] zyricon:shadow-[0_0_15px_rgba(194,117,149,0.3)]'
+                : 'border-slate-200/80 dark:border-white/10 zyricon:border-[#694788]/40 bg-white/90 dark:bg-[#161d28]/90 zyricon:bg-[#140E20]/90 text-slate-700 dark:text-gray-200 zyricon:text-[#C4A5B8] hover:border-amber-500/50 dark:hover:border-indigo-500/50 zyricon:hover:border-[#C27595]/50 hover:text-slate-900 dark:hover:text-white zyricon:hover:text-[#F7F3F6]'
               }`}
             title={hasNewMessagesWhileScrolled ? 'Tin nhắn mới' : 'Cuộn xuống tin nhắn mới nhất'}
             aria-label={hasNewMessagesWhileScrolled ? 'Tin nhắn mới' : 'Cuộn xuống tin nhắn mới nhất'}
           >
-            <svg className="h-3.5 w-3.5 text-[#1B8F3D] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+            <svg className="h-3.5 w-3.5 text-amber-600 dark:text-indigo-400 zyricon:text-[#C27595] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
             <span>{hasNewMessagesWhileScrolled ? 'Tin nhắn mới' : 'Cuộn xuống tin nhắn mới nhất'}</span>
             {(streamingMessageId || hasNewMessagesWhileScrolled) && (
               <span className="relative ml-0.5 flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping motion-reduce:hidden rounded-full bg-[#1B8F3D] opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#1B8F3D]"></span>
+                <span className="absolute inline-flex h-full w-full animate-ping motion-reduce:hidden rounded-full bg-amber-500 dark:bg-indigo-400 zyricon:bg-[#C27595] opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500 dark:bg-indigo-400 zyricon:bg-[#C27595]"></span>
               </span>
             )}
           </button>
