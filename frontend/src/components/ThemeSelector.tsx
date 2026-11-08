@@ -290,6 +290,7 @@ export function ThemeSelector() {
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const optionRefs = useRef<(HTMLDivElement | null)[]>([])
+  const rafIdRef = useRef<number | null>(null)
 
   const currentTheme = useThemeStore((state) => state.theme)
   const setTheme = useThemeStore((state) => state.setTheme)
@@ -298,6 +299,10 @@ export function ThemeSelector() {
     THEME_OPTIONS.find((opt) => opt.value === currentTheme) || THEME_OPTIONS[1]
 
   const closeDropdown = useCallback(() => {
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current)
+      rafIdRef.current = null
+    }
     setIsOpen(false)
     setFocusedIndex(-1)
   }, [])
@@ -309,12 +314,24 @@ export function ThemeSelector() {
       const targetIdx =
         initialIndex !== undefined ? initialIndex : activeIdx >= 0 ? activeIdx : 0
       setFocusedIndex(targetIdx)
-      requestAnimationFrame(() => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+      }
+      rafIdRef.current = requestAnimationFrame(() => {
         optionRefs.current[targetIdx]?.focus()
+        rafIdRef.current = null
       })
     },
     [currentTheme]
   )
+
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current)
+      }
+    }
+  }, [])
 
   const selectTheme = useCallback(
     (theme: Theme) => {
@@ -347,6 +364,14 @@ export function ThemeSelector() {
     }
   }, [isOpen, closeDropdown])
 
+  const handleContainerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape' && isOpen) {
+      e.preventDefault()
+      closeDropdown()
+      triggerRef.current?.focus()
+    }
+  }
+
   const handleTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
@@ -375,17 +400,17 @@ export function ThemeSelector() {
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       selectTheme(optionValue)
-    } else if (e.key === 'Escape') {
-      e.preventDefault()
-      closeDropdown()
-      triggerRef.current?.focus()
     } else if (e.key === 'Tab') {
       closeDropdown()
     }
   }
 
   return (
-    <div ref={containerRef} className="relative inline-block text-left shrink-0 z-50">
+    <div
+      ref={containerRef}
+      onKeyDown={handleContainerKeyDown}
+      className="relative inline-block text-left shrink-0 z-50"
+    >
       {/* Premium Capsule Trigger Button (Harmonized with ModelSelector anatomy) */}
       <button
         id="theme-selector-btn"

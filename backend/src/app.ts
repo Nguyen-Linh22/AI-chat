@@ -19,6 +19,14 @@ export { getAllowedOrigins }
 
 const app = express()
 
+// TEMPORARY DIAGNOSTIC: log every incoming request before other middleware.
+app.use((req, _res, next) => {
+  console.log(
+    `[DIAG_REQUEST_RECEIVED] ${new Date().toISOString()} ${req.method} ${req.path}`
+  )
+  next()
+})
+
 const isProduction = process.env.NODE_ENV === 'production'
 
 if (isProduction || process.env.TRUST_PROXY === 'true') {
